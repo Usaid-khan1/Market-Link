@@ -1,12 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import customerApi from '../api/customer';
 
 export default function CustomerFavorites({ onNavigate, showToast, onAddToCart }) {
   const [activeTab, setActiveTab] = useState('farmers'); // 'farmers' | 'products'
+  const [loading, setLoading] = useState(false);
 
   // Farmers Dataset
   const [favoriteFarmers, setFavoriteFarmers] = useState([
     {
       id: 'f-1',
+      targetId: 2,
       name: 'Green Pastures Organic',
       specialty: 'Heirloom Solanaceae & Specialty Greens',
       market: 'Pioneer Pavilion • Stall #08',
@@ -20,6 +23,7 @@ export default function CustomerFavorites({ onNavigate, showToast, onAddToCart }
     },
     {
       id: 'f-2',
+      targetId: 3,
       name: 'Mountain View Orchard & Cider',
       specialty: 'Cideries, Honeycrisp & Asian Pears',
       market: 'Riverside Twilight Market • Pier 4',
@@ -33,6 +37,7 @@ export default function CustomerFavorites({ onNavigate, showToast, onAddToCart }
     },
     {
       id: 'f-3',
+      targetId: 4,
       name: 'Miller & Stone Hearth Bakery',
       specialty: 'Naturally Leavened Sourdough & Ancient Grains',
       market: 'Downtown Saturday Market • Space 19',
@@ -46,6 +51,7 @@ export default function CustomerFavorites({ onNavigate, showToast, onAddToCart }
     },
     {
       id: 'f-4',
+      targetId: 5,
       name: 'Riverbend Goat Dairy',
       specialty: 'Farmstead Artisan Chèvre & Aged Tommes',
       market: 'River District Sat • Lot 14-B',
@@ -63,6 +69,7 @@ export default function CustomerFavorites({ onNavigate, showToast, onAddToCart }
   const [favoriteProducts, setFavoriteProducts] = useState([
     {
       id: 'p-1',
+      targetId: 1,
       name: 'Heirloom Brandywine Tomatoes',
       farmer: 'Green Pastures Organic',
       stall: 'Stall #08',
@@ -77,6 +84,7 @@ export default function CustomerFavorites({ onNavigate, showToast, onAddToCart }
     },
     {
       id: 'p-2',
+      targetId: 2,
       name: 'Artisan Sourdough Country Loaf',
       farmer: 'Miller & Stone Hearth Bakery',
       stall: 'Space 19',
@@ -91,6 +99,7 @@ export default function CustomerFavorites({ onNavigate, showToast, onAddToCart }
     },
     {
       id: 'p-3',
+      targetId: 3,
       name: 'Cold-Pressed Sweet Apple Cider (1 Gal)',
       farmer: 'Mountain View Orchard & Cider',
       stall: 'Pier 4',
@@ -105,6 +114,7 @@ export default function CustomerFavorites({ onNavigate, showToast, onAddToCart }
     },
     {
       id: 'p-4',
+      targetId: 4,
       name: 'Artisan Herbed Goat Chèvre (8oz)',
       farmer: 'Riverbend Goat Dairy',
       stall: 'Lot 14-B',
@@ -119,6 +129,7 @@ export default function CustomerFavorites({ onNavigate, showToast, onAddToCart }
     },
     {
       id: 'p-5',
+      targetId: 5,
       name: 'Rainbow Swiss Chard & Lacinato Kale',
       farmer: 'Green Pastures Organic',
       stall: 'Stall #08',
@@ -133,6 +144,7 @@ export default function CustomerFavorites({ onNavigate, showToast, onAddToCart }
     },
     {
       id: 'p-6',
+      targetId: 6,
       name: 'Wild Blackberry Blossom Raw Honey (16oz)',
       farmer: 'Cascade Apiaries & Botanicals',
       stall: 'Stall #14',
@@ -147,19 +159,88 @@ export default function CustomerFavorites({ onNavigate, showToast, onAddToCart }
     }
   ]);
 
+  // Load live favorites from backend API
+  useEffect(() => {
+    let isMounted = true;
+    customerApi.getFavorites()
+      .then((res) => {
+        if (!isMounted || !res?.data || !Array.isArray(res.data) || res.data.length === 0) return;
+        
+        const liveFarmers = [];
+        const liveProducts = [];
+
+        res.data.forEach((fav) => {
+          if (fav.type === 'farmer' && fav.target) {
+            liveFarmers.push({
+              id: fav.target.id,
+              targetId: fav.target.id,
+              favId: fav.id,
+              name: fav.target.stall_name || fav.target.name || 'Local Farmer',
+              specialty: fav.target.stall_name ? 'Local Farm Producer' : 'Artisan Grower',
+              market: fav.target.address || 'Market Pavilion',
+              location: fav.target.address || 'Local Region',
+              rating: 4.9,
+              reviewCount: 48,
+              verified: fav.target.status === 'approved',
+              image: 'https://images.unsplash.com/photo-1595974482597-4b8da8879bc5?auto=format&fit=crop&w=600&q=80',
+              tags: ['Verified Farmer', 'Direct Harvest'],
+              featuredHarvest: 'Fresh Farm Goods'
+            });
+          } else if (fav.type === 'product' && fav.target) {
+            liveProducts.push({
+              id: fav.target.id,
+              targetId: fav.target.id,
+              favId: fav.id,
+              name: fav.target.name,
+              farmer: fav.target.stall_name || fav.target.farmer_name || 'Local Farmer',
+              stall: fav.target.stall_name || 'Stall',
+              price: `$${fav.target.price?.toFixed(2) || '0.00'}`,
+              unit: fav.target.unit ? `/ ${fav.target.unit}` : '',
+              availability: fav.target.stock_quantity > 0 ? 'Available' : 'Sold Out',
+              badgeStatus: fav.target.status,
+              isBackInStock: fav.target.stock_quantity > 0,
+              rating: 5.0,
+              image: fav.target.image || 'https://images.unsplash.com/photo-1592841200221-a6898f307baa?auto=format&fit=crop&w=500&q=80',
+              stockRemaining: `${fav.target.stock_quantity} left`
+            });
+          }
+        });
+
+        if (liveFarmers.length > 0) setFavoriteFarmers(liveFarmers);
+        if (liveProducts.length > 0) setFavoriteProducts(liveProducts);
+      })
+      .catch((err) => console.warn('Could not load favorites from API:', err));
+
+    return () => { isMounted = false; };
+  }, []);
+
   // Remove Favorite Farmer
-  const handleRemoveFarmer = (farmerId, name) => {
+  const handleRemoveFarmer = async (farmerId, name) => {
+    const farmer = favoriteFarmers.find(f => f.id === farmerId);
     setFavoriteFarmers(prev => prev.filter(f => f.id !== farmerId));
     if (showToast) {
       showToast(`Removed "${name}" from your favorite farmers.`);
     }
+    try {
+      const targetId = farmer?.targetId || (typeof farmerId === 'number' ? farmerId : parseInt(String(farmerId).replace(/\D/g, ''), 10) || 2);
+      await customerApi.toggleFavorite('farmer', targetId);
+    } catch (err) {
+      console.warn('API error toggling farmer favorite:', err);
+    }
   };
 
   // Remove Favorite Product
-  const handleRemoveProduct = (productId, name) => {
+  const handleRemoveProduct = async (productId, name) => {
+    const prod = favoriteProducts.find(p => p.id === productId);
     setFavoriteProducts(prev => prev.filter(p => p.id !== productId));
     if (showToast) {
       showToast(`Removed "${name}" from saved items.`);
+    }
+    try {
+      const targetId = prod?.targetId || (typeof productId === 'number' ? productId : parseInt(String(productId).replace(/\D/g, ''), 10) || 1);
+      await customerApi.toggleFavorite('product', targetId);
+    } catch (err) {
+      console.warn('API error toggling product favorite:', err);
     }
   };
 

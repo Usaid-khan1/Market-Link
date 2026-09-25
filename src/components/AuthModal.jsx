@@ -1,25 +1,48 @@
 import React, { useState } from 'react';
+import { useAuth } from '../context/AuthContext';
 
 export default function AuthModal({ initialMode = 'login', onClose, onLoginSuccess }) {
+  const { login, register } = useAuth();
   const [mode, setMode] = useState(initialMode); // 'login', 'register', 'farmer'
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [farmName, setFarmName] = useState('');
-  const [submitted, setSubmitted] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState(null);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setSubmitted(true);
-    setTimeout(() => {
-      if (onLoginSuccess) {
-        onLoginSuccess({
+    setIsLoading(true);
+    setErrorMessage(null);
+
+    try {
+      let authUser = null;
+      if (mode === 'login') {
+        const res = await login({ email, password });
+        authUser = res.user;
+      } else {
+        const role = mode === 'farmer' ? 'farmer' : 'customer';
+        const res = await register({
           name: name || (mode === 'farmer' ? farmName : 'Community Member'),
-          role: mode === 'farmer' ? 'Farmer Vendor' : 'Shopper'
+          email,
+          password,
+          password_confirmation: password,
+          role,
+          stall_name: mode === 'farmer' ? (farmName || `${name}'s Stall`) : null,
         });
+        authUser = res.user;
+      }
+
+      setIsLoading(false);
+      if (onLoginSuccess) {
+        onLoginSuccess(authUser);
       }
       onClose();
-    }, 1200);
+    } catch (err) {
+      setIsLoading(false);
+      setErrorMessage(err.message || 'Authentication failed. Please verify your details.');
+    }
   };
 
   return (
@@ -92,6 +115,12 @@ export default function AuthModal({ initialMode = 'login', onClose, onLoginSucce
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="flex flex-col gap-space-md">
+              {errorMessage && (
+                <div className="p-space-xs rounded-lg bg-error-container/40 border border-error text-xs text-on-surface flex items-center gap-space-xs">
+                  <span className="material-symbols-outlined text-error text-[16px]">error</span>
+                  <span>{errorMessage}</span>
+                </div>
+              )}
               {(mode === 'register' || mode === 'farmer') && (
                 <div>
                   <label className="font-label-sm text-on-surface-variant block mb-1">
@@ -144,13 +173,21 @@ export default function AuthModal({ initialMode = 'login', onClose, onLoginSucce
 
               <button
                 type="submit"
-                className="w-full bg-primary hover:bg-primary-container text-on-primary font-label-md py-space-sm rounded-xl shadow-md transition-all active:scale-95 cursor-pointer mt-space-xs"
+                disabled={isLoading}
+                className="w-full bg-primary hover:bg-primary-container disabled:opacity-60 text-on-primary font-label-md py-space-sm rounded-xl shadow-md transition-all active:scale-95 cursor-pointer mt-space-xs flex items-center justify-center gap-space-xs"
               >
-                {mode === 'farmer'
-                  ? 'Submit Farmer Application'
-                  : mode === 'register'
-                  ? 'Create Free Account'
-                  : 'Log In'}
+                {isLoading ? (
+                  <>
+                    <span className="material-symbols-outlined animate-spin text-[18px]">sync</span>
+                    <span>Connecting...</span>
+                  </>
+                ) : mode === 'farmer' ? (
+                  'Submit Farmer Application'
+                ) : mode === 'register' ? (
+                  'Create Free Account'
+                ) : (
+                  'Log In'
+                )}
               </button>
             </form>
           )}

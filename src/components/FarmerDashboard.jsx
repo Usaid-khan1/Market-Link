@@ -1,15 +1,36 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import FarmerProducts from './FarmerProducts';
 import FarmerStockTemplate from './FarmerStockTemplate';
 import FarmerPreOrders from './FarmerPreOrders';
 import FarmerReviews from './FarmerReviews';
 import FarmerSettings from './FarmerSettings';
+import farmerApi from '../api/farmer';
 
 export default function FarmerDashboard({ onNavigate, initialTab = 'dashboard' }) {
   const [activeTab, setActiveTab] = useState(initialTab);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
+  const [insights, setInsights] = useState(null);
+  const [profile, setProfile] = useState(null);
+
+  useEffect(() => {
+    farmerApi.getInsights()
+      .then((res) => {
+        if (res?.data) {
+          setInsights(res.data);
+        }
+      })
+      .catch((err) => console.warn('Could not load farmer insights:', err));
+
+    farmerApi.getProfile()
+      .then((res) => {
+        if (res?.data) {
+          setProfile(res.data);
+        }
+      })
+      .catch((err) => console.warn('Could not load farmer profile:', err));
+  }, []);
 
   // Quick Toast Notification helper
   const showToast = (msg) => {
@@ -21,11 +42,11 @@ export default function FarmerDashboard({ onNavigate, initialTab = 'dashboard' }
 
   // Farmer / Stall Profile
   const stallInfo = {
-    name: 'Green Pastures Organic',
-    tagline: 'Stall #08 • Pioneer Pavilion & Downtown Sat',
-    owner: 'Marcus Thorne',
-    initials: 'GP',
-    rating: '4.95 ★'
+    name: profile?.stall_name || 'Green Pastures Organic',
+    tagline: profile?.address ? `${profile.address}` : 'Stall #08 • Pioneer Pavilion & Downtown Sat',
+    owner: profile?.contact_person || 'Marcus Thorne',
+    initials: (profile?.stall_name || 'GP').split(' ').map((n) => n[0]).join('').substring(0, 2).toUpperCase(),
+    rating: profile?.rating ? `${profile.rating} ★` : '4.95 ★'
   };
 
   // Sidebar Navigation Items
@@ -367,7 +388,7 @@ export default function FarmerDashboard({ onNavigate, initialTab = 'dashboard' }
                     <span className="material-symbols-outlined text-primary text-[22px]">shopping_bag</span>
                   </div>
                   <span className="font-headline-md text-2xl sm:text-3xl font-bold text-on-surface">
-                    128
+                    {insights?.total_orders ?? 128}
                   </span>
                   <span className="font-body-sm text-secondary flex items-center gap-1 font-bold text-xs">
                     <span className="material-symbols-outlined text-[15px]">trending_up</span> +18% this month
@@ -383,7 +404,7 @@ export default function FarmerDashboard({ onNavigate, initialTab = 'dashboard' }
                     <span className="material-symbols-outlined text-tertiary text-[22px]">pending_actions</span>
                   </div>
                   <span className="font-headline-md text-2xl sm:text-3xl font-bold text-tertiary">
-                    6
+                    {insights?.pending_orders ?? 6}
                   </span>
                   <span className="font-body-sm text-on-surface-variant text-xs">
                     Awaiting harvest pack
@@ -399,7 +420,7 @@ export default function FarmerDashboard({ onNavigate, initialTab = 'dashboard' }
                     <span className="material-symbols-outlined text-primary text-[22px]">payments</span>
                   </div>
                   <span className="font-headline-md text-2xl sm:text-3xl font-bold text-primary font-mono">
-                    $2,480.00
+                    {insights?.total_revenue ? `$${Number(insights.total_revenue).toFixed(2)}` : '$2,480.00'}
                   </span>
                   <span className="font-body-sm text-on-surface-variant text-xs">
                     Direct in-person collections
@@ -415,10 +436,10 @@ export default function FarmerDashboard({ onNavigate, initialTab = 'dashboard' }
                     <span className="material-symbols-outlined text-secondary text-[22px]">eco</span>
                   </div>
                   <span className="font-headline-sm text-sm font-bold text-on-surface truncate">
-                    Brandywine Tomatoes
+                    {insights?.best_seller?.name ?? 'Brandywine Tomatoes'}
                   </span>
                   <span className="font-body-sm text-secondary font-bold text-xs">
-                    980 lbs sold this season
+                    {insights?.best_seller?.total_sold ? `${insights.best_seller.total_sold} units sold` : '980 lbs sold this season'}
                   </span>
                 </div>
               </div>

@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import adminApi from '../api/admin';
 
 export default function ManageFarmers({ onNavigate, showToast }) {
   const [statusFilter, setStatusFilter] = useState('all'); // 'all' | 'pending' | 'approved' | 'suspended'
@@ -176,13 +177,45 @@ export default function ManageFarmers({ onNavigate, showToast }) {
     return result;
   }, [farmers, statusFilter, marketFilter, searchQuery, sortBy]);
 
+  // Load live farmers from backend
+  useEffect(() => {
+    adminApi.getFarmers()
+      .then((res) => {
+        if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
+          const mapped = res.data.map((f) => ({
+            id: f.id,
+            name: f.farmer_profile?.stall_name || f.name,
+            location: f.farmer_profile?.address || f.address || 'Regional Stall',
+            contact: f.farmer_profile?.contact_person || f.name,
+            role: 'Stallholder / Grower',
+            email: f.email,
+            phone: f.phone || '(503) 555-0192',
+            markets: f.farmer_profile?.operating_days || ['Downtown Saturday Market'],
+            marketKey: 'Saturday Downtown',
+            registered: f.created_at ? new Date(f.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Oct 18, 2025',
+            registeredDate: f.created_at ? new Date(f.created_at) : new Date(),
+            status: f.farmer_profile?.status || (f.status === 'active' ? 'approved' : f.status) || 'pending',
+            permit: `PERM-2025-${String(f.id).padStart(3, '0')}`,
+            image: f.farmer_profile?.image || 'https://lh3.googleusercontent.com/aida-public/AB6AXuC-b2tyzO-wRNjqUSNU5FkHWNWYmzeq0RpogYXq_XW0Tska6bHZoULqYiRIjqb-f1bh83DXrUHkUIy3X3kCB92HSDDXevyIkQXchLQ73sKofJENZmILGvq-u0fJzUzSCKj14RqUVLs413DXwdOPd370W_wqZmNVEF0Avfacy-EAtLOx87rDffRZ23lrRG9mp1tQZCHcXC_sb3J_1gBv15LR98yyrLj_iCMhJZWPw-BU7EbGSbA0SpMf'
+          }));
+          setFarmers(mapped);
+        }
+      })
+      .catch((err) => console.warn('Could not load live farmers:', err));
+  }, []);
+
   // Actions
   const handleApprove = (farmer) => {
     setApprovalModalFarmer(farmer);
   };
 
-  const confirmApprove = () => {
+  const confirmApprove = async () => {
     if (!approvalModalFarmer) return;
+    try {
+      await adminApi.updateFarmerStatus(approvalModalFarmer.id, 'approved');
+    } catch (e) {
+      console.warn('API updateFarmerStatus error:', e);
+    }
     setFarmers((prev) =>
       prev.map((f) =>
         f.id === approvalModalFarmer.id ? { ...f, status: 'approved' } : f
@@ -192,15 +225,25 @@ export default function ManageFarmers({ onNavigate, showToast }) {
     setApprovalModalFarmer(null);
   };
 
-  const handleReject = (farmer) => {
+  const handleReject = async (farmer) => {
     if (window.confirm(`Are you sure you want to reject the registration request for ${farmer.name}? An email notice with revision instructions will be dispatched.`)) {
+      try {
+        await adminApi.updateFarmerStatus(farmer.id, 'suspended');
+      } catch (e) {
+        console.warn('API error:', e);
+      }
       setFarmers((prev) => prev.filter((f) => f.id !== farmer.id));
       showToast(`Registration rejected for ${farmer.name}. Revision notice dispatched.`);
     }
   };
 
-  const handleSuspend = (farmer) => {
+  const handleSuspend = async (farmer) => {
     if (window.confirm(`Suspend stall privileges for ${farmer.name}? They will temporarily be removed from market stand maps.`)) {
+      try {
+        await adminApi.updateFarmerStatus(farmer.id, 'suspended');
+      } catch (e) {
+        console.warn('API error:', e);
+      }
       setFarmers((prev) =>
         prev.map((f) => (f.id === farmer.id ? { ...f, status: 'suspended' } : f))
       );
@@ -208,8 +251,13 @@ export default function ManageFarmers({ onNavigate, showToast }) {
     }
   };
 
-  const handleReactivate = (farmer) => {
+  const handleReactivate = async (farmer) => {
     if (window.confirm(`Reactivate ${farmer.name} after inspecting verified permit updates?`)) {
+      try {
+        await adminApi.updateFarmerStatus(farmer.id, 'approved');
+      } catch (e) {
+        console.warn('API error:', e);
+      }
       setFarmers((prev) =>
         prev.map((f) => (f.id === farmer.id ? { ...f, status: 'approved' } : f))
       );

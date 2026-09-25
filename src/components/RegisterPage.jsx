@@ -1,6 +1,8 @@
 import React, { useState, useMemo } from 'react';
+import { useAuth } from '../context/AuthContext';
 
 export default function RegisterPage({ onNavigate, onRegisterSuccess, initialRole = 'shopper' }) {
+  const { register } = useAuth();
   const [role, setRole] = useState(initialRole); // 'shopper' | 'farmer'
   const [fullName, setFullName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -72,9 +74,10 @@ export default function RegisterPage({ onNavigate, onRegisterSuccess, initialRol
     };
   }, [password, confirmPassword]);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMessage('');
+    setSuccessNotice(null);
 
     if (password.length < 6) {
       setErrorMessage('Please use a password of at least 6 characters.');
@@ -91,26 +94,37 @@ export default function RegisterPage({ onNavigate, onRegisterSuccess, initialRol
 
     setIsLoading(true);
 
-    setTimeout(() => {
+    try {
+      const payload = {
+        name: fullName || 'Community Member',
+        email: emailAddress,
+        password: password,
+        password_confirmation: confirmPassword,
+        role: role === 'farmer' ? 'farmer' : 'customer',
+        phone: phoneNumber || null,
+        address: neighborhood || null,
+        stall_name: role === 'farmer' ? `${fullName || 'Farmer'}'s Produce` : null,
+      };
+
+      const authData = await register(payload);
       setIsLoading(false);
       setSuccessNotice(`Registration successful! Welcome to the harvest community, ${fullName || 'Neighbor'}.`);
 
-      const newUser = {
-        name: fullName || 'Community Member',
-        email: emailAddress,
-        phone: phoneNumber,
-        role: role === 'farmer' ? 'Farmer / Producer' : 'Shopper',
-        neighborhood: neighborhood || 'Downtown Region'
-      };
-
       if (onRegisterSuccess) {
-        onRegisterSuccess(newUser);
+        onRegisterSuccess(authData.user);
       }
 
       setTimeout(() => {
-        onNavigate('home');
-      }, 1400);
-    }, 1200);
+        if (authData.user.role === 'farmer') {
+          onNavigate('farmer-dashboard');
+        } else {
+          onNavigate('customer-dashboard');
+        }
+      }, 1000);
+    } catch (err) {
+      setIsLoading(false);
+      setErrorMessage(err.message || 'Registration failed. Please check your information and try again.');
+    }
   };
 
   return (

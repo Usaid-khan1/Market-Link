@@ -1,9 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import browseApi from '../api/browse';
 
-export default function MarketDetails({ onNavigate, onReserveProduct, onNotifyProduct }) {
+export default function MarketDetails({ marketId = 1, onNavigate, onReserveProduct, onNotifyProduct }) {
   const [mapFilter, setMapFilter] = useState('all');
   const [producerFilter, setProducerFilter] = useState('all');
   const [preferredMarket, setPreferredMarket] = useState(false);
+  const [liveMarket, setLiveMarket] = useState(null);
+
+  useEffect(() => {
+    let mounted = true;
+    browseApi.getMarket(marketId || 1).then((res) => {
+      if (mounted && res.data) {
+        setLiveMarket(res.data);
+      }
+    }).catch(() => {});
+    return () => { mounted = false; };
+  }, [marketId]);
 
   // Producers data for Downtown Historic Market
   const producers = [

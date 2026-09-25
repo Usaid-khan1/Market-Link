@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import customerApi from '../api/customer';
 
 export default function CustomerReviews({ onNavigate, showToast }) {
   // Realistic Customer Reviews written by Elena Rostova
@@ -71,6 +72,35 @@ export default function CustomerReviews({ onNavigate, showToast }) {
       }
     }
   ]);
+
+  // Load reviews from backend
+  useEffect(() => {
+    let isMounted = true;
+    customerApi.getReviews()
+      .then((res) => {
+        if (!isMounted || !res?.data || !Array.isArray(res.data) || res.data.length === 0) return;
+        const liveReviews = res.data.map((r) => ({
+          id: r.id,
+          targetType: r.product_id ? 'product' : 'farmer',
+          targetName: r.product_name || r.stall_name || r.farmer_name || 'Market Goods',
+          farmerName: r.farmer_name || 'Local Grower',
+          stallLocation: r.stall_name || 'Stall Bay',
+          rating: r.rating || 5,
+          date: r.created_at ? new Date(r.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'Recent',
+          orderRef: `#ML-${r.order_id || r.id}`,
+          comment: r.comment,
+          farmerReply: r.farmer_reply ? {
+            farmerName: `${r.farmer_name || 'Farmer'} (Grower)`,
+            date: r.reply_date ? new Date(r.reply_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'Recent',
+            replyText: r.farmer_reply,
+          } : null,
+        }));
+        setReviews(liveReviews);
+      })
+      .catch((err) => console.warn('Could not load live customer reviews:', err));
+
+    return () => { isMounted = false; };
+  }, []);
 
   // Modals state
   const [editingReview, setEditingReview] = useState(null);

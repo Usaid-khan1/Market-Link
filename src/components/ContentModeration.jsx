@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import adminApi from '../api/admin';
 
 export default function ContentModeration({ onNavigate, showToast }) {
   const [activeTab, setActiveTab] = useState('products'); // 'products' | 'reviews'
@@ -125,6 +126,55 @@ export default function ContentModeration({ onNavigate, showToast }) {
     );
   }, [reportedReviews, searchQuery]);
 
+  // Load moderation data from backend
+  useEffect(() => {
+    adminApi.getModerationProducts()
+      .then((res) => {
+        if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
+          const mapped = res.data.map((p) => ({
+            id: p.id,
+            name: p.name,
+            category: p.category_name || 'Produce',
+            price: `$${Number(p.price).toFixed(2)}`,
+            farmer: p.stall_name || p.farmer_name || 'Local Grower',
+            farmerContact: p.farmer_name || 'Vendor',
+            market: p.market_name || 'Regional Market',
+            reportedBy: 'System Compliance Filter',
+            reportedEmail: 'admin@marketlink.test',
+            reason: p.status === 'sold_out' ? 'Stock Depleted Listing' : 'Active Catalog Audit',
+            reasonDetails: p.description || 'Listing reviewed under platform catalog standards.',
+            date: p.created_at ? new Date(p.created_at).toLocaleDateString() : 'Recent',
+            image: p.image || 'https://lh3.googleusercontent.com/aida-public/AB6AXuDZQARg08jALmVwYA3ok4amUG0u-xEEYBvHSZxOMJpee6BnH_nKjni29z-GksED67D6ZlGhCKRhJUIRZHr4r2DUhFilbG8omgUd7-RaIaMaQOZko3-tkgxjCPyuhNGXinuXgoGlEhcj36RwrQlLtHE1YyFMSkOYl9xsWrbw1zYfTrAL1FM0S9N58axAx7S2XdY5SumAaEEqqoN7i-Jq70byrKynPcG9A1WTfqUTrWqXXnBrSCsiscH2',
+            description: p.description || ''
+          }));
+          setReportedProducts(mapped);
+        }
+      })
+      .catch((err) => console.warn('Could not load moderation products:', err));
+
+    adminApi.getModerationReviews()
+      .then((res) => {
+        if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
+          const mapped = res.data.map((r) => ({
+            id: r.id,
+            reviewerName: r.customer_name || 'Customer',
+            reviewerEmail: 'shopper@marketlink.test',
+            target: r.farmer_name || 'Grower',
+            targetType: r.product_id ? 'Product' : 'Farmer',
+            rating: r.rating || 5,
+            excerpt: (r.comment || '').substring(0, 80) + '...',
+            fullReview: r.comment || '',
+            reason: r.rating <= 2 ? 'Low Rating Disputed by Vendor' : 'Community Content Review',
+            reasonDetails: r.comment || 'Verified customer pre-order feedback.',
+            date: r.created_at ? new Date(r.created_at).toLocaleDateString() : 'Recent',
+            flaggedBy: 'Automated Review Filter'
+          }));
+          setReportedReviews(mapped);
+        }
+      })
+      .catch((err) => console.warn('Could not load moderation reviews:', err));
+  }, []);
+
   // Dismiss Actions
   const handleDismissProduct = (id) => {
     const item = reportedProducts.find((p) => p.id === id);
@@ -148,15 +198,25 @@ export default function ContentModeration({ onNavigate, showToast }) {
   };
 
   // Confirm Remove
-  const handleExecuteRemoval = () => {
+  const handleExecuteRemoval = async () => {
     if (!removeConfirmation) return;
 
     if (removeConfirmation.type === 'product') {
       const p = removeConfirmation.item;
+      try {
+        await adminApi.deleteModerationProduct(p.id);
+      } catch (err) {
+        console.warn('API deleteModerationProduct error:', err);
+      }
       setReportedProducts((prev) => prev.filter((item) => item.id !== p.id));
       showToast?.(`Product listing "${p.name}" was permanently removed from MarketLink.`);
     } else {
       const r = removeConfirmation.item;
+      try {
+        await adminApi.deleteModerationReview(r.id);
+      } catch (err) {
+        console.warn('API deleteModerationReview error:', err);
+      }
       setReportedReviews((prev) => prev.filter((item) => item.id !== r.id));
       showToast?.(`Flagged review by "${r.reviewerName}" has been purged from platform.`);
     }

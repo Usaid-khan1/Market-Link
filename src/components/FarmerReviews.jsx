@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import farmerApi from '../api/farmer';
 
 export default function FarmerReviews({ showToast }) {
   const [filter, setFilter] = useState('All'); // 'All' | 'Unreplied' | 'Replied'
@@ -80,6 +81,29 @@ export default function FarmerReviews({ showToast }) {
     });
   }, [reviews, filter]);
 
+  // Load reviews from backend
+  useEffect(() => {
+    farmerApi.getReviews()
+      .then((res) => {
+        if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
+          const mapped = res.data.map((r) => ({
+            id: r.id,
+            customer: r.customer_name || 'Verified Customer',
+            avatar: (r.customer_name || 'VC').split(' ').map((n) => n[0]).join('').substring(0, 2).toUpperCase(),
+            avatarBg: 'bg-primary-fixed text-on-primary-fixed',
+            rating: r.rating || 5,
+            product: r.product_name || 'Market Produce',
+            date: r.created_at ? new Date(r.created_at).toLocaleDateString() : 'Recent',
+            comment: r.comment || '',
+            farmerReply: r.reply || null,
+            replyDate: r.replied_at ? new Date(r.replied_at).toLocaleDateString() : null
+          }));
+          setReviews(mapped);
+        }
+      })
+      .catch((err) => console.warn('Could not load farmer reviews:', err));
+  }, []);
+
   // Open Reply
   const handleOpenReply = (review) => {
     setReplyingToId(review.id);
@@ -87,8 +111,14 @@ export default function FarmerReviews({ showToast }) {
   };
 
   // Submit Reply
-  const handleSaveReply = (id) => {
+  const handleSaveReply = async (id) => {
     if (!replyText.trim()) return;
+
+    try {
+      await farmerApi.replyReview(id, replyText.trim());
+    } catch (err) {
+      console.warn('API replyReview error:', err);
+    }
 
     setReviews((prev) =>
       prev.map((r) =>

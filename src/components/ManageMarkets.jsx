@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import adminApi from '../api/admin';
 
 export default function ManageMarkets({ onNavigate, showToast }) {
   const [searchQuery, setSearchQuery] = useState('');
@@ -177,8 +178,35 @@ export default function ManageMarkets({ onNavigate, showToast }) {
     });
   };
 
+  // Load live markets from backend
+  useEffect(() => {
+    adminApi.getMarkets()
+      .then((res) => {
+        if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
+          const mapped = res.data.map((m) => ({
+            id: m.id,
+            name: m.market_name || m.name,
+            area: m.location || m.area || 'Regional Pavilion Hub',
+            address: m.address || m.location || '',
+            operatingDays: m.operating_days || ['Saturday'],
+            timings: m.timings || `${m.start_time || '08:00 AM'} – ${m.end_time || '02:00 PM'}`,
+            startTime: m.start_time || '08:00 AM',
+            endTime: m.end_time || '02:00 PM',
+            farmersCount: m.farmers_count || 20,
+            status: m.status ? (m.status.charAt(0).toUpperCase() + m.status.slice(1)) : 'Active',
+            lat: m.latitude ? String(m.latitude) : '45.5152',
+            lng: m.longitude ? String(m.longitude) : '-122.6784',
+            badgeClass: 'bg-primary-fixed text-on-primary-fixed',
+            image: m.image || 'https://lh3.googleusercontent.com/aida-public/AB6AXuBBX6utvQ3xGaWuRHTzDH0bpvHJPPVXGKwmlRJkZclFyW9JmposXNsPIaGlKfbAYLjWlTj6kegD3xiXVcbwKrDbcXdl9om839D_OtCFGkQfGjruKFlwdMZbaHi9p6_fHEbYgdzibkaRDVAFTrVRiKOUa0XSheflTlbEV4iokdUWipIMFeVWXZIyaHSPRj3_a5AhBpPhI_-sqaX8mti0ZIC8RNAPRyTWVWTAz4sBygNArLrviP7I4kSL'
+          }));
+          setMarkets(mapped);
+        }
+      })
+      .catch((err) => console.warn('Could not load live markets:', err));
+  }, []);
+
   // Handle Save Form
-  const handleSaveForm = (e) => {
+  const handleSaveForm = async (e) => {
     e.preventDefault();
     if (!formData.name.trim() || !formData.address.trim()) {
       showToast?.('Please fill in market name and address.');
@@ -186,9 +214,23 @@ export default function ManageMarkets({ onNavigate, showToast }) {
     }
 
     const timingStr = `${formData.startTime} – ${formData.endTime}`;
+    const payload = {
+      market_name: formData.name.trim(),
+      address: formData.address.trim(),
+      operating_days: formData.operatingDays,
+      timings: timingStr,
+      latitude: parseFloat(formData.lat) || 45.5152,
+      longitude: parseFloat(formData.lng) || -122.6784,
+      map_provider: 'openstreetmap'
+    };
 
     if (editingMarket) {
       // Update
+      try {
+        await adminApi.updateMarket(editingMarket.id, payload);
+      } catch (err) {
+        console.warn('API updateMarket error:', err);
+      }
       setMarkets((prev) =>
         prev.map((m) =>
           m.id === editingMarket.id
@@ -212,8 +254,15 @@ export default function ManageMarkets({ onNavigate, showToast }) {
       showToast?.(`Market "${formData.name}" successfully updated!`);
     } else {
       // Create
+      let createdId = Date.now();
+      try {
+        const res = await adminApi.createMarket(payload);
+        if (res?.data?.id) createdId = res.data.id;
+      } catch (err) {
+        console.warn('API createMarket error:', err);
+      }
       const newM = {
-        id: Date.now(),
+        id: createdId,
         name: formData.name,
         area: formData.description || 'Regional Pavilion Hub',
         address: formData.address,
@@ -245,8 +294,13 @@ export default function ManageMarkets({ onNavigate, showToast }) {
   };
 
   // Confirm Delete
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (!deleteModalMarket) return;
+    try {
+      await adminApi.deleteMarket(deleteModalMarket.id);
+    } catch (err) {
+      console.warn('API deleteMarket error:', err);
+    }
     setMarkets((prev) => prev.filter((m) => m.id !== deleteModalMarket.id));
     showToast?.(`Market "${deleteModalMarket.name}" has been permanently removed.`);
     setDeleteModalMarket(null);

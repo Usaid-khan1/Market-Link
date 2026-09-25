@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ManageFarmers from './ManageFarmers';
 import ManageCustomers from './ManageCustomers';
 import ManageMarkets from './ManageMarkets';
 import ContentModeration from './ContentModeration';
 import ReportsAnalytics from './ReportsAnalytics';
 import SystemConfiguration from './SystemConfiguration';
+import adminApi from '../api/admin';
 
 export default function AdminDashboard({ onNavigate, initialTab = 'dashboard' }) {
   const [activeTab, setActiveTab] = useState(initialTab);
@@ -13,6 +14,7 @@ export default function AdminDashboard({ onNavigate, initialTab = 'dashboard' })
   const [statusFilter, setStatusFilter] = useState('All Statuses');
   const [chartTimeframe, setChartTimeframe] = useState('This Month');
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [summaryData, setSummaryData] = useState(null);
 
   // Modals state
   const [reviewModalData, setReviewModalData] = useState(null);
@@ -185,6 +187,36 @@ export default function AdminDashboard({ onNavigate, initialTab = 'dashboard' })
     }
   ]);
 
+  // Load summary metrics & announcements from backend
+  useEffect(() => {
+    adminApi.getSummary()
+      .then((res) => {
+        if (res?.data) {
+          setSummaryData(res.data);
+        }
+      })
+      .catch((err) => console.warn('Could not load admin summary:', err));
+
+    adminApi.getAnnouncements()
+      .then((res) => {
+        if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
+          const mapped = res.data.map((a) => ({
+            id: a.id,
+            type: a.type || 'Platform Notice',
+            icon: 'campaign',
+            color: 'text-primary',
+            time: a.created_at ? new Date(a.created_at).toLocaleDateString() : 'Recent',
+            title: a.title,
+            desc: a.content || a.message || '',
+            author: 'Central Admin',
+            audience: a.audience || 'All Community'
+          }));
+          setAnnouncements(mapped);
+        }
+      })
+      .catch((err) => console.warn('Could not load announcements:', err));
+  }, []);
+
   const showToast = (msg) => {
     setToastMessage(msg);
     setTimeout(() => {
@@ -192,8 +224,13 @@ export default function AdminDashboard({ onNavigate, initialTab = 'dashboard' })
     }, 4000);
   };
 
-  const handleApproveFarmer = (id) => {
+  const handleApproveFarmer = async (id) => {
     const farmer = pendingFarmers.find((f) => f.id === id);
+    try {
+      await adminApi.updateFarmerStatus(id, 'approved');
+    } catch (e) {
+      console.warn('API update farmer status error:', e);
+    }
     setPendingFarmers((prev) => prev.filter((f) => f.id !== id));
     setReviewModalData(null);
     showToast(`Farmer stall "${farmer ? farmer.shortName : 'Vendor'}" approved and listed in market directory!`);
@@ -204,9 +241,21 @@ export default function AdminDashboard({ onNavigate, initialTab = 'dashboard' })
     showToast('Notification sent to grower requesting soil test clarification.');
   };
 
-  const handlePublishAnnouncement = (e) => {
+  const handlePublishAnnouncement = async (e) => {
     e.preventDefault();
     if (!announcementForm.title.trim()) return;
+
+    try {
+      await adminApi.createAnnouncement({
+        title: announcementForm.title,
+        content: announcementForm.content || 'Important update broadcasted to market community.',
+        audience: announcementForm.target,
+        type: 'General Notice',
+        is_active: true
+      });
+    } catch (err) {
+      console.warn('API announcement error:', err);
+    }
 
     const newPost = {
       id: Date.now(),
@@ -520,7 +569,7 @@ export default function AdminDashboard({ onNavigate, initialTab = 'dashboard' })
                         Registered Farmers
                       </span>
                       <span className="font-headline-lg text-2xl sm:text-3xl text-on-surface mt-1 font-bold">
-                        {54 + pendingFarmers.length}
+                        {summaryData?.total_farmers ?? (54 + pendingFarmers.length)}
                       </span>
                     </div>
                     <div className="w-12 h-12 rounded-xl bg-primary-fixed/40 flex items-center justify-center text-primary">
@@ -531,14 +580,14 @@ export default function AdminDashboard({ onNavigate, initialTab = 'dashboard' })
                     <div className="flex items-center gap-1.5">
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed font-label-sm font-bold text-[11px]">
                         <span className="material-symbols-outlined text-[14px]">trending_up</span>
-                        +4 this week
+                        {summaryData?.approved_farmers ? `${summaryData.approved_farmers} approved` : '+4 this week'}
                       </span>
                       <span className="text-tertiary-container font-label-sm font-bold text-[11px]">
-                        ({pendingFarmers.length} pending)
+                        ({summaryData?.pending_farmers ?? pendingFarmers.length} pending)
                       </span>
                     </div>
                     <span className="font-body-sm text-on-surface-variant text-[11px]">
-                      48 active stalls this Saturday
+                      {summaryData ? 'Live registered growers' : '48 active stalls this Saturday'}
                     </span>
                   </div>
                 </div>
@@ -552,7 +601,7 @@ export default function AdminDashboard({ onNavigate, initialTab = 'dashboard' })
                         Shopper Community
                       </span>
                       <span className="font-headline-lg text-2xl sm:text-3xl text-on-surface mt-1 font-bold">
-                        3,420
+                        {summaryData?.total_customers ?? '3,420'}
                       </span>
                     </div>
                     <div className="w-12 h-12 rounded-xl bg-tertiary-fixed/50 flex items-center justify-center text-tertiary">
@@ -563,11 +612,11 @@ export default function AdminDashboard({ onNavigate, initialTab = 'dashboard' })
                     <div className="flex items-center gap-1.5">
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed font-label-sm font-bold text-[11px]">
                         <span className="material-symbols-outlined text-[14px]">arrow_upward</span>
-                        +142 this week (+12%)
+                        {summaryData?.active_customers ? `${summaryData.active_customers} active accounts` : '+142 this week (+12%)'}
                       </span>
                     </div>
                     <span className="font-body-sm text-on-surface-variant text-[11px]">
-                      1,890 active pre-reservations
+                      Verified community shoppers
                     </span>
                   </div>
                 </div>
@@ -581,7 +630,7 @@ export default function AdminDashboard({ onNavigate, initialTab = 'dashboard' })
                         Active Pavilions
                       </span>
                       <span className="font-headline-lg text-2xl sm:text-3xl text-on-surface mt-1 font-bold">
-                        14
+                        {summaryData?.total_markets ?? 14}
                       </span>
                     </div>
                     <div className="w-12 h-12 rounded-xl bg-secondary-container/60 flex items-center justify-center text-secondary">
@@ -592,11 +641,11 @@ export default function AdminDashboard({ onNavigate, initialTab = 'dashboard' })
                     <div className="flex items-center gap-1.5">
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed font-label-sm font-bold text-[11px]">
                         <span className="material-symbols-outlined text-[14px]">verified</span>
-                        +2 this month
+                        Regional Network
                       </span>
                     </div>
                     <span className="font-body-sm text-on-surface-variant text-[11px]">
-                      All 14 locations live today
+                      OpenStreetMap mapped locations
                     </span>
                   </div>
                 </div>
@@ -610,7 +659,7 @@ export default function AdminDashboard({ onNavigate, initialTab = 'dashboard' })
                         Pickup Pre-Orders
                       </span>
                       <span className="font-headline-lg text-2xl sm:text-3xl text-on-surface mt-1 font-bold">
-                        2,845
+                        {summaryData?.total_orders ?? '2,845'}
                       </span>
                     </div>
                     <div className="w-12 h-12 rounded-xl bg-tertiary-fixed/60 flex items-center justify-center text-tertiary">
@@ -621,7 +670,7 @@ export default function AdminDashboard({ onNavigate, initialTab = 'dashboard' })
                     <div className="flex items-center gap-1.5">
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-tertiary-fixed text-on-tertiary-fixed font-label-sm font-bold text-[11px]">
                         <span className="material-symbols-outlined text-[14px]">check_circle</span>
-                        +386 this week (98.4%)
+                        {summaryData?.total_revenue ? `$${Number(summaryData.total_revenue).toFixed(2)} Vol` : '+386 this week (98.4%)'}
                       </span>
                     </div>
                     <span className="font-body-sm text-on-surface-variant text-[11px]">

@@ -30,12 +30,21 @@ import CustomerDashboard from './components/CustomerDashboard';
 import Footer from './components/Footer';
 
 import { INITIAL_PRODUCTS, MARKETS } from './data/mockData';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import browseApi from './api/browse';
 
-export default function App() {
+function AppContent() {
+  const { user, isAuthenticated, role, isLoading } = useAuth();
+
   const [currentView, setCurrentView] = useState(() => {
     const hash = typeof window !== 'undefined' ? window.location.hash.replace('#', '') : '';
-    return hash || 'admin';
-  }); // 'admin' | 'dashboard' | 'contact-us' | '404' | 'register' | 'login' | 'about-us' | 'home' | 'markets' | 'market-details' | 'farmer-profile' | 'products' | 'product-details'
+    return hash || 'home';
+  });
+
+  const [selectedMarketId, setSelectedMarketId] = useState(1);
+  const [selectedProductId, setSelectedProductId] = useState(1);
+  const [selectedFarmerId, setSelectedFarmerId] = useState(1);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDay, setSelectedDay] = useState('any');
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -47,10 +56,53 @@ export default function App() {
   const [guideModalOpen, setGuideModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
 
+  // Live Backend Data States
+  const [liveMarkets, setLiveMarkets] = useState([]);
+  const [liveProducts, setLiveProducts] = useState([]);
+  const [liveAnnouncements, setLiveAnnouncements] = useState([]);
+
+  // Fetch initial public catalog & announcements
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadPublicData() {
+      try {
+        const [marketsRes, productsRes, announcementsRes] = await Promise.allSettled([
+          browseApi.getMarkets(),
+          browseApi.getProducts(),
+          browseApi.getAnnouncements(),
+        ]);
+
+        if (isMounted) {
+          if (marketsRes.status === 'fulfilled' && marketsRes.value?.data) {
+            setLiveMarkets(marketsRes.value.data);
+          }
+          if (productsRes.status === 'fulfilled' && productsRes.value?.data) {
+            setLiveProducts(productsRes.value.data);
+          }
+          if (announcementsRes.status === 'fulfilled' && announcementsRes.value?.data) {
+            setLiveAnnouncements(announcementsRes.value.data);
+          }
+        }
+      } catch (err) {
+        // Fallbacks already in place
+      }
+    }
+
+    loadPublicData();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   // Sync hash routing
   useEffect(() => {
     const handleHash = () => {
-      const hash = window.location.hash.replace('#', '');
+      const fullHash = window.location.hash.replace('#', '');
+      const parts = fullHash.split('/');
+      const hash = parts[0];
+      const param = parts[1];
+
       if (hash === 'admin' || hash === 'dashboard') {
         setCurrentView('admin');
       } else if (
@@ -99,20 +151,24 @@ export default function App() {
         setCurrentView('login');
       } else if (hash === 'about-us') {
         setCurrentView('about-us');
-      } else if (hash === 'product-details' || hash === 'product/heirloom-brandywine') {
+      } else if (hash === 'product-details' || hash === 'product') {
+        if (param) setSelectedProductId(parseInt(param, 10) || 1);
         setCurrentView('product-details');
       } else if (hash === 'products') {
         setCurrentView('products');
-      } else if (hash === 'farmer-profile' || hash === 'farmer/green-pastures') {
+      } else if (hash === 'farmer-profile' || hash === 'farmer') {
+        if (param) setSelectedFarmerId(parseInt(param, 10) || 1);
         setCurrentView('farmer-profile');
-      } else if (hash === 'market-details' || hash === 'market/1') {
+      } else if (hash === 'market-details' || hash === 'market') {
+        if (param) setSelectedMarketId(parseInt(param, 10) || 1);
         setCurrentView('market-details');
       } else if (hash.startsWith('markets')) {
         setCurrentView('markets');
-      } else if (hash === 'home') {
+      } else {
         setCurrentView('home');
       }
     };
+
     handleHash();
     window.addEventListener('hashchange', handleHash);
     return () => window.removeEventListener('hashchange', handleHash);
@@ -127,89 +183,18 @@ export default function App() {
   };
 
   // Navigation Handler
-  const handleNavigate = (viewOrSection) => {
-    if (viewOrSection === 'admin' || viewOrSection === 'dashboard') {
-      setCurrentView('admin');
-      window.location.hash = '#admin';
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    } else if (viewOrSection === '404' || viewOrSection === 'not-found') {
-      setCurrentView('404');
-      window.location.hash = '#404';
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    } else if (viewOrSection === 'register' || viewOrSection === 'register-farmer') {
-      setCurrentView('register');
-      window.location.hash = '#register';
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    } else if (viewOrSection === 'login') {
-      setCurrentView('login');
-      window.location.hash = '#login';
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    } else if (viewOrSection === 'about-us') {
-      setCurrentView('about-us');
-      window.location.hash = '#about-us';
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    } else if (viewOrSection === 'product-details') {
-      setCurrentView('product-details');
-      window.location.hash = '#product-details';
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    } else if (viewOrSection === 'products') {
-      setCurrentView('products');
-      window.location.hash = '#products';
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    } else if (viewOrSection === 'farmer-profile') {
-      setCurrentView('farmer-profile');
-      window.location.hash = '#farmer-profile';
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    } else if (viewOrSection === 'market-details') {
-      setCurrentView('market-details');
-      window.location.hash = '#market-details';
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    } else if (viewOrSection === 'markets') {
-      setCurrentView('markets');
-      window.location.hash = '#markets';
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    } else if (
-      viewOrSection === 'customer-dashboard' ||
-      viewOrSection === 'customer-portal' ||
-      viewOrSection === 'customer' ||
-      viewOrSection === 'customer-orders' ||
-      viewOrSection === 'my-orders' ||
-      viewOrSection === 'customer-cart' ||
-      viewOrSection === 'cart' ||
-      viewOrSection === 'customer-favorites' ||
-      viewOrSection === 'favorites' ||
-      viewOrSection === 'customer-reviews' ||
-      viewOrSection === 'my-reviews' ||
-      viewOrSection === 'customer-settings' ||
-      viewOrSection === 'profile-settings'
-    ) {
-      setCurrentView(viewOrSection);
-      window.location.hash = `#${viewOrSection}`;
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    } else if (
-      viewOrSection === 'farmer-dashboard' ||
-      viewOrSection === 'farmer-portal' ||
-      viewOrSection === 'farmer' ||
-      viewOrSection === 'farmer-products' ||
-      viewOrSection === 'farmer-stock' ||
-      viewOrSection === 'farmer-pre-orders' ||
-      viewOrSection === 'farmer-reviews' ||
-      viewOrSection === 'farmer-settings'
-    ) {
-      setCurrentView(viewOrSection);
-      window.location.hash = `#${viewOrSection}`;
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    } else if (viewOrSection === 'home') {
-      setCurrentView('home');
-      window.location.hash = '#home';
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    } else if (viewOrSection === 'contact-us') {
-      setCurrentView('contact-us');
-      window.location.hash = '#contact-us';
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    } else if (viewOrSection === 'farmer-portal') {
-      setAuthMode('farmer');
+  const handleNavigate = (viewOrSection, id = null) => {
+    let target = viewOrSection;
+    if (id) {
+      if (viewOrSection === 'market-details') setSelectedMarketId(id);
+      if (viewOrSection === 'product-details') setSelectedProductId(id);
+      if (viewOrSection === 'farmer-profile') setSelectedFarmerId(id);
+      target = `${viewOrSection}/${id}`;
     }
+
+    setCurrentView(viewOrSection);
+    window.location.hash = `#${target}`;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   // Search Submit from Hero
@@ -217,53 +202,49 @@ export default function App() {
     setSearchQuery(query);
     setSelectedDay(day);
     setSelectedCategory(category);
-    setCurrentView('products');
+    handleNavigate('products');
   };
 
   // Filtered Products for Home
   const filteredProducts = useMemo(() => {
-    return INITIAL_PRODUCTS.filter((prod) => {
-      if (selectedCategory !== 'all' && prod.category !== selectedCategory) {
-        return false;
+    const list = liveProducts.length > 0 ? liveProducts : INITIAL_PRODUCTS;
+    return list.filter((prod) => {
+      if (selectedCategory !== 'all') {
+        const catSlug = prod.category_name?.toLowerCase().replace(/\s+/g, '-') || prod.category;
+        if (catSlug !== selectedCategory) return false;
       }
-      if (activeMarketFilter !== 'all' && prod.marketKey !== activeMarketFilter) {
-        return false;
+      if (activeMarketFilter !== 'all') {
+        const mKey = prod.market_name?.toLowerCase().replace(/\s+/g, '-') || prod.marketKey;
+        if (mKey !== activeMarketFilter) return false;
       }
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
-        const matchesName = prod.name.toLowerCase().includes(q);
-        const matchesFarm = prod.farm.toLowerCase().includes(q);
-        const matchesMarket = prod.market.toLowerCase().includes(q);
-        const matchesDesc = prod.description.toLowerCase().includes(q);
-        if (!matchesName && !matchesFarm && !matchesMarket && !matchesDesc) {
-          return false;
-        }
-      }
-      if (selectedDay !== 'any') {
-        const marketObj = MARKETS.find((m) => m.key === prod.marketKey);
-        if (marketObj && marketObj.dayKey !== selectedDay) {
-          return false;
-        }
+        const matchesName = prod.name?.toLowerCase().includes(q);
+        const matchesFarm = (prod.stall_name || prod.farmer_name || prod.farm || '').toLowerCase().includes(q);
+        const matchesDesc = (prod.description || '').toLowerCase().includes(q);
+        if (!matchesName && !matchesFarm && !matchesDesc) return false;
       }
       return true;
     });
-  }, [searchQuery, selectedCategory, activeMarketFilter, selectedDay]);
+  }, [liveProducts, searchQuery, selectedCategory, activeMarketFilter]);
 
   // Filtered Markets for Home Featured section
   const filteredFeaturedMarkets = useMemo(() => {
-    return MARKETS.filter((m) => {
-      if (selectedDay !== 'any' && m.dayKey !== selectedDay) {
-        return false;
+    const list = liveMarkets.length > 0 ? liveMarkets : MARKETS;
+    return list.filter((m) => {
+      const mName = m.market_name || m.name || '';
+      const mAddr = m.address || '';
+      if (selectedDay !== 'any') {
+        const opDays = Array.isArray(m.operating_days) ? m.operating_days.join(' ').toLowerCase() : (m.operating_days || m.days || '').toLowerCase();
+        if (!opDays.includes(selectedDay.toLowerCase())) return false;
       }
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
-        const matchesName = m.name.toLowerCase().includes(q);
-        const matchesLoc = m.address.toLowerCase().includes(q);
-        if (!matchesName && !matchesLoc) return false;
+        if (!mName.toLowerCase().includes(q) && !mAddr.toLowerCase().includes(q)) return false;
       }
       return true;
     });
-  }, [selectedDay, searchQuery]);
+  }, [liveMarkets, selectedDay, searchQuery]);
 
   const handleResetFilters = () => {
     setSearchQuery('');
@@ -273,21 +254,24 @@ export default function App() {
   };
 
   const handleNotifyProduct = (item) => {
-    showToast(`🔔 We will alert you the moment ${item.farm || 'the grower'} harvests the next batch of ${item.name}!`);
+    showToast(`🔔 We will alert you the moment ${item.stall_name || item.farmer_name || item.farm || 'the grower'} harvests the next batch of ${item.name}!`);
   };
 
   const handleConfirmReservation = (slip) => {
-    showToast(`🎉 Produce Held! Your reservation #${slip.voucherId} is confirmed for stall pickup.`);
+    showToast(`🎉 Produce Held! Your reservation #${slip.voucherId || 'ML-R'} is confirmed for stall pickup.`);
   };
 
   const handleReserveForMarket = (marketKey) => {
-    if (marketKey === 'downtown') {
-      setCurrentView('market-details');
+    if (marketKey === 'downtown' || marketKey === 1) {
+      handleNavigate('market-details', 1);
     } else {
-      setCurrentView('products');
+      handleNavigate('products');
     }
   };
 
+  /* ==========================================================================
+     ROUTE GUARDS: ADMIN DASHBOARD
+     ========================================================================== */
   if (
     currentView === 'admin' ||
     currentView === 'dashboard' ||
@@ -298,6 +282,54 @@ export default function App() {
     currentView === 'admin-reports' ||
     currentView === 'admin-settings'
   ) {
+    if (!isAuthenticated && !isLoading) {
+      return (
+        <div className="min-h-screen flex flex-col bg-surface">
+          <Navbar currentView={currentView} onNavigate={handleNavigate} onOpenAuth={() => setAuthMode('login')} onFocusSearch={() => {}} />
+          <div className="flex-1 flex items-center justify-center p-6 mt-20">
+            <div className="bg-surface-container-lowest p-8 rounded-2xl max-w-md w-full text-center border border-outline-variant/30 shadow-xl">
+              <span className="material-symbols-outlined text-tertiary text-5xl mb-3">admin_panel_settings</span>
+              <h2 className="text-xl font-bold text-on-surface">Admin Access Required</h2>
+              <p className="text-sm text-on-surface-variant mt-2 mb-6">
+                Please log in with an administrator account to access the MarketLink Administration Desk.
+              </p>
+              <button
+                onClick={() => handleNavigate('login')}
+                className="w-full py-3 px-4 rounded-xl bg-primary text-on-primary font-bold text-sm shadow hover:bg-primary-container transition-colors cursor-pointer"
+              >
+                Log In as Administrator
+              </button>
+            </div>
+          </div>
+          <Footer onNavigate={handleNavigate} onOpenPartnerModal={() => setAuthMode('farmer')} />
+        </div>
+      );
+    }
+
+    if (isAuthenticated && role !== 'admin') {
+      return (
+        <div className="min-h-screen flex flex-col bg-surface">
+          <Navbar currentView={currentView} onNavigate={handleNavigate} onOpenAuth={() => setAuthMode('login')} onFocusSearch={() => {}} />
+          <div className="flex-1 flex items-center justify-center p-6 mt-20">
+            <div className="bg-surface-container-lowest p-8 rounded-2xl max-w-md w-full text-center border border-outline-variant/30 shadow-xl">
+              <span className="material-symbols-outlined text-error text-5xl mb-3">gpp_bad</span>
+              <h2 className="text-xl font-bold text-on-surface">Access Denied</h2>
+              <p className="text-sm text-on-surface-variant mt-2 mb-6">
+                Your current account ({user?.name} &bull; {role}) is not authorized to access administrator controls.
+              </p>
+              <button
+                onClick={() => handleNavigate('home')}
+                className="w-full py-3 px-4 rounded-xl bg-primary text-on-primary font-bold text-sm shadow hover:bg-primary-container transition-colors cursor-pointer"
+              >
+                Return to Home
+              </button>
+            </div>
+          </div>
+          <Footer onNavigate={handleNavigate} onOpenPartnerModal={() => setAuthMode('farmer')} />
+        </div>
+      );
+    }
+
     const tab =
       currentView === 'admin-markets'
         ? 'markets'
@@ -316,6 +348,9 @@ export default function App() {
     return <AdminDashboard onNavigate={handleNavigate} initialTab={tab} />;
   }
 
+  /* ==========================================================================
+     ROUTE GUARDS: FARMER DASHBOARD
+     ========================================================================== */
   if (
     currentView === 'farmer-dashboard' ||
     currentView === 'farmer-portal' ||
@@ -326,6 +361,54 @@ export default function App() {
     currentView === 'farmer-reviews' ||
     currentView === 'farmer-settings'
   ) {
+    if (!isAuthenticated && !isLoading) {
+      return (
+        <div className="min-h-screen flex flex-col bg-surface">
+          <Navbar currentView={currentView} onNavigate={handleNavigate} onOpenAuth={() => setAuthMode('farmer')} onFocusSearch={() => {}} />
+          <div className="flex-1 flex items-center justify-center p-6 mt-20">
+            <div className="bg-surface-container-lowest p-8 rounded-2xl max-w-md w-full text-center border border-outline-variant/30 shadow-xl">
+              <span className="material-symbols-outlined text-secondary text-5xl mb-3">agriculture</span>
+              <h2 className="text-xl font-bold text-on-surface">Farmer Stall Portal</h2>
+              <p className="text-sm text-on-surface-variant mt-2 mb-6">
+                Please log in with your registered producer / vendor account to manage your stall catalog, stock, and pre-orders.
+              </p>
+              <button
+                onClick={() => handleNavigate('login')}
+                className="w-full py-3 px-4 rounded-xl bg-tertiary-container text-on-tertiary font-bold text-sm shadow hover:bg-tertiary transition-colors cursor-pointer"
+              >
+                Log In as Farmer
+              </button>
+            </div>
+          </div>
+          <Footer onNavigate={handleNavigate} onOpenPartnerModal={() => setAuthMode('farmer')} />
+        </div>
+      );
+    }
+
+    if (isAuthenticated && role !== 'farmer' && role !== 'admin') {
+      return (
+        <div className="min-h-screen flex flex-col bg-surface">
+          <Navbar currentView={currentView} onNavigate={handleNavigate} onOpenAuth={() => setAuthMode('farmer')} onFocusSearch={() => {}} />
+          <div className="flex-1 flex items-center justify-center p-6 mt-20">
+            <div className="bg-surface-container-lowest p-8 rounded-2xl max-w-md w-full text-center border border-outline-variant/30 shadow-xl">
+              <span className="material-symbols-outlined text-error text-5xl mb-3">lock</span>
+              <h2 className="text-xl font-bold text-on-surface">Farmer Role Required</h2>
+              <p className="text-sm text-on-surface-variant mt-2 mb-6">
+                This portal is reserved for verified grower stalls. Your account is registered as a customer.
+              </p>
+              <button
+                onClick={() => handleNavigate('home')}
+                className="w-full py-3 px-4 rounded-xl bg-primary text-on-primary font-bold text-sm shadow hover:bg-primary-container transition-colors cursor-pointer"
+              >
+                Back to MarketLink
+              </button>
+            </div>
+          </div>
+          <Footer onNavigate={handleNavigate} onOpenPartnerModal={() => setAuthMode('farmer')} />
+        </div>
+      );
+    }
+
     const tab =
       currentView === 'farmer-products'
         ? 'products'
@@ -342,6 +425,9 @@ export default function App() {
     return <FarmerDashboard onNavigate={handleNavigate} initialTab={tab} />;
   }
 
+  /* ==========================================================================
+     ROUTE GUARDS: CUSTOMER DASHBOARD
+     ========================================================================== */
   if (
     currentView === 'customer-dashboard' ||
     currentView === 'customer-portal' ||
@@ -357,6 +443,38 @@ export default function App() {
     currentView === 'customer-settings' ||
     currentView === 'profile-settings'
   ) {
+    if (!isAuthenticated && !isLoading) {
+      return (
+        <div className="min-h-screen flex flex-col bg-surface">
+          <Navbar currentView={currentView} onNavigate={handleNavigate} onOpenAuth={() => setAuthMode('login')} onFocusSearch={() => {}} />
+          <div className="flex-1 flex items-center justify-center p-6 mt-20">
+            <div className="bg-surface-container-lowest p-8 rounded-2xl max-w-md w-full text-center border border-outline-variant/30 shadow-xl">
+              <span className="material-symbols-outlined text-primary text-5xl mb-3">shopping_bag</span>
+              <h2 className="text-xl font-bold text-on-surface">Sign In to View Your Orders & Cart</h2>
+              <p className="text-sm text-on-surface-variant mt-2 mb-6">
+                Your pre-orders, stall pickup schedule, and saved favorite growers require a customer account.
+              </p>
+              <div className="flex flex-col gap-3">
+                <button
+                  onClick={() => handleNavigate('login')}
+                  className="w-full py-3 px-4 rounded-xl bg-primary text-on-primary font-bold text-sm shadow hover:bg-primary-container transition-colors cursor-pointer"
+                >
+                  Log In to Customer Account
+                </button>
+                <button
+                  onClick={() => handleNavigate('register')}
+                  className="w-full py-3 px-4 rounded-xl bg-surface-container text-on-surface font-bold text-sm hover:bg-surface-container-high transition-colors cursor-pointer"
+                >
+                  Create Free Account
+                </button>
+              </div>
+            </div>
+          </div>
+          <Footer onNavigate={handleNavigate} onOpenPartnerModal={() => setAuthMode('farmer')} />
+        </div>
+      );
+    }
+
     const tab =
       currentView === 'customer-orders' || currentView === 'my-orders'
         ? 'orders'
@@ -373,6 +491,9 @@ export default function App() {
     return <CustomerDashboard onNavigate={handleNavigate} initialTab={tab} />;
   }
 
+  /* ==========================================================================
+     PUBLIC PAGES & APPLICATION SHELL
+     ========================================================================== */
   return (
     <div className="w-full min-h-screen bg-surface font-body-md text-on-surface antialiased flex flex-col">
       {/* Toast Alert */}
@@ -413,75 +534,67 @@ export default function App() {
       {/* Main Page Body */}
       <main className="w-full pt-20 bg-surface flex-1">
         {currentView === 'contact-us' ? (
-          /* DEDICATED CONTACT US PAGE */
           <ContactPage onNavigate={handleNavigate} />
         ) : currentView === '404' ? (
-          /* DEDICATED 404 CROP NOT FOUND ERROR PAGE */
           <NotFoundPage
             onNavigate={handleNavigate}
             onSearch={handleSearch}
             onOpenFarmerPortal={() => setAuthMode('farmer')}
           />
         ) : currentView === 'register' ? (
-          /* DEDICATED SHOPPER & FARMER REGISTRATION PAGE */
           <RegisterPage
             onNavigate={handleNavigate}
-            onRegisterSuccess={(user) => {
-              showToast(`🌾 Welcome ${user.name}! Your free ${user.role} account is now active.`);
+            onRegisterSuccess={(newUser) => {
+              showToast(`🌾 Welcome ${newUser.name}! Your free account is active.`);
             }}
           />
         ) : currentView === 'login' ? (
-          /* DEDICATED COMMUNITY LOGIN PAGE */
           <LoginPage
             onNavigate={handleNavigate}
             onOpenRegister={() => handleNavigate('register')}
-            onLoginSuccess={(user) => {
-              showToast(`Welcome back, ${user.name}! Signed in as verified ${user.role}.`);
+            onLoginSuccess={(loggedUser) => {
+              showToast(`Welcome back, ${loggedUser.name}!`);
             }}
           />
         ) : currentView === 'about-us' ? (
-          /* ABOUT US PAGE (Exact match to User Request) */
           <AboutUs
             onNavigate={handleNavigate}
             onOpenRegister={() => handleNavigate('register')}
             onOpenFarmerPortal={() => setAuthMode('farmer')}
           />
         ) : currentView === 'product-details' ? (
-          /* HEIRLOOM BRANDYWINE TOMATOES PRODUCT DETAIL PAGE */
           <ProductDetails
+            productId={selectedProductId}
             onNavigate={handleNavigate}
             onReserveProduct={(item) => setReserveProduct(item)}
             onNotifyProduct={handleNotifyProduct}
           />
         ) : currentView === 'products' ? (
-          /* PRODUCTS CATALOG PAGE */
           <ProductsCatalog
             onNavigate={handleNavigate}
             onReserveProduct={(item) => setReserveProduct(item)}
             onNotifyProduct={handleNotifyProduct}
           />
         ) : currentView === 'farmer-profile' ? (
-          /* GREEN PASTURES ORGANIC FARMER PROFILE */
           <FarmerProfile
+            farmerId={selectedFarmerId}
             onNavigate={handleNavigate}
             onReserveProduct={(item) => setReserveProduct(item)}
             onNotifyProduct={handleNotifyProduct}
           />
         ) : currentView === 'market-details' ? (
-          /* DOWNTOWN HISTORIC MARKET DETAIL PAGE */
           <MarketDetails
+            marketId={selectedMarketId}
             onNavigate={handleNavigate}
             onReserveProduct={(item) => setReserveProduct(item)}
             onNotifyProduct={handleNotifyProduct}
           />
         ) : currentView === 'markets' ? (
-          /* MARKETS DIRECTORY PAGE */
           <MarketsDirectory
             onNavigate={handleNavigate}
             onReserveForMarket={handleReserveForMarket}
           />
         ) : (
-          /* HOME LANDING PAGE */
           <div className="flex flex-col w-full">
             {/* HERO SECTION */}
             <Hero
@@ -503,10 +616,10 @@ export default function App() {
               markets={filteredFeaturedMarkets}
               activeMarketFilter={activeMarketFilter}
               onSelectMarket={(marketKey) => {
-                if (marketKey === 'downtown') {
-                  setCurrentView('market-details');
+                if (marketKey === 'downtown' || marketKey === 1) {
+                  handleNavigate('market-details', 1);
                 } else if (marketKey === 'all') {
-                  setCurrentView('markets');
+                  handleNavigate('markets');
                 } else {
                   setActiveMarketFilter(marketKey);
                   const prodEl = document.getElementById('products');
@@ -529,8 +642,8 @@ export default function App() {
             <ProductShowcase
               products={filteredProducts}
               onReserveProduct={(item) => {
-                if (item.name.includes('Brandywine')) {
-                  setCurrentView('product-details');
+                if (item.name?.includes('Brandywine') || item.id === 1) {
+                  handleNavigate('product-details', item.id || 1);
                 } else {
                   setReserveProduct(item);
                 }
@@ -544,7 +657,7 @@ export default function App() {
             {/* MEET YOUR REGIONAL GROWERS */}
             <GrowersShowcase onNavigate={(sec) => {
               if (sec === 'about-us') {
-                setCurrentView('about-us');
+                handleNavigate('about-us');
               } else {
                 handleNavigate(sec);
               }
@@ -570,7 +683,7 @@ export default function App() {
         onNavigate={handleNavigate}
         onFilterProduct={(cat) => {
           setSelectedCategory(cat);
-          if (currentView !== 'home') setCurrentView('home');
+          if (currentView !== 'home') handleNavigate('home');
         }}
       />
 
@@ -593,12 +706,14 @@ export default function App() {
         <AuthModal
           initialMode={authMode}
           onClose={() => setAuthMode(null)}
-          onLoginSuccess={(user) => {
-            showToast(`Welcome ${user.name}! Signed in as ${user.role}.`);
-            if (user.role === 'Shopper') {
+          onLoginSuccess={(authUser) => {
+            showToast(`Welcome ${authUser.name}! Signed in.`);
+            if (authUser.role === 'customer') {
               handleNavigate('customer-dashboard');
-            } else if (user.role === 'Farmer Vendor') {
+            } else if (authUser.role === 'farmer') {
               handleNavigate('farmer-dashboard');
+            } else if (authUser.role === 'admin') {
+              handleNavigate('admin');
             }
           }}
         />
@@ -608,5 +723,13 @@ export default function App() {
         <GuideModal onClose={() => setGuideModalOpen(false)} />
       )}
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }

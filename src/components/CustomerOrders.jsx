@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import customerApi from '../api/customer';
 
 export default function CustomerOrders({ onNavigate, showToast, onAddToCart }) {
   const [activeTab, setActiveTab] = useState('All');
@@ -199,9 +200,67 @@ export default function CustomerOrders({ onNavigate, showToast, onAddToCart }) {
     }
   };
 
+  // Load customer orders from backend
+  useEffect(() => {
+    customerApi.getOrders()
+      .then((res) => {
+        if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
+          const mapped = res.data.map((o) => {
+            let uiStatus = 'Placed';
+            if (o.order_status === 'accepted') uiStatus = 'Accepted';
+            else if (o.order_status === 'ready' || o.order_status === 'ready_for_pickup') uiStatus = 'Ready for Pickup';
+            else if (o.order_status === 'completed') uiStatus = 'Completed';
+            else if (o.order_status === 'cancelled') uiStatus = 'Cancelled';
+
+            const itemsList = (o.items || []).map((it) => ({
+              name: it.product_name || it.product?.name || 'Produce Item',
+              qty: `${it.quantity} ${it.unit || ''}`,
+              unitPrice: `$${Number(it.unit_price).toFixed(2)}`,
+              total: `$${Number(it.subtotal).toFixed(2)}`
+            }));
+
+            const itemsSummary = itemsList.map((it) => `${it.qty} ${it.name}`).join(', ') || 'Market Pre-Order';
+
+            return {
+              id: `#ML-${o.id}`,
+              numericId: o.id,
+              farmerId: o.farmer_id,
+              farmer: o.farmer?.farmer_profile?.stall_name || o.farmer?.name || 'Local Farm',
+              stallLocation: o.farmer?.farmer_profile?.address || 'Designated Stand',
+              farmerPhone: o.farmer?.phone || '(503) 555-0100',
+              farmerEmail: o.farmer?.email || 'farmer@marketlink.test',
+              itemsSummary,
+              itemsList,
+              pickupDate: o.pickup_date || 'Saturday',
+              pickupSlot: o.pickup_time || '9:30 AM – 11:00 AM',
+              market: o.market?.market_name || 'Downtown Saturday Market',
+              totalAmount: `$${Number(o.total_amount).toFixed(2)}`,
+              status: uiStatus,
+              cutoffPassed: false,
+              cutoffText: 'Cutoff: Friday 8:00 PM',
+              hasReviewed: Boolean(o.review),
+              timeline: [
+                { time: o.created_at ? new Date(o.created_at).toLocaleTimeString() : 'Recent', title: 'Reservation Placed', desc: 'Pre-order submitted online.' }
+              ]
+            };
+          });
+          setOrders(mapped);
+        }
+      })
+      .catch((err) => console.warn('Could not load customer orders:', err));
+  }, []);
+
   // Cancel Order Handler
-  const handleConfirmCancel = () => {
+  const handleConfirmCancel = async () => {
     if (!cancelModalOrder) return;
+    const orderIdToCancel = cancelModalOrder.numericId || parseInt(String(cancelModalOrder.id).replace(/\D/g, '')) || 1;
+
+    try {
+      await customerApi.cancelOrder(orderIdToCancel);
+    } catch (err) {
+      console.warn('API cancelOrder error:', err);
+    }
+
     setOrders((prev) =>
       prev.map((o) =>
         o.id === cancelModalOrder.id
@@ -221,7 +280,14 @@ export default function CustomerOrders({ onNavigate, showToast, onAddToCart }) {
   };
 
   // Reorder Handler
-  const handleReorder = (order) => {
+  const handleReorder = async (order) => {
+    const orderIdToReorder = order.numericId || parseInt(String(order.id).replace(/\D/g, '')) || 1;
+    try {
+      await customerApi.reorder(orderIdToReorder);
+    } catch (err) {
+      console.warn('API reorder call:', err);
+    }
+
     order.itemsList.forEach((it) => {
       onAddToCart?.({
         id: `reord-${it.name}`,
@@ -231,13 +297,26 @@ export default function CustomerOrders({ onNavigate, showToast, onAddToCart }) {
         quantity: 1
       });
     });
-    showToast?.(`Items from ${order.id} added to your cart!`);
+    showToast?.(`Items from ${order.id} reordered & added to your cart!`);
   };
 
   // Submit Review Handler
-  const handleSubmitReview = (e) => {
+  const handleSubmitReview = async (e) => {
     e.preventDefault();
     if (!reviewForm.comment.trim()) return;
+
+    const orderIdToReview = reviewModalOrder.numericId || parseInt(String(reviewModalOrder.id).replace(/\D/g, '')) || 1;
+
+    try {
+      await customerApi.createReview({
+        order_id: orderIdToReview,
+        farmer_id: reviewModalOrder.farmerId || 1,
+        rating: reviewForm.rating,
+        comment: reviewForm.comment.trim()
+      });
+    } catch (err) {
+      console.warn('API createReview error:', err);
+    }
 
     setOrders((prev) =>
       prev.map((o) =>

@@ -1,12 +1,27 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import browseApi from '../api/browse';
+import customerApi from '../api/customer';
+import { useAuth } from '../context/AuthContext';
 
-export default function ProductDetails({ onNavigate, onReserveProduct, onNotifyProduct }) {
+export default function ProductDetails({ productId = 1, onNavigate, onReserveProduct, onNotifyProduct }) {
+  const { isAuthenticated } = useAuth();
   const [activeThumb, setActiveThumb] = useState(0);
   const [quantity, setQuantity] = useState(2);
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [wishlistCount, setWishlistCount] = useState(142);
+  const [liveProduct, setLiveProduct] = useState(null);
 
-  const pricePerUnit = 4.50;
+  useEffect(() => {
+    let mounted = true;
+    browseApi.getProduct(productId || 1).then((res) => {
+      if (mounted && res.data) {
+        setLiveProduct(res.data);
+      }
+    }).catch(() => {});
+    return () => { mounted = false; };
+  }, [productId]);
+
+  const pricePerUnit = liveProduct ? Number(liveProduct.price) : 4.50;
   const totalPrice = (quantity * pricePerUnit).toFixed(2);
 
   const galleryImages = [

@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import farmerApi from '../api/farmer';
 
 export default function FarmerProducts({ showToast }) {
   const [searchQuery, setSearchQuery] = useState('');
@@ -175,10 +176,42 @@ export default function FarmerProducts({ showToast }) {
     setIsFormModalOpen(true);
   };
 
+  // Load products from backend
+  useEffect(() => {
+    farmerApi.getProducts()
+      .then((res) => {
+        if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
+          const mapped = res.data.map((p) => {
+            const numPrice = Number(p.price) || 0;
+            const statusLabel = p.status === 'sold_out' ? 'Sold Out' : (p.stock_quantity <= 5 && p.stock_quantity > 0 ? 'Low Stock' : 'Available');
+            return {
+              id: p.id,
+              name: p.name,
+              category: p.category_name || 'Fresh Produce',
+              price: `$${numPrice.toFixed(2)}`,
+              numericPrice: numPrice,
+              unit: p.unit || 'unit',
+              quantity: p.stock_quantity ?? 10,
+              status: statusLabel,
+              description: p.description || '',
+              image: p.image || initialFormState.image
+            };
+          });
+          setProducts(mapped);
+        }
+      })
+      .catch((err) => console.warn('Could not load farmer products:', err));
+  }, []);
+
   // Toggle Sold Out / Available
-  const handleToggleSoldOut = (prod) => {
+  const handleToggleSoldOut = async (prod) => {
     const nextStatus = prod.status === 'Sold Out' ? 'Available' : 'Sold Out';
     const nextQty = nextStatus === 'Sold Out' ? 0 : 20;
+    try {
+      await farmerApi.toggleProductStatus(prod.id, nextStatus === 'Sold Out' ? 'sold_out' : 'available');
+    } catch (err) {
+      console.warn('API toggleProductStatus error:', err);
+    }
     setProducts((prev) =>
       prev.map((p) => (p.id === prod.id ? { ...p, status: nextStatus, quantity: nextQty } : p))
     );
@@ -186,7 +219,7 @@ export default function FarmerProducts({ showToast }) {
   };
 
   // Save Product Form
-  const handleSaveProduct = (e) => {
+  const handleSaveProduct = async (e) => {
     e.preventDefault();
     if (!formData.name.trim() || !formData.price) {
       showToast?.('Please fill out product name and price.');
@@ -201,7 +234,22 @@ export default function FarmerProducts({ showToast }) {
     if (qty === 0 && autoStatus === 'Available') autoStatus = 'Sold Out';
     if (qty > 0 && qty <= 5 && autoStatus === 'Available') autoStatus = 'Low Stock';
 
+    const payload = {
+      name: formData.name.trim(),
+      price: priceNum,
+      unit: formData.unit,
+      stock_quantity: qty,
+      description: formData.description,
+      status: autoStatus === 'Sold Out' ? 'sold_out' : 'available',
+      image: formData.image || initialFormState.image
+    };
+
     if (editingProduct) {
+      try {
+        await farmerApi.updateProduct(editingProduct.id, payload);
+      } catch (err) {
+        console.warn('API updateProduct error:', err);
+      }
       setProducts((prev) =>
         prev.map((p) =>
           p.id === editingProduct.id
@@ -222,8 +270,15 @@ export default function FarmerProducts({ showToast }) {
       );
       showToast?.(`Product "${formData.name}" updated successfully.`);
     } else {
+      let createdId = `p-${Date.now()}`;
+      try {
+        const res = await farmerApi.createProduct(payload);
+        if (res?.data?.id) createdId = res.data.id;
+      } catch (err) {
+        console.warn('API createProduct error:', err);
+      }
       const newProd = {
-        id: `p-${Date.now()}`,
+        id: createdId,
         name: formData.name.trim(),
         category: formData.category,
         price: formattedPrice,
@@ -242,8 +297,13 @@ export default function FarmerProducts({ showToast }) {
   };
 
   // Confirm Delete
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (!deleteModalProduct) return;
+    try {
+      await farmerApi.deleteProduct(deleteModalProduct.id);
+    } catch (err) {
+      console.warn('API deleteProduct error:', err);
+    }
     setProducts((prev) => prev.filter((p) => p.id !== deleteModalProduct.id));
     showToast?.(`Product "${deleteModalProduct.name}" removed from stall.`);
     setDeleteModalProduct(null);

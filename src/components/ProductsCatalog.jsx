@@ -1,6 +1,10 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import browseApi from '../api/browse';
+import customerApi from '../api/customer';
+import { useAuth } from '../context/AuthContext';
 
 export default function ProductsCatalog({ onNavigate, onReserveProduct, onNotifyProduct }) {
+  const { isAuthenticated, role } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('freshness');
   const [inStockOnly, setInStockOnly] = useState(true);
@@ -10,6 +14,17 @@ export default function ProductsCatalog({ onNavigate, onReserveProduct, onNotify
   const [minPrice, setMinPrice] = useState(1.5);
   const [currentPage, setCurrentPage] = useState(1);
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
+  const [liveProducts, setLiveProducts] = useState([]);
+
+  useEffect(() => {
+    let mounted = true;
+    browseApi.getProducts().then((res) => {
+      if (mounted && res.data && res.data.length > 0) {
+        setLiveProducts(res.data);
+      }
+    }).catch(() => {});
+    return () => { mounted = false; };
+  }, []);
 
   // Category selections
   const [selectedCategories, setSelectedCategories] = useState({

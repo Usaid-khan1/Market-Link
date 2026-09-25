@@ -1,8 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import adminApi from '../api/admin';
 
 export default function ReportsAnalytics({ onNavigate, showToast }) {
   const [dateRange, setDateRange] = useState('This Month');
   const [activeChartPoint, setActiveChartPoint] = useState(null);
+  const [reportsData, setReportsData] = useState(null);
+
+  useEffect(() => {
+    adminApi.getReports()
+      .then((res) => {
+        if (res?.data) {
+          setReportsData(res.data);
+        }
+      })
+      .catch((err) => console.warn('Could not load reports:', err));
+  }, []);
 
   // Farmers ranking data
   const mostActiveFarmers = [
@@ -200,7 +212,7 @@ export default function ReportsAnalytics({ onNavigate, showToast }) {
             </div>
           </div>
           <span className="font-headline-md text-2xl sm:text-3xl font-bold text-on-surface">
-            $148,920
+            {reportsData?.total_revenue ? `$${Number(reportsData.total_revenue).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '$148,920'}
           </span>
           <div className="flex items-center justify-between pt-1">
             <span className="font-body-sm text-secondary flex items-center gap-1 font-bold text-xs">
@@ -226,7 +238,7 @@ export default function ReportsAnalytics({ onNavigate, showToast }) {
             </div>
           </div>
           <span className="font-headline-md text-2xl sm:text-3xl font-bold text-primary">
-            3,842
+            {reportsData?.total_orders ?? '3,842'}
           </span>
           <div className="flex items-center justify-between pt-1">
             <span className="font-body-sm text-secondary flex items-center gap-1 font-bold text-xs">

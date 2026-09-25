@@ -1,31 +1,77 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import customerApi from '../api/customer';
+import { useAuth } from '../context/AuthContext';
 
 export default function ReservationModal({ product, onClose, onConfirmReservation }) {
+  const { user, isAuthenticated } = useAuth();
   const [quantity, setQuantity] = useState(1);
-  const [customerName, setCustomerName] = useState('');
-  const [customerPhone, setCustomerPhone] = useState('');
+  const [customerName, setCustomerName] = useState(user?.name || '');
+  const [customerPhone, setCustomerPhone] = useState(user?.phone || '');
   const [notes, setNotes] = useState('');
+  const [submitting, setSubmitting] = useState(false);
   const [reservedSlip, setReservedSlip] = useState(null);
+
+  useEffect(() => {
+    if (user?.name && !customerName) {
+      setCustomerName(user.name);
+    }
+  }, [user]);
 
   if (!product) return null;
 
   const totalPrice = (product.price * quantity).toFixed(2);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!customerName.trim() || !customerPhone.trim()) {
       alert('Please provide your name and phone number for the farmer reservation slip.');
       return;
     }
 
-    const voucherId = `ML-${Math.floor(1000 + Math.random() * 9000)}`;
+    setSubmitting(true);
+    let voucherId = `ML-${Math.floor(1000 + Math.random() * 9000)}`;
+
+    if (isAuthenticated && user?.role === 'customer') {
+      try {
+        const pickupDate = new Date();
+        pickupDate.setDate(pickupDate.getDate() + 2);
+
+        const prodId = typeof product.id === 'number'
+          ? product.id
+          : (parseInt(String(product.id).replace(/\D/g, ''), 10) || 1);
+
+        const farmerId = product.farmer_id || product.farmerId || 2;
+        const marketId = product.market_id || product.marketId || 1;
+
+        const res = await customerApi.createOrder({
+          farmer_id: farmerId,
+          market_id: marketId,
+          pickup_date: pickupDate.toISOString().split('T')[0],
+          pickup_time: 'This Weekend (Opening Hours)',
+          notes: notes ? `${notes} (Contact: ${customerPhone})` : `Storefront hold (Contact: ${customerPhone})`,
+          items: [
+            {
+              product_id: prodId,
+              quantity: quantity,
+            }
+          ]
+        });
+
+        if (res?.data?.id) {
+          voucherId = `ML-${res.data.id}`;
+        }
+      } catch (err) {
+        console.warn('Backend reservation error, using local voucher slip:', err);
+      }
+    }
+
     const slip = {
       voucherId,
       productName: product.name,
-      farm: product.farm,
-      market: product.market,
+      farm: product.farm || product.farmer_name || product.stall_name || 'Regional Grower',
+      market: product.market || product.market_name || 'Market Stand',
       quantity,
-      unit: product.unit,
+      unit: product.unit || 'item',
       totalPrice,
       customerName,
       customerPhone,
@@ -33,6 +79,7 @@ export default function ReservationModal({ product, onClose, onConfirmReservatio
       bay: 'Designated Stall Pickup Bay'
     };
 
+    setSubmitting(false);
     setReservedSlip(slip);
     if (onConfirmReservation) {
       onConfirmReservation(slip);

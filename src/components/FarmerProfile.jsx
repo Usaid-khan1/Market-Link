@@ -1,9 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import browseApi from '../api/browse';
+import customerApi from '../api/customer';
+import { useAuth } from '../context/AuthContext';
 
-export default function FarmerProfile({ onNavigate, onReserveProduct, onNotifyProduct }) {
+export default function FarmerProfile({ farmerId = 2, onNavigate, onReserveProduct, onNotifyProduct }) {
+  const { isAuthenticated } = useAuth();
   const [activeCategory, setActiveCategory] = useState('all');
   const [isFavorited, setIsFavorited] = useState(false);
   const [favoriteCount, setFavoriteCount] = useState(89);
+  const [liveFarmer, setLiveFarmer] = useState(null);
+
+  useEffect(() => {
+    let mounted = true;
+    browseApi.getFarmer(farmerId || 2).then((res) => {
+      if (mounted && res.data) {
+        setLiveFarmer(res.data);
+      }
+    }).catch(() => {});
+    return () => { mounted = false; };
+  }, [farmerId]);
   const [quantities, setQuantities] = useState({
     1: 1,
     2: 1,

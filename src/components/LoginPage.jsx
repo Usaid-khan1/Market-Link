@@ -1,29 +1,44 @@
 import React, { useState } from 'react';
+import { useAuth } from '../context/AuthContext';
 
 export default function LoginPage({ onNavigate, onLoginSuccess, onOpenRegister }) {
+  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [loginFeedback, setLoginFeedback] = useState(null);
+  const [errorMessage, setErrorMessage] = useState(null);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
-    setTimeout(() => {
+    setErrorMessage(null);
+    setLoginFeedback(null);
+
+    try {
+      const authData = await login({ email, password });
       setIsLoading(false);
-      setLoginFeedback('Welcome back, Neighbor!');
+      setLoginFeedback(`Welcome back, ${authData.user.name}!`);
+
+      if (onLoginSuccess) {
+        onLoginSuccess(authData.user);
+      }
+
       setTimeout(() => {
-        if (onLoginSuccess) {
-          onLoginSuccess({
-            name: email.split('@')[0] || 'Elena Rostova',
-            role: 'Shopper'
-          });
+        if (authData.user.role === 'admin') {
+          onNavigate('admin');
+        } else if (authData.user.role === 'farmer') {
+          onNavigate('farmer-dashboard');
+        } else {
+          onNavigate('customer-dashboard');
         }
-        onNavigate('customer-dashboard');
-      }, 1000);
-    }, 1200);
+      }, 600);
+    } catch (err) {
+      setIsLoading(false);
+      setErrorMessage(err.message || 'Login failed. Please check your credentials.');
+    }
   };
 
   return (
@@ -103,6 +118,12 @@ export default function LoginPage({ onNavigate, onLoginSuccess, onOpenRegister }
 
               {/* Form */}
               <form onSubmit={handleSubmit} className="mt-space-lg flex flex-col gap-space-md">
+                {errorMessage && (
+                  <div className="bg-error-container/40 border border-error text-on-surface px-space-md py-space-sm rounded-xl text-xs flex items-center gap-space-xs">
+                    <span className="material-symbols-outlined text-error text-[18px]">error</span>
+                    <span>{errorMessage}</span>
+                  </div>
+                )}
                 <div>
                   <label className="block font-label-md text-label-md text-on-surface mb-space-xs text-xs font-bold" htmlFor="email">
                     Email Address

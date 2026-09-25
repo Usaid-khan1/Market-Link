@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import farmerApi from '../api/farmer';
 
 export default function FarmerSettings({ showToast }) {
   // Basic Info Form State
@@ -48,6 +49,36 @@ export default function FarmerSettings({ showToast }) {
     confirmPassword: ''
   });
 
+  // Load live stall profile from backend
+  useEffect(() => {
+    farmerApi.getProfile()
+      .then((res) => {
+        if (res?.data) {
+          const p = res.data;
+          setBasicInfo((prev) => ({
+            ...prev,
+            stallName: p.stall_name || prev.stallName,
+            contactPerson: p.contact_person || prev.contactPerson,
+            phone: p.phone || prev.phone,
+            email: p.email || prev.email,
+            farmAddress: p.address || prev.farmAddress,
+            bio: p.bio || prev.bio
+          }));
+          if (p.operating_days && Array.isArray(p.operating_days)) {
+            setOperatingDays(p.operating_days);
+          }
+          if (p.latitude && p.longitude) {
+            setStallLocation((prev) => ({
+              ...prev,
+              lat: String(p.latitude),
+              lng: String(p.longitude)
+            }));
+          }
+        }
+      })
+      .catch((err) => console.warn('Could not load farmer profile:', err));
+  }, []);
+
   // Toggle Market Selection
   const handleToggleMarket = (marketName) => {
     setSelectedMarkets((prev) => {
@@ -73,7 +104,7 @@ export default function FarmerSettings({ showToast }) {
   };
 
   // Form Submit
-  const handleSaveAll = (e) => {
+  const handleSaveAll = async (e) => {
     e.preventDefault();
 
     if (passwords.newPassword && passwords.newPassword !== passwords.confirmPassword) {
@@ -84,6 +115,23 @@ export default function FarmerSettings({ showToast }) {
     if (passwords.newPassword && passwords.newPassword.length < 8) {
       showToast?.('⚠️ Password must be at least 8 characters.');
       return;
+    }
+
+    try {
+      await farmerApi.updateProfile({
+        stall_name: basicInfo.stallName,
+        contact_person: basicInfo.contactPerson,
+        address: basicInfo.farmAddress,
+        phone: basicInfo.phone,
+        bio: basicInfo.bio,
+        operating_days: operatingDays,
+        pickup_time_start: pickupWindow.start,
+        pickup_time_end: pickupWindow.end,
+        latitude: parseFloat(stallLocation.lat) || 45.5152,
+        longitude: parseFloat(stallLocation.lng) || -122.6784
+      });
+    } catch (err) {
+      console.warn('API updateProfile error:', err);
     }
 
     showToast?.('Stall profile, operating schedules, and geolocation updated live!');

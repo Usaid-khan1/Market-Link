@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
+import { useAuth } from '../context/AuthContext';
 
 export default function Navbar({ currentView, onNavigate, onOpenAuth, onFocusSearch }) {
+  const { user, isAuthenticated, role, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navLinks = [
@@ -85,50 +87,86 @@ export default function Navbar({ currentView, onNavigate, onOpenAuth, onFocusSea
             <span className="material-symbols-outlined text-[22px]">search</span>
           </button>
 
-          <button 
-            onClick={() => onNavigate('login')}
-            className={`hidden sm:inline-flex items-center font-label-md px-space-md py-space-xs rounded-lg transition-colors cursor-pointer ${
-              currentView === 'login' ? 'bg-surface-container text-primary font-bold' : 'text-primary hover:bg-surface-container hover:text-primary'
-            }`}
-          >
-            Log In
-          </button>
+          {isAuthenticated ? (
+            <div className="flex items-center gap-space-xs sm:gap-space-sm">
+              <button
+                onClick={() => {
+                  if (role === 'admin') onNavigate('admin');
+                  else if (role === 'farmer') onNavigate('farmer-dashboard');
+                  else onNavigate('customer-dashboard');
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface-container hover:bg-surface-container-high transition-colors text-xs font-bold text-on-surface cursor-pointer"
+                title={`Open ${role} dashboard`}
+              >
+                <span className="material-symbols-outlined text-[16px] text-primary">
+                  {role === 'admin' ? 'admin_panel_settings' : role === 'farmer' ? 'agriculture' : 'shopping_bag'}
+                </span>
+                <span className="max-w-[120px] truncate">{user?.name}</span>
+                <span className="text-[10px] uppercase tracking-wider text-primary font-bold px-1.5 py-0.5 rounded bg-surface-container-lowest border border-outline-variant/30">
+                  {role}
+                </span>
+              </button>
 
-          <button 
-            onClick={() => onNavigate('register')}
-            className={`inline-flex items-center justify-center font-label-md px-space-md py-space-xs rounded-full shadow-[0_2px_8px_rgba(46,107,58,0.12)] transition-colors cursor-pointer active:scale-95 ${
-              currentView === 'register' ? 'bg-tertiary text-on-tertiary ring-2 ring-primary-container font-bold' : 'text-on-tertiary bg-tertiary-container hover:bg-tertiary'
-            }`}
-          >
-            Register
-          </button>
+              <button
+                onClick={async () => {
+                  await logout();
+                  onNavigate('home');
+                }}
+                title="Sign Out"
+                className="w-8 h-8 rounded-full flex items-center justify-center text-on-surface-variant hover:text-error hover:bg-error-container/30 transition-colors cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-[18px]">logout</span>
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-space-xs sm:gap-space-sm">
+              <button 
+                onClick={() => onNavigate('login')}
+                className={`hidden sm:inline-flex items-center font-label-md px-space-md py-space-xs rounded-lg transition-colors cursor-pointer ${
+                  currentView === 'login' ? 'bg-surface-container text-primary font-bold' : 'text-primary hover:bg-surface-container hover:text-primary'
+                }`}
+              >
+                Log In
+              </button>
 
-          <button 
-            onClick={() => onNavigate('customer-dashboard')}
-            aria-label="Customer Portal"
-            title="Open Customer Dashboard (Elena Rostova)"
-            className="w-8 h-8 rounded-full bg-[#E6F0E1] flex items-center justify-center text-[#2E6B3A] hover:bg-[#8BC34A] hover:text-[#222] transition-colors cursor-pointer active:scale-95 font-bold text-xs"
-          >
-            <span className="material-symbols-outlined text-[18px]">shopping_bag</span>
-          </button>
+              <button 
+                onClick={() => onNavigate('register')}
+                className={`inline-flex items-center justify-center font-label-md px-space-md py-space-xs rounded-full shadow-[0_2px_8px_rgba(46,107,58,0.12)] transition-colors cursor-pointer active:scale-95 ${
+                  currentView === 'register' ? 'bg-tertiary text-on-tertiary ring-2 ring-primary-container font-bold' : 'text-on-tertiary bg-tertiary-container hover:bg-tertiary'
+                }`}
+              >
+                Register
+              </button>
 
-          <button 
-            onClick={() => onNavigate('farmer-dashboard')}
-            aria-label="Farmer Portal"
-            title="Open Farmer Dashboard (Green Pastures Organic)"
-            className="w-8 h-8 rounded-full bg-secondary-fixed flex items-center justify-center text-on-secondary-fixed-variant hover:bg-secondary-fixed-dim transition-colors cursor-pointer active:scale-95"
-          >
-            <span className="material-symbols-outlined text-[18px]">agriculture</span>
-          </button>
+              {/* Quick portal shortcut buttons for easy developer access */}
+              <button 
+                onClick={() => onNavigate('customer-dashboard')}
+                aria-label="Customer Portal"
+                title="Customer Portal"
+                className="w-8 h-8 rounded-full bg-[#E6F0E1] flex items-center justify-center text-[#2E6B3A] hover:bg-[#8BC34A] hover:text-[#222] transition-colors cursor-pointer active:scale-95 font-bold text-xs"
+              >
+                <span className="material-symbols-outlined text-[18px]">shopping_bag</span>
+              </button>
 
-          <button 
-            onClick={() => onNavigate('admin')}
-            aria-label="Admin Portal"
-            title="Open Admin Portal (Super Admin)"
-            className="w-8 h-8 rounded-full bg-primary flex items-center justify-center ml-space-xs text-on-primary hover:bg-primary-container transition-colors cursor-pointer active:scale-95"
-          >
-            <span className="material-symbols-outlined text-on-primary text-[18px]">person</span>
-          </button>
+              <button 
+                onClick={() => onNavigate('farmer-dashboard')}
+                aria-label="Farmer Portal"
+                title="Farmer Portal"
+                className="w-8 h-8 rounded-full bg-secondary-fixed flex items-center justify-center text-on-secondary-fixed-variant hover:bg-secondary-fixed-dim transition-colors cursor-pointer active:scale-95"
+              >
+                <span className="material-symbols-outlined text-[18px]">agriculture</span>
+              </button>
+
+              <button 
+                onClick={() => onNavigate('admin')}
+                aria-label="Admin Portal"
+                title="Admin Portal"
+                className="w-8 h-8 rounded-full bg-primary flex items-center justify-center ml-space-xs text-on-primary hover:bg-primary-container transition-colors cursor-pointer active:scale-95"
+              >
+                <span className="material-symbols-outlined text-on-primary text-[18px]">person</span>
+              </button>
+            </div>
+          )}
 
           {/* Mobile Menu Hamburger */}
           <button 

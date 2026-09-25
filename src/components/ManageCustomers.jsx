@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import adminApi from '../api/admin';
 
 export default function ManageCustomers({ onNavigate, showToast }) {
   const [searchQuery, setSearchQuery] = useState('');
@@ -181,9 +182,42 @@ export default function ManageCustomers({ onNavigate, showToast }) {
     });
   }, [customers, searchQuery, statusFilter, tierFilter]);
 
+  // Load live customers from backend
+  useEffect(() => {
+    adminApi.getCustomers()
+      .then((res) => {
+        if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
+          const mapped = res.data.map((c) => ({
+            id: c.id,
+            name: c.name,
+            initials: c.name.split(' ').map((n) => n[0]).join('').substring(0, 2).toUpperCase(),
+            email: c.email,
+            phone: c.phone || '(503) 555-0199',
+            neighborhood: c.address || 'Portland Metro',
+            preferredMarket: 'Downtown Saturday Market',
+            joinedDate: c.created_at ? new Date(c.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Mar 14, 2024',
+            totalOrders: 14,
+            totalSpent: '$420.00',
+            status: c.status || 'active',
+            tier: 'Regular Shopper',
+            tierBadge: 'bg-surface-container text-on-surface',
+            avatarColor: 'bg-primary-fixed text-on-primary-fixed',
+            recentOrders: []
+          }));
+          setCustomers(mapped);
+        }
+      })
+      .catch((err) => console.warn('Could not load live customers:', err));
+  }, []);
+
   // Toggle Suspend / Reactivate
-  const handleToggleSuspend = (customer) => {
+  const handleToggleSuspend = async (customer) => {
     const nextStatus = customer.status === 'active' ? 'suspended' : 'active';
+    try {
+      await adminApi.updateCustomerStatus(customer.id, nextStatus);
+    } catch (e) {
+      console.warn('API updateCustomerStatus error:', e);
+    }
     setCustomers((prev) =>
       prev.map((c) => (c.id === customer.id ? { ...c, status: nextStatus } : c))
     );

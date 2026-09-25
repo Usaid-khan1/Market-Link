@@ -1,17 +1,32 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
 
 export default function CustomerSettings({ onNavigate, showToast }) {
+  const { user } = useAuth();
+
   // Basic Info Form State
   const [basicInfo, setBasicInfo] = useState({
-    fullName: 'Elena Rostova',
-    email: 'elena.rostova@gmail.com',
-    phone: '(503) 555-0144',
-    address: '1420 SW Park Ave, Apt 4B',
+    fullName: user?.name || 'Elena Rostova',
+    email: user?.email || 'elena.rostova@gmail.com',
+    phone: user?.phone || '(503) 555-0144',
+    address: user?.address || '1420 SW Park Ave, Apt 4B',
     city: 'Portland',
     state: 'OR',
     zip: '97201',
     preferredMarket: 'Pioneer Pavilion Heritage Market'
   });
+
+  useEffect(() => {
+    if (user) {
+      setBasicInfo(prev => ({
+        ...prev,
+        fullName: user.name || prev.fullName,
+        email: user.email || prev.email,
+        phone: user.phone || prev.phone,
+        address: user.address || prev.address,
+      }));
+    }
+  }, [user]);
 
   // Notification Preferences State
   const [notifications, setNotifications] = useState({

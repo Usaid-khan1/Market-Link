@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import farmerApi from '../api/farmer';
 
 export default function FarmerPreOrders({ showToast }) {
   const [activeTab, setActiveTab] = useState('All');
@@ -198,6 +199,52 @@ export default function FarmerPreOrders({ showToast }) {
     }
   };
 
+  // Load orders from backend
+  useEffect(() => {
+    farmerApi.getOrders()
+      .then((res) => {
+        if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
+          const mapped = res.data.map((o) => {
+            let uiStatus = 'Placed';
+            if (o.order_status === 'accepted') uiStatus = 'Accepted';
+            else if (o.order_status === 'ready' || o.order_status === 'ready_for_pickup') uiStatus = 'Ready for Pickup';
+            else if (o.order_status === 'completed') uiStatus = 'Completed';
+            else if (o.order_status === 'cancelled') uiStatus = 'Cancelled';
+
+            const itemsList = (o.items || []).map((it) => ({
+              name: it.product_name || it.product?.name || 'Item',
+              qty: `${it.quantity} ${it.unit || ''}`,
+              price: `$${Number(it.unit_price).toFixed(2)}`,
+              total: `$${Number(it.subtotal).toFixed(2)}`
+            }));
+
+            const itemsSummary = itemsList.map((it) => `${it.qty} ${it.name}`).join(', ') || 'Custom harvest pack';
+
+            return {
+              id: `#ML-${o.id}`,
+              numericId: o.id,
+              customer: o.customer?.name || o.customer_name || 'Customer',
+              email: o.customer?.email || 'customer@marketlink.test',
+              phone: o.customer?.phone || '(503) 555-0100',
+              itemsSummary,
+              itemsList,
+              pickupDate: o.pickup_date || 'Saturday',
+              pickupSlot: o.pickup_time || '9:30 AM – 11:00 AM',
+              market: o.market?.market_name || o.market_name || 'Downtown Saturday Market',
+              totalAmount: `$${Number(o.total_amount).toFixed(2)}`,
+              status: uiStatus,
+              specialNotes: o.notes || 'No special instructions',
+              timeline: [
+                { time: o.created_at ? new Date(o.created_at).toLocaleTimeString() : 'Recent', text: 'Reservation submitted via MarketLink storefront' }
+              ]
+            };
+          });
+          setOrders(mapped);
+        }
+      })
+      .catch((err) => console.warn('Could not load farmer orders:', err));
+  }, []);
+
   // Status Transition Trigger
   const promptStatusChange = (order, newStatus, actionTitle) => {
     setActionConfirm({
@@ -208,9 +255,22 @@ export default function FarmerPreOrders({ showToast }) {
   };
 
   // Execute Confirmed Status Change
-  const executeStatusChange = () => {
+  const executeStatusChange = async () => {
     if (!actionConfirm) return;
     const { order, newStatus } = actionConfirm;
+
+    let apiStatus = 'placed';
+    if (newStatus === 'Accepted') apiStatus = 'accepted';
+    else if (newStatus === 'Ready for Pickup') apiStatus = 'ready';
+    else if (newStatus === 'Completed') apiStatus = 'completed';
+    else if (newStatus === 'Cancelled' || newStatus === 'Declined') apiStatus = 'cancelled';
+
+    const orderIdToUpdate = order.numericId || parseInt(String(order.id).replace(/\D/g, '')) || 1;
+    try {
+      await farmerApi.updateOrderStatus(orderIdToUpdate, apiStatus);
+    } catch (err) {
+      console.warn('API updateOrderStatus error:', err);
+    }
 
     setOrders((prev) =>
       prev.map((o) => {

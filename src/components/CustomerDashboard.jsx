@@ -1,11 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import CustomerOrders from './CustomerOrders';
 import CustomerCart from './CustomerCart';
 import CustomerFavorites from './CustomerFavorites';
 import CustomerReviews from './CustomerReviews';
 import CustomerSettings from './CustomerSettings';
+import customerApi from '../api/customer';
+import { useAuth } from '../context/AuthContext';
 
 export default function CustomerDashboard({ onNavigate, initialTab = 'dashboard' }) {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState(initialTab);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
@@ -21,10 +24,10 @@ export default function CustomerDashboard({ onNavigate, initialTab = 'dashboard'
 
   // Customer Profile Info
   const customerProfile = {
-    name: 'Elena Rostova',
-    initials: 'ER',
-    email: 'elena.rostova@gmail.com',
-    location: 'South Park Blocks, Portland',
+    name: user?.name || 'Elena Rostova',
+    initials: (user?.name || 'ER').split(' ').map((n) => n[0]).join('').substring(0, 2).toUpperCase(),
+    email: user?.email || 'elena.rostova@gmail.com',
+    location: user?.address || 'South Park Blocks, Portland',
     memberSince: 'Member since 2024'
   };
 
@@ -39,7 +42,7 @@ export default function CustomerDashboard({ onNavigate, initialTab = 'dashboard'
   ];
 
   // Active Orders Mini Table Data for Dashboard Home
-  const activeOrdersMini = [
+  const [activeOrdersMini, setActiveOrdersMini] = useState([
     {
       id: '#ML-8920',
       farmer: 'Green Pastures Organic',
@@ -56,7 +59,35 @@ export default function CustomerDashboard({ onNavigate, initialTab = 'dashboard'
       market: 'Riverside Twilight Market',
       status: 'Ready for Pickup'
     }
-  ];
+  ]);
+
+  // Load live active customer orders
+  useEffect(() => {
+    customerApi.getOrders({ status: 'active' })
+      .then((res) => {
+        if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
+          const mapped = res.data.map((o) => {
+            let uiStatus = 'Placed';
+            if (o.order_status === 'accepted') uiStatus = 'Accepted';
+            else if (o.order_status === 'ready' || o.order_status === 'ready_for_pickup') uiStatus = 'Ready for Pickup';
+            else if (o.order_status === 'completed') uiStatus = 'Completed';
+
+            const itemsStr = (o.items || []).map((it) => `${it.quantity} ${it.product_name || it.product?.name || 'Item'}`).join(', ');
+
+            return {
+              id: `#ML-${o.id}`,
+              farmer: o.farmer?.farmer_profile?.stall_name || o.farmer?.name || 'Local Farm',
+              items: itemsStr || 'Fresh farm harvest',
+              pickupSlot: `${o.pickup_date || 'Weekend'} • ${o.pickup_time || 'Morning'}`,
+              market: o.market?.market_name || 'Downtown Saturday Market',
+              status: uiStatus
+            };
+          });
+          setActiveOrdersMini(mapped);
+        }
+      })
+      .catch((err) => console.warn('Could not load active orders:', err));
+  }, []);
 
   // Recommended Products for Dashboard Home
   const recommendedProducts = [

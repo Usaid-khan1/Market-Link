@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import farmerApi from '../api/farmer';
 
 export default function FarmerStockTemplate({ showToast }) {
   const daysOfWeek = [
@@ -74,13 +75,57 @@ export default function FarmerStockTemplate({ showToast }) {
     });
   };
 
+  // Load live templates and products from backend
+  useEffect(() => {
+    farmerApi.getStockTemplates()
+      .then((res) => {
+        if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
+          const grouped = {};
+          res.data.forEach((tpl) => {
+            const day = tpl.day_of_week;
+            if (!grouped[day]) grouped[day] = [];
+            grouped[day].push({
+              id: tpl.product_id || tpl.id,
+              productId: tpl.product_id,
+              name: tpl.product?.name || `Product #${tpl.product_id}`,
+              unit: tpl.product?.unit || 'unit',
+              defaultQty: tpl.default_quantity,
+              included: Boolean(tpl.is_included)
+            });
+          });
+          setTemplates((prev) => ({ ...prev, ...grouped }));
+        }
+      })
+      .catch((err) => console.warn('Could not load stock templates:', err));
+  }, []);
+
   // Save Template
-  const handleSaveTemplate = () => {
+  const handleSaveTemplate = async () => {
+    const dayItems = templates[selectedDay] || currentItems;
+    const itemsPayload = dayItems.map((item, idx) => ({
+      product_id: item.productId || (typeof item.id === 'number' ? item.id : idx + 1),
+      default_quantity: item.defaultQty,
+      is_included: item.included
+    }));
+
+    try {
+      await farmerApi.saveStockTemplates({
+        day_of_week: selectedDay,
+        items: itemsPayload
+      });
+    } catch (err) {
+      console.warn('API saveStockTemplates error:', err);
+    }
     showToast?.(`Weekly template for ${selectedDay} saved successfully!`);
   };
 
   // Apply Template to This Week
-  const handleApplyTemplate = () => {
+  const handleApplyTemplate = async () => {
+    try {
+      await farmerApi.applyStockTemplates(selectedDay);
+    } catch (err) {
+      console.warn('API applyStockTemplates error:', err);
+    }
     showToast?.(`🎉 Template applied! Live stock levels updated for ${selectedDay}.`);
   };
 

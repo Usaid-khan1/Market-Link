@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import adminApi from '../api/admin';
 
 export default function SystemConfiguration({ onNavigate, showToast }) {
   // Categories State
@@ -58,6 +59,40 @@ export default function SystemConfiguration({ onNavigate, showToast }) {
   });
   const [deleteAnnouncementItem, setDeleteAnnouncementItem] = useState(null);
 
+  // Load live categories and announcements from backend
+  useEffect(() => {
+    adminApi.getCategories()
+      .then((res) => {
+        if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
+          const mapped = res.data.map((c) => ({
+            id: c.id,
+            name: c.name,
+            icon: c.icon || 'category',
+            count: c.products_count || 0,
+            active: c.is_active ?? true
+          }));
+          setCategories(mapped);
+        }
+      })
+      .catch((err) => console.warn('Could not load categories:', err));
+
+    adminApi.getAnnouncements()
+      .then((res) => {
+        if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
+          const mapped = res.data.map((a) => ({
+            id: a.id,
+            title: a.title,
+            message: a.content || a.message || '',
+            date: a.created_at ? new Date(a.created_at).toLocaleDateString() : 'Recent',
+            audience: a.audience || 'All Community',
+            active: a.is_active ?? true
+          }));
+          setAnnouncements(mapped);
+        }
+      })
+      .catch((err) => console.warn('Could not load announcements:', err));
+  }, []);
+
   // ----------------------------------------------------
   // Category Handlers
   // ----------------------------------------------------
@@ -73,11 +108,16 @@ export default function SystemConfiguration({ onNavigate, showToast }) {
     setCategoryModalOpen(true);
   };
 
-  const handleSaveCategory = (e) => {
+  const handleSaveCategory = async (e) => {
     e.preventDefault();
     if (!categoryNameInput.trim()) return;
 
     if (editingCategory) {
+      try {
+        await adminApi.updateCategory(editingCategory.id, { name: categoryNameInput.trim() });
+      } catch (err) {
+        console.warn('API updateCategory error:', err);
+      }
       setCategories((prev) =>
         prev.map((c) =>
           c.id === editingCategory.id ? { ...c, name: categoryNameInput.trim() } : c
@@ -85,8 +125,15 @@ export default function SystemConfiguration({ onNavigate, showToast }) {
       );
       showToast?.(`Category updated to "${categoryNameInput.trim()}".`);
     } else {
+      let createdId = Date.now();
+      try {
+        const res = await adminApi.createCategory({ name: categoryNameInput.trim(), is_active: true });
+        if (res?.data?.id) createdId = res.data.id;
+      } catch (err) {
+        console.warn('API createCategory error:', err);
+      }
       const newCat = {
-        id: Date.now(),
+        id: createdId,
         name: categoryNameInput.trim(),
         icon: 'category',
         count: 0,
@@ -100,8 +147,13 @@ export default function SystemConfiguration({ onNavigate, showToast }) {
     setCategoryNameInput('');
   };
 
-  const handleConfirmDeleteCategory = () => {
+  const handleConfirmDeleteCategory = async () => {
     if (!deleteCategoryItem) return;
+    try {
+      await adminApi.deleteCategory(deleteCategoryItem.id);
+    } catch (err) {
+      console.warn('API deleteCategory error:', err);
+    }
     setCategories((prev) => prev.filter((c) => c.id !== deleteCategoryItem.id));
     showToast?.(`Category "${deleteCategoryItem.name}" deleted.`);
     setDeleteCategoryItem(null);
@@ -132,14 +184,27 @@ export default function SystemConfiguration({ onNavigate, showToast }) {
     setAnnouncementModalOpen(true);
   };
 
-  const handleSaveAnnouncement = (e) => {
+  const handleSaveAnnouncement = async (e) => {
     e.preventDefault();
     if (!announcementForm.title.trim() || !announcementForm.message.trim()) {
       showToast?.('Please fill out both title and message.');
       return;
     }
 
+    const payload = {
+      title: announcementForm.title.trim(),
+      content: announcementForm.message.trim(),
+      audience: announcementForm.audience,
+      is_active: announcementForm.publishImmediately,
+      type: 'General Notice'
+    };
+
     if (editingAnnouncement) {
+      try {
+        await adminApi.updateAnnouncement(editingAnnouncement.id, payload);
+      } catch (err) {
+        console.warn('API updateAnnouncement error:', err);
+      }
       setAnnouncements((prev) =>
         prev.map((a) =>
           a.id === editingAnnouncement.id
@@ -155,8 +220,15 @@ export default function SystemConfiguration({ onNavigate, showToast }) {
       );
       showToast?.(`Announcement "${announcementForm.title.trim()}" updated.`);
     } else {
+      let createdId = Date.now();
+      try {
+        const res = await adminApi.createAnnouncement(payload);
+        if (res?.data?.id) createdId = res.data.id;
+      } catch (err) {
+        console.warn('API createAnnouncement error:', err);
+      }
       const newPost = {
-        id: Date.now(),
+        id: createdId,
         title: announcementForm.title.trim(),
         message: announcementForm.message.trim(),
         date: 'Today',
@@ -170,11 +242,17 @@ export default function SystemConfiguration({ onNavigate, showToast }) {
     setAnnouncementModalOpen(false);
   };
 
-  const handleToggleAnnouncementActive = (id) => {
+  const handleToggleAnnouncementActive = async (id) => {
+    const target = announcements.find((a) => a.id === id);
+    const next = !target?.active;
+    try {
+      await adminApi.updateAnnouncement(id, { is_active: next });
+    } catch (err) {
+      console.warn('API toggle announcement error:', err);
+    }
     setAnnouncements((prev) =>
       prev.map((a) => {
         if (a.id === id) {
-          const next = !a.active;
           showToast?.(`Announcement "${a.title}" is now ${next ? 'Active' : 'Inactive'}.`);
           return { ...a, active: next };
         }
@@ -183,8 +261,13 @@ export default function SystemConfiguration({ onNavigate, showToast }) {
     );
   };
 
-  const handleConfirmDeleteAnnouncement = () => {
+  const handleConfirmDeleteAnnouncement = async () => {
     if (!deleteAnnouncementItem) return;
+    try {
+      await adminApi.deleteAnnouncement(deleteAnnouncementItem.id);
+    } catch (err) {
+      console.warn('API deleteAnnouncement error:', err);
+    }
     setAnnouncements((prev) => prev.filter((a) => a.id !== deleteAnnouncementItem.id));
     showToast?.(`Announcement "${deleteAnnouncementItem.title}" deleted.`);
     setDeleteAnnouncementItem(null);

@@ -1,5 +1,6 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { DIRECTORY_MARKETS } from '../data/mockData';
+import browseApi from '../api/browse';
 
 export default function MarketsDirectory({ onNavigate, onReserveForMarket }) {
   const [searchTerm, setSearchTerm] = useState('');
@@ -12,6 +13,46 @@ export default function MarketsDirectory({ onNavigate, onReserveForMarket }) {
   const [selectedMarketId, setSelectedMarketId] = useState(1);
   const [popupVisible, setPopupVisible] = useState(true);
   const [mapZoom, setMapZoom] = useState(1);
+  const [mapMode, setMapMode] = useState('osm'); // 'osm' | 'stylized'
+  const [liveMarkets, setLiveMarkets] = useState([]);
+
+  useEffect(() => {
+    let mounted = true;
+    browseApi.getMarkets().then((res) => {
+      if (mounted && res.data && res.data.length > 0) {
+        setLiveMarkets(res.data);
+      }
+    }).catch(() => {});
+    return () => { mounted = false; };
+  }, []);
+
+  // Merged markets dataset (live from backend with mock fallback)
+  const allMarkets = useMemo(() => {
+    if (liveMarkets.length === 0) return DIRECTORY_MARKETS;
+    return liveMarkets.map((m, idx) => ({
+      id: m.id,
+      title: m.market_name,
+      address: m.address,
+      latitude: m.latitude || 37.7833,
+      longitude: m.longitude || -122.4166,
+      region: 'Central Downtown',
+      schedule: `${Array.isArray(m.operating_days) ? m.operating_days.join(', ') : m.operating_days} • ${m.timings}`,
+      hours: m.timings,
+      day: Array.isArray(m.operating_days) ? m.operating_days[0]?.toLowerCase() : (m.operating_days || '').toLowerCase(),
+      growers: `${m.farmers_count || m.farmers?.length || 10}+ Certified Local Growers`,
+      distance: `${(0.8 + idx * 1.4).toFixed(1)} miles away`,
+      numBadge: m.id,
+      numBadgeClass: idx === 0 ? 'bg-primary text-on-primary' : 'bg-surface-container text-on-surface',
+      tags: ['Certified Local', 'EBT/SNAP', 'Family Friendly'],
+      features: ['ebt', 'dog-friendly', 'live-music'],
+      pinLeft: `${25 + (idx * 30) % 55}%`,
+      pinTop: `${20 + (idx * 25) % 55}%`,
+      key: m.id === 1 ? 'downtown' : `market-${m.id}`,
+      pickupWindow: m.timings,
+      parkingBadge: 'Street & Parking Garage Available',
+      farmers: m.farmers || [],
+    }));
+  }, [liveMarkets]);
 
   // Filter chips list
   const chips = [
@@ -25,11 +66,11 @@ export default function MarketsDirectory({ onNavigate, onReserveForMarket }) {
 
   // Filtering logic
   const filteredMarkets = useMemo(() => {
-    return DIRECTORY_MARKETS.filter((m) => {
+    return allMarkets.filter((m) => {
       // Search term
       if (searchTerm.trim()) {
         const q = searchTerm.toLowerCase();
-        const text = `${m.title} ${m.address} ${m.region} ${m.tags.join(' ')}`.toLowerCase();
+        const text = `${m.title} ${m.address} ${m.region} ${(m.tags || []).join(' ')}`.toLowerCase();
         if (!text.includes(q)) return false;
       }
 
@@ -40,21 +81,22 @@ export default function MarketsDirectory({ onNavigate, onReserveForMarket }) {
 
       // Day dropdown
       if (selectedDay !== 'all') {
-        if (selectedDay === 'saturday' && m.day !== 'saturday') return false;
-        if (selectedDay === 'sunday' && m.day !== 'sunday') return false;
-        if (selectedDay === 'wednesday' && m.day !== 'wednesday') return false;
+        const scheduleStr = (m.schedule || '').toLowerCase();
+        if (selectedDay === 'saturday' && !scheduleStr.includes('saturday')) return false;
+        if (selectedDay === 'sunday' && !scheduleStr.includes('sunday')) return false;
+        if (selectedDay === 'wednesday' && !scheduleStr.includes('wednesday')) return false;
       }
 
       // Filter chip
-      if (activeChip === 'saturday' && m.day !== 'saturday') return false;
-      if (activeChip === 'sunday' && m.day !== 'sunday') return false;
-      if (activeChip === 'midweek' && m.day !== 'wednesday') return false;
+      if (activeChip === 'saturday' && !(m.schedule || '').toLowerCase().includes('saturday')) return false;
+      if (activeChip === 'sunday' && !(m.schedule || '').toLowerCase().includes('sunday')) return false;
+      if (activeChip === 'midweek' && !(m.schedule || '').toLowerCase().includes('wednesday') && !(m.schedule || '').toLowerCase().includes('thursday')) return false;
       if (activeChip === 'dog-friendly' && !m.features?.includes('dog-friendly')) return false;
       if (activeChip === 'ebt' && !m.features?.includes('ebt')) return false;
 
       return true;
     });
-  }, [searchTerm, activeChip, selectedRegion, selectedDay]);
+  }, [allMarkets, searchTerm, activeChip, selectedRegion, selectedDay]);
 
   const handleResetFilters = () => {
     setSearchTerm('');
@@ -70,7 +112,7 @@ export default function MarketsDirectory({ onNavigate, onReserveForMarket }) {
   };
 
   // Currently active market for the map popup
-  const activeMarket = DIRECTORY_MARKETS.find((m) => m.id === selectedMarketId) || DIRECTORY_MARKETS[0];
+  const activeMarket = allMarkets.find((m) => m.id === selectedMarketId) || allMarkets[0];
 
   return (
     <div className="w-full flex flex-col">
@@ -406,7 +448,17 @@ export default function MarketsDirectory({ onNavigate, onReserveForMarket }) {
                   </h3>
                   <p className="font-label-sm text-on-surface-variant text-xs">Click pins to inspect location details</p>
                 </div>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={() => setMapMode((m) => m === 'osm' ? 'stylized' : 'osm')}
+                    className="text-[11px] px-2.5 py-1 rounded-full bg-surface text-primary border border-primary/40 font-bold hover:bg-surface-container flex items-center gap-1 cursor-pointer transition-colors"
+                    title="Toggle between OpenStreetMap and Stylized Map"
+                  >
+                    <span className="material-symbols-outlined text-[14px]">
+                      {mapMode === 'osm' ? 'schema' : 'public'}
+                    </span>
+                    <span>{mapMode === 'osm' ? 'Stylized' : 'OpenStreetMap'}</span>
+                  </button>
                   <button
                     onClick={() => setMapZoom((z) => Math.min(z + 0.15, 1.45))}
                     className="w-8 h-8 rounded-lg bg-surface flex items-center justify-center text-on-surface shadow-sm hover:bg-surface-container transition-colors cursor-pointer"
@@ -435,7 +487,30 @@ export default function MarketsDirectory({ onNavigate, onReserveForMarket }) {
                 </div>
               </div>
 
-              {/* Stylized Map Canvas with Topographic & Street Visuals */}
+              {/* Conditional Map View: Live OpenStreetMap or Stylized Vector Canvas */}
+              {mapMode === 'osm' ? (
+                <div className="relative w-full h-[520px] bg-surface-container-low overflow-hidden select-none">
+                  <iframe
+                    title="OpenStreetMap"
+                    className="w-full h-full border-0"
+                    src={`https://www.openstreetmap.org/export/embed.html?bbox=${Number(activeMarket.longitude || -122.4166) - 0.02}%2C${Number(activeMarket.latitude || 37.7833) - 0.02}%2C${Number(activeMarket.longitude || -122.4166) + 0.02}%2C${Number(activeMarket.latitude || 37.7833) + 0.02}&layer=mapnik&marker=${activeMarket.latitude || 37.7833}%2C${activeMarket.longitude || -122.4166}`}
+                  />
+                  <div className="absolute bottom-3 left-3 right-3 bg-surface/95 backdrop-blur-md p-3 rounded-xl border border-outline-variant/40 shadow-lg text-xs flex items-center justify-between z-10">
+                    <div className="min-w-0 pr-2">
+                      <span className="font-bold text-on-surface block truncate">{activeMarket.title}</span>
+                      <span className="text-on-surface-variant text-[11px] block truncate">
+                        {activeMarket.address} &bull; GPS: {Number(activeMarket.latitude || 37.7833).toFixed(4)}, {Number(activeMarket.longitude || -122.4166).toFixed(4)}
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => onNavigate('market-details', activeMarket.id)}
+                      className="px-3 py-1.5 rounded-lg bg-primary text-on-primary font-bold text-xs hover:bg-primary-container shrink-0 cursor-pointer"
+                    >
+                      View Details
+                    </button>
+                  </div>
+                </div>
+              ) : (
               <div
                 id="mapCanvas"
                 className="relative w-full h-[520px] bg-[#E7EBDD] overflow-hidden select-none transition-transform duration-200"
@@ -460,16 +535,16 @@ export default function MarketsDirectory({ onNavigate, onReserveForMarket }) {
                 </svg>
 
                 {/* Map Pins */}
-                {DIRECTORY_MARKETS.map((m) => {
+                {allMarkets.map((m) => {
                   const isSelected = selectedMarketId === m.id;
-                  const isWednesday = m.day === 'wednesday';
+                  const isWednesday = (m.schedule || '').toLowerCase().includes('wednesday');
                   const isPrimary = m.id === 1;
 
                   return (
                     <button
                       key={m.id}
                       onClick={() => handlePinClick(m.id)}
-                      style={{ top: m.mapPos.top, left: m.mapPos.left }}
+                      style={{ top: m.mapPos?.top || m.pinTop, left: m.mapPos?.left || m.pinLeft }}
                       className={`map-pin absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center group cursor-pointer focus:outline-none transition-transform ${
                         isSelected ? 'scale-110 z-30' : 'z-10'
                       }`}
@@ -574,6 +649,7 @@ export default function MarketsDirectory({ onNavigate, onReserveForMarket }) {
                   Map: Regional Agro-Directory Canvas
                 </div>
               </div>
+              )}
             </div>
 
             {/* In-Person Reminder Card */}
