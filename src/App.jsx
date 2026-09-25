@@ -21,12 +21,21 @@ import ProductsCatalog from './components/ProductsCatalog';
 import ProductDetails from './components/ProductDetails';
 import AboutUs from './components/AboutUs';
 import LoginPage from './components/LoginPage';
+import RegisterPage from './components/RegisterPage';
+import NotFoundPage from './components/NotFoundPage';
+import ContactPage from './components/ContactPage';
+import AdminDashboard from './components/AdminDashboard';
+import FarmerDashboard from './components/FarmerDashboard';
+import CustomerDashboard from './components/CustomerDashboard';
 import Footer from './components/Footer';
 
 import { INITIAL_PRODUCTS, MARKETS } from './data/mockData';
 
 export default function App() {
-  const [currentView, setCurrentView] = useState('login'); // 'login' | 'about-us' | 'home' | 'markets' | 'market-details' | 'farmer-profile' | 'products' | 'product-details'
+  const [currentView, setCurrentView] = useState(() => {
+    const hash = typeof window !== 'undefined' ? window.location.hash.replace('#', '') : '';
+    return hash || 'admin';
+  }); // 'admin' | 'dashboard' | 'contact-us' | '404' | 'register' | 'login' | 'about-us' | 'home' | 'markets' | 'market-details' | 'farmer-profile' | 'products' | 'product-details'
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDay, setSelectedDay] = useState('any');
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -42,7 +51,51 @@ export default function App() {
   useEffect(() => {
     const handleHash = () => {
       const hash = window.location.hash.replace('#', '');
-      if (hash === 'login') {
+      if (hash === 'admin' || hash === 'dashboard') {
+        setCurrentView('admin');
+      } else if (
+        hash === 'admin-farmers' ||
+        hash === 'admin-customers' ||
+        hash === 'admin-markets' ||
+        hash === 'admin-moderation' ||
+        hash === 'admin-reports' ||
+        hash === 'admin-settings'
+      ) {
+        setCurrentView(hash);
+      } else if (
+        hash === 'farmer-dashboard' ||
+        hash === 'farmer-portal' ||
+        hash === 'farmer' ||
+        hash === 'farmer-products' ||
+        hash === 'farmer-stock' ||
+        hash === 'farmer-pre-orders' ||
+        hash === 'farmer-reviews' ||
+        hash === 'farmer-settings'
+      ) {
+        setCurrentView(hash);
+      } else if (
+        hash === 'customer-dashboard' ||
+        hash === 'customer-portal' ||
+        hash === 'customer' ||
+        hash === 'customer-orders' ||
+        hash === 'my-orders' ||
+        hash === 'customer-cart' ||
+        hash === 'cart' ||
+        hash === 'customer-favorites' ||
+        hash === 'favorites' ||
+        hash === 'customer-reviews' ||
+        hash === 'my-reviews' ||
+        hash === 'customer-settings' ||
+        hash === 'profile-settings'
+      ) {
+        setCurrentView(hash);
+      } else if (hash === 'contact-us') {
+        setCurrentView('contact-us');
+      } else if (hash === '404' || hash === 'not-found') {
+        setCurrentView('404');
+      } else if (hash === 'register' || hash === 'register-farmer') {
+        setCurrentView('register');
+      } else if (hash === 'login') {
         setCurrentView('login');
       } else if (hash === 'about-us') {
         setCurrentView('about-us');
@@ -56,8 +109,8 @@ export default function App() {
         setCurrentView('market-details');
       } else if (hash.startsWith('markets')) {
         setCurrentView('markets');
-      } else if (hash === 'home' || hash === '') {
-        // preserve current or default
+      } else if (hash === 'home') {
+        setCurrentView('home');
       }
     };
     handleHash();
@@ -75,7 +128,19 @@ export default function App() {
 
   // Navigation Handler
   const handleNavigate = (viewOrSection) => {
-    if (viewOrSection === 'login') {
+    if (viewOrSection === 'admin' || viewOrSection === 'dashboard') {
+      setCurrentView('admin');
+      window.location.hash = '#admin';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else if (viewOrSection === '404' || viewOrSection === 'not-found') {
+      setCurrentView('404');
+      window.location.hash = '#404';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else if (viewOrSection === 'register' || viewOrSection === 'register-farmer') {
+      setCurrentView('register');
+      window.location.hash = '#register';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else if (viewOrSection === 'login') {
       setCurrentView('login');
       window.location.hash = '#login';
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -103,21 +168,45 @@ export default function App() {
       setCurrentView('markets');
       window.location.hash = '#markets';
       window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else if (
+      viewOrSection === 'customer-dashboard' ||
+      viewOrSection === 'customer-portal' ||
+      viewOrSection === 'customer' ||
+      viewOrSection === 'customer-orders' ||
+      viewOrSection === 'my-orders' ||
+      viewOrSection === 'customer-cart' ||
+      viewOrSection === 'cart' ||
+      viewOrSection === 'customer-favorites' ||
+      viewOrSection === 'favorites' ||
+      viewOrSection === 'customer-reviews' ||
+      viewOrSection === 'my-reviews' ||
+      viewOrSection === 'customer-settings' ||
+      viewOrSection === 'profile-settings'
+    ) {
+      setCurrentView(viewOrSection);
+      window.location.hash = `#${viewOrSection}`;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else if (
+      viewOrSection === 'farmer-dashboard' ||
+      viewOrSection === 'farmer-portal' ||
+      viewOrSection === 'farmer' ||
+      viewOrSection === 'farmer-products' ||
+      viewOrSection === 'farmer-stock' ||
+      viewOrSection === 'farmer-pre-orders' ||
+      viewOrSection === 'farmer-reviews' ||
+      viewOrSection === 'farmer-settings'
+    ) {
+      setCurrentView(viewOrSection);
+      window.location.hash = `#${viewOrSection}`;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } else if (viewOrSection === 'home') {
       setCurrentView('home');
       window.location.hash = '#home';
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else if (viewOrSection === 'contact-us') {
-      if (currentView !== 'home') {
-        setCurrentView('home');
-        setTimeout(() => {
-          const el = document.getElementById('contact-us');
-          if (el) el.scrollIntoView({ behavior: 'smooth' });
-        }, 100);
-      } else {
-        const el = document.getElementById('contact-us');
-        if (el) el.scrollIntoView({ behavior: 'smooth' });
-      }
+      setCurrentView('contact-us');
+      window.location.hash = '#contact-us';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } else if (viewOrSection === 'farmer-portal') {
       setAuthMode('farmer');
     }
@@ -199,6 +288,91 @@ export default function App() {
     }
   };
 
+  if (
+    currentView === 'admin' ||
+    currentView === 'dashboard' ||
+    currentView === 'admin-farmers' ||
+    currentView === 'admin-customers' ||
+    currentView === 'admin-markets' ||
+    currentView === 'admin-moderation' ||
+    currentView === 'admin-reports' ||
+    currentView === 'admin-settings'
+  ) {
+    const tab =
+      currentView === 'admin-markets'
+        ? 'markets'
+        : currentView === 'admin-customers'
+        ? 'customers'
+        : currentView === 'admin-moderation'
+        ? 'moderation'
+        : currentView === 'admin-reports'
+        ? 'reports'
+        : currentView === 'admin-settings'
+        ? 'settings'
+        : currentView === 'admin-farmers'
+        ? 'farmers'
+        : 'dashboard';
+
+    return <AdminDashboard onNavigate={handleNavigate} initialTab={tab} />;
+  }
+
+  if (
+    currentView === 'farmer-dashboard' ||
+    currentView === 'farmer-portal' ||
+    currentView === 'farmer' ||
+    currentView === 'farmer-products' ||
+    currentView === 'farmer-stock' ||
+    currentView === 'farmer-pre-orders' ||
+    currentView === 'farmer-reviews' ||
+    currentView === 'farmer-settings'
+  ) {
+    const tab =
+      currentView === 'farmer-products'
+        ? 'products'
+        : currentView === 'farmer-stock'
+        ? 'stock-template'
+        : currentView === 'farmer-pre-orders'
+        ? 'pre-orders'
+        : currentView === 'farmer-reviews'
+        ? 'reviews'
+        : currentView === 'farmer-settings'
+        ? 'settings'
+        : 'dashboard';
+
+    return <FarmerDashboard onNavigate={handleNavigate} initialTab={tab} />;
+  }
+
+  if (
+    currentView === 'customer-dashboard' ||
+    currentView === 'customer-portal' ||
+    currentView === 'customer' ||
+    currentView === 'customer-orders' ||
+    currentView === 'my-orders' ||
+    currentView === 'customer-cart' ||
+    currentView === 'cart' ||
+    currentView === 'customer-favorites' ||
+    currentView === 'favorites' ||
+    currentView === 'customer-reviews' ||
+    currentView === 'my-reviews' ||
+    currentView === 'customer-settings' ||
+    currentView === 'profile-settings'
+  ) {
+    const tab =
+      currentView === 'customer-orders' || currentView === 'my-orders'
+        ? 'orders'
+        : currentView === 'customer-cart' || currentView === 'cart'
+        ? 'cart'
+        : currentView === 'customer-favorites' || currentView === 'favorites'
+        ? 'favorites'
+        : currentView === 'customer-reviews' || currentView === 'my-reviews'
+        ? 'reviews'
+        : currentView === 'customer-settings' || currentView === 'profile-settings'
+        ? 'settings'
+        : 'dashboard';
+
+    return <CustomerDashboard onNavigate={handleNavigate} initialTab={tab} />;
+  }
+
   return (
     <div className="w-full min-h-screen bg-surface font-body-md text-on-surface antialiased flex flex-col">
       {/* Toast Alert */}
@@ -238,11 +412,29 @@ export default function App() {
 
       {/* Main Page Body */}
       <main className="w-full pt-20 bg-surface flex-1">
-        {currentView === 'login' ? (
+        {currentView === 'contact-us' ? (
+          /* DEDICATED CONTACT US PAGE */
+          <ContactPage onNavigate={handleNavigate} />
+        ) : currentView === '404' ? (
+          /* DEDICATED 404 CROP NOT FOUND ERROR PAGE */
+          <NotFoundPage
+            onNavigate={handleNavigate}
+            onSearch={handleSearch}
+            onOpenFarmerPortal={() => setAuthMode('farmer')}
+          />
+        ) : currentView === 'register' ? (
+          /* DEDICATED SHOPPER & FARMER REGISTRATION PAGE */
+          <RegisterPage
+            onNavigate={handleNavigate}
+            onRegisterSuccess={(user) => {
+              showToast(`🌾 Welcome ${user.name}! Your free ${user.role} account is now active.`);
+            }}
+          />
+        ) : currentView === 'login' ? (
           /* DEDICATED COMMUNITY LOGIN PAGE */
           <LoginPage
             onNavigate={handleNavigate}
-            onOpenRegister={() => setAuthMode('register')}
+            onOpenRegister={() => handleNavigate('register')}
             onLoginSuccess={(user) => {
               showToast(`Welcome back, ${user.name}! Signed in as verified ${user.role}.`);
             }}
@@ -251,7 +443,7 @@ export default function App() {
           /* ABOUT US PAGE (Exact match to User Request) */
           <AboutUs
             onNavigate={handleNavigate}
-            onOpenRegister={() => setAuthMode('register')}
+            onOpenRegister={() => handleNavigate('register')}
             onOpenFarmerPortal={() => setAuthMode('farmer')}
           />
         ) : currentView === 'product-details' ? (
@@ -403,6 +595,11 @@ export default function App() {
           onClose={() => setAuthMode(null)}
           onLoginSuccess={(user) => {
             showToast(`Welcome ${user.name}! Signed in as ${user.role}.`);
+            if (user.role === 'Shopper') {
+              handleNavigate('customer-dashboard');
+            } else if (user.role === 'Farmer Vendor') {
+              handleNavigate('farmer-dashboard');
+            }
           }}
         />
       )}

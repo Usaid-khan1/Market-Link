@@ -95,16 +95,37 @@ export default function Navbar({ currentView, onNavigate, onOpenAuth, onFocusSea
           </button>
 
           <button 
-            onClick={() => onOpenAuth('register')}
-            className="inline-flex items-center justify-center font-label-md text-on-tertiary bg-tertiary-container hover:bg-tertiary px-space-md py-space-xs rounded-full shadow-[0_2px_8px_rgba(46,107,58,0.12)] transition-colors cursor-pointer active:scale-95"
+            onClick={() => onNavigate('register')}
+            className={`inline-flex items-center justify-center font-label-md px-space-md py-space-xs rounded-full shadow-[0_2px_8px_rgba(46,107,58,0.12)] transition-colors cursor-pointer active:scale-95 ${
+              currentView === 'register' ? 'bg-tertiary text-on-tertiary ring-2 ring-primary-container font-bold' : 'text-on-tertiary bg-tertiary-container hover:bg-tertiary'
+            }`}
           >
             Register
           </button>
 
           <button 
-            onClick={() => onOpenAuth('profile')}
-            aria-label="User Profile"
-            className="w-8 h-8 rounded-full bg-primary flex items-center justify-center ml-space-xs text-on-primary hover:bg-primary-container transition-colors cursor-pointer"
+            onClick={() => onNavigate('customer-dashboard')}
+            aria-label="Customer Portal"
+            title="Open Customer Dashboard (Elena Rostova)"
+            className="w-8 h-8 rounded-full bg-[#E6F0E1] flex items-center justify-center text-[#2E6B3A] hover:bg-[#8BC34A] hover:text-[#222] transition-colors cursor-pointer active:scale-95 font-bold text-xs"
+          >
+            <span className="material-symbols-outlined text-[18px]">shopping_bag</span>
+          </button>
+
+          <button 
+            onClick={() => onNavigate('farmer-dashboard')}
+            aria-label="Farmer Portal"
+            title="Open Farmer Dashboard (Green Pastures Organic)"
+            className="w-8 h-8 rounded-full bg-secondary-fixed flex items-center justify-center text-on-secondary-fixed-variant hover:bg-secondary-fixed-dim transition-colors cursor-pointer active:scale-95"
+          >
+            <span className="material-symbols-outlined text-[18px]">agriculture</span>
+          </button>
+
+          <button 
+            onClick={() => onNavigate('admin')}
+            aria-label="Admin Portal"
+            title="Open Admin Portal (Super Admin)"
+            className="w-8 h-8 rounded-full bg-primary flex items-center justify-center ml-space-xs text-on-primary hover:bg-primary-container transition-colors cursor-pointer active:scale-95"
           >
             <span className="material-symbols-outlined text-on-primary text-[18px]">person</span>
           </button>
@@ -145,7 +166,7 @@ export default function Navbar({ currentView, onNavigate, onOpenAuth, onFocusSea
                 Log In
               </button>
               <button 
-                onClick={() => { onOpenAuth('register'); setMobileMenuOpen(false); }}
+                onClick={() => { onNavigate('register'); setMobileMenuOpen(false); }}
                 className="text-center font-label-md text-on-tertiary bg-tertiary-container hover:bg-tertiary py-space-xs rounded-full shadow-sm cursor-pointer"
               >
                 Register

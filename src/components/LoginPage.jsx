@@ -17,11 +17,11 @@ export default function LoginPage({ onNavigate, onLoginSuccess, onOpenRegister }
       setTimeout(() => {
         if (onLoginSuccess) {
           onLoginSuccess({
-            name: email.split('@')[0] || 'Community Member',
+            name: email.split('@')[0] || 'Elena Rostova',
             role: 'Shopper'
           });
         }
-        onNavigate('home');
+        onNavigate('customer-dashboard');
       }, 1000);
     }, 1200);
   };

@@ -102,10 +102,16 @@ export default function Footer({ onNavigate, onOpenPartnerModal }) {
             Pickup Guidelines
           </button>
           <button
-            onClick={onOpenPartnerModal}
+            onClick={() => onNavigate('farmer-dashboard')}
             className="text-left font-body-sm text-on-surface-variant hover:text-primary transition-colors cursor-pointer"
           >
-            Farmer Partner Portal
+            Farmer Partner Portal (Dashboard)
+          </button>
+          <button
+            onClick={() => onNavigate('admin')}
+            className="text-left font-body-sm text-on-surface-variant hover:text-primary transition-colors cursor-pointer"
+          >
+            Admin Portal (Hannah Vance)
           </button>
           <button
             onClick={() => onNavigate('contact-us')}
