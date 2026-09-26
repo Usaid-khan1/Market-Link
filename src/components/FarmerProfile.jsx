@@ -338,7 +338,7 @@ export default function FarmerProfile({ farmerId = 2, onNavigate, onReserveProdu
               </div>
 
               {/* Filter Chips Bar */}
-              <div className="flex items-center gap-space-xs overflow-x-auto pb-space-xs scrollbar-none" id="category-filter-bar">
+              <div className="flex flex-wrap items-center gap-2 pb-1" id="category-filter-bar">
                 {[
                   { id: 'all', label: 'All Harvest (6)' },
                   { id: 'tomatoes', label: 'Heirloom Tomatoes' },
@@ -735,7 +735,7 @@ export default function FarmerProfile({ farmerId = 2, onNavigate, onReserveProdu
             {/* Card C: Farmer Practices & Certifications */}
             <div className="bg-surface-container-lowest rounded-xl p-space-md shadow-sm border border-outline-variant/30">
               <div className="flex items-center gap-space-xs mb-space-sm">
-                <span className="material-symbols-outlined text-secondary text-[22px]">psychiatry</span>
+                <span className="material-symbols-outlined text-secondary text-[22px]">eco</span>
                 <h3 className="font-headline-sm text-on-surface font-semibold text-base">Growing Practices</h3>
               </div>
               <div className="flex flex-col gap-space-sm text-xs">

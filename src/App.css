@@ -1,1 +1,4 @@
-/* App specific utilities */
+/* App-level styles */
+* {
+  box-sizing: border-box;
+}

@@ -857,7 +857,7 @@ export default function MarketDetails({ marketId = 1, onNavigate, onReserveProdu
           <div className="bg-primary text-on-primary rounded-xl p-space-lg shadow-md relative overflow-hidden">
             {/* Decorative subtle leaf background SVG icon */}
             <div className="absolute right-4 -bottom-6 opacity-10 pointer-events-none">
-              <span className="material-symbols-outlined text-[220px]">psychiatry</span>
+              <span className="material-symbols-outlined text-[220px]">eco</span>
             </div>
 
             <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-space-lg items-center">
@@ -877,7 +877,7 @@ export default function MarketDetails({ marketId = 1, onNavigate, onReserveProdu
                     </div>
                   </div>
                   <div className="flex items-start gap-space-xs">
-                    <span className="material-symbols-outlined text-secondary-fixed text-[22px] mt-0.5">psychiatry</span>
+                    <span className="material-symbols-outlined text-secondary-fixed text-[22px] mt-0.5">eco</span>
                     <div>
                       <p className="font-label-md text-on-primary">Master Gardener Soil Testing</p>
                       <p className="font-body-sm text-primary-fixed-dim text-xs">Desk near Stall #1: Bring 1 cup dry garden soil for free pH test.</p>

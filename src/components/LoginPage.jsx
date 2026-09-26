@@ -21,19 +21,12 @@ export default function LoginPage({ onNavigate, onLoginSuccess, onOpenRegister }
       const authData = await login({ email, password });
       setIsLoading(false);
       setLoginFeedback(`Welcome back, ${authData.user.name}!`);
-
-      if (onLoginSuccess) {
-        onLoginSuccess(authData.user);
-      }
+      if (onLoginSuccess) onLoginSuccess(authData.user);
 
       setTimeout(() => {
-        if (authData.user.role === 'admin') {
-          onNavigate('admin');
-        } else if (authData.user.role === 'farmer') {
-          onNavigate('farmer-dashboard');
-        } else {
-          onNavigate('customer-dashboard');
-        }
+        if (authData.user.role === 'admin') onNavigate('admin');
+        else if (authData.user.role === 'farmer') onNavigate('farmer-dashboard');
+        else onNavigate('customer-dashboard');
       }, 600);
     } catch (err) {
       setIsLoading(false);
@@ -41,97 +34,94 @@ export default function LoginPage({ onNavigate, onLoginSuccess, onOpenRegister }
     }
   };
 
+  const quickRoles = [
+    { icon: 'shopping_bag', label: 'Shopper', color: 'bg-primary/8 text-primary border-primary/20' },
+    { icon: 'agriculture', label: 'Farmer', color: 'bg-secondary/8 text-secondary border-secondary/20' },
+    { icon: 'admin_panel_settings', label: 'Admin', color: 'bg-tertiary/8 text-tertiary border-tertiary/20' },
+  ];
+
   return (
     <div className="flex flex-col w-full">
-      {/* Breadcrumb Navigation */}
-      <div className="w-full max-w-7xl mx-auto px-gutter py-space-md">
-        <nav aria-label="Breadcrumb" className="flex items-center gap-space-xs font-body-sm text-on-surface-variant text-xs">
+      {/* Breadcrumb */}
+      <div className="w-full max-w-7xl mx-auto px-gutter py-4">
+        <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-xs text-on-surface-variant">
           <button
             type="button"
             onClick={() => onNavigate('home')}
-            className="hover:text-primary transition-colors flex items-center gap-space-xs cursor-pointer"
+            className="hover:text-primary transition-colors flex items-center gap-1.5 cursor-pointer font-semibold"
           >
-            <span className="material-symbols-outlined text-[16px]">storefront</span>
+            <span className="material-symbols-outlined text-[15px]">storefront</span>
             <span>Home</span>
           </button>
-          <span className="text-outline-variant font-bold">/</span>
-          <span className="text-primary font-label-sm font-bold">Community Login</span>
+          <span className="text-outline-variant">/</span>
+          <span className="text-primary font-bold">Community Login</span>
         </nav>
       </div>
 
-      {/* Main Login Card Section */}
-      <section className="w-full max-w-7xl mx-auto px-gutter pb-space-xl">
-        <div className="w-full bg-surface-container-lowest rounded-xl shadow-[0_12px_32px_rgba(34,34,34,0.06),0_4px_16px_rgba(46,107,58,0.05)] overflow-hidden grid grid-cols-1 lg:grid-cols-12 min-h-[680px] border border-outline-variant/30">
-          {/* Left Column (7 Cols) */}
-          <div className="lg:col-span-7 p-space-lg sm:p-space-xl flex flex-col justify-between">
+      {/* Main Login Section */}
+      <section className="w-full max-w-7xl mx-auto px-gutter pb-16">
+        <div
+          className="w-full rounded-3xl overflow-hidden grid grid-cols-1 lg:grid-cols-12 min-h-[700px] border border-outline-variant/20"
+          style={{ boxShadow: '0 24px 64px rgba(18,82,36,0.10), 0 8px 24px rgba(0,0,0,0.05)' }}
+        >
+          {/* Left Column: Form */}
+          <div className="lg:col-span-7 p-8 sm:p-12 flex flex-col justify-between bg-white">
             <div>
-              {/* Brand and Security Badge */}
-              <div className="flex items-center justify-between gap-space-md pb-space-md">
-                <div className="flex items-center gap-space-sm">
-                  <img
-                    alt="MarketLink Logo"
-                    className="h-9 w-auto object-contain"
-                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuCFwAFs6oHB8haDF1tl4Mghi6ExChfSnMT0HUZ3KzWZpfwDZmxDa5chfAz9TvTulJs3Bdw8iGQW1Gc4oovdfiDiFEAQ2AO__M63AeCprLWKXqNVfLMk-S8LaCZ1H-W0t-rB7U0Um8AXbt_zaXYass_8WIcTnOZZYWvQ2v_QvDSCkLFil8Bz8fkKvh0QKUHosXk5Ci9tCGYU9VbtwxlCDxU2nQ6f2Mk3PQVbgOKaADFK9ehQy4lbyNr9"
-                  />
-                  <span className="font-headline-sm text-primary tracking-tight font-bold">MarketLink</span>
+              {/* Brand + Security Badge */}
+              <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#092813] to-[#125224] border border-primary/20 flex items-center justify-center shadow-md">
+                    <span className="material-symbols-outlined text-secondary-fixed text-[22px]">eco</span>
+                  </div>
+                  <span className="font-headline-sm text-primary tracking-tight font-black">MarketLink</span>
                 </div>
-                <span className="inline-flex items-center gap-space-xs font-label-sm text-primary bg-surface-container px-space-sm py-space-xs rounded-full text-xs font-bold">
-                  <span className="w-2 h-2 rounded-full bg-primary-container animate-pulse"></span>
+                <span className="inline-flex items-center gap-1.5 font-bold text-primary bg-primary/8 px-3 py-1.5 rounded-full text-xs border border-primary/15">
+                  <span className="w-2 h-2 rounded-full bg-secondary-fixed animate-pulse" />
                   Secure Portal
                 </span>
               </div>
 
-              {/* Title & Introduction */}
-              <div className="mt-space-md">
-                <h1 className="font-headline-lg text-headline-lg text-on-surface font-bold">Welcome Back to the Market</h1>
-                <p className="font-body-md text-body-md text-on-surface-variant mt-space-xs leading-relaxed max-w-xl text-sm">
+              {/* Title */}
+              <div className="mb-8">
+                <h1 className="font-headline-lg text-on-surface font-black text-3xl mb-2">
+                  Welcome Back to{' '}
+                  <span className="hero-headline-gradient" style={{ backgroundSize: '200% auto' }}>the Market</span>
+                </h1>
+                <p className="text-on-surface-variant text-sm leading-relaxed">
                   One unified community login for shoppers, family farmers, artisans, and market volunteers.
                 </p>
               </div>
 
-              {/* Unified Account System Notice */}
-              <div className="mt-space-lg bg-surface-container-low p-space-md rounded-xl border border-outline-variant/30">
-                <div className="flex items-center justify-between gap-space-xs mb-space-xs text-xs">
-                  <span className="font-label-sm text-label-sm text-primary uppercase tracking-wider font-bold">
-                    Unified Account System
-                  </span>
-                  <span className="font-body-sm text-body-sm text-on-surface-variant">Auto-detected roles</span>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-space-xs text-on-surface font-label-sm text-label-sm text-xs">
-                  <div className="flex items-center gap-space-xs bg-surface-container-lowest px-space-sm py-space-xs rounded-lg shadow-sm border border-outline-variant/20">
-                    <span className="material-symbols-outlined text-primary text-[18px] fill">check_circle</span>
-                    <span>Shopper Basket</span>
+              {/* Role pills */}
+              <div className="flex items-center gap-2 mb-8">
+                {quickRoles.map((r, i) => (
+                  <div key={i} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold ${r.color}`}>
+                    <span className="material-symbols-outlined text-[14px]">{r.icon}</span>
+                    {r.label}
                   </div>
-                  <div className="flex items-center gap-space-xs bg-surface-container-lowest px-space-sm py-space-xs rounded-lg shadow-sm border border-outline-variant/20">
-                    <span className="material-symbols-outlined text-primary text-[18px] fill">agriculture</span>
-                    <span>Farmer Stall Desk</span>
-                  </div>
-                  <div className="flex items-center gap-space-xs bg-surface-container-lowest px-space-sm py-space-xs rounded-lg shadow-sm border border-outline-variant/20">
-                    <span className="material-symbols-outlined text-primary text-[18px] fill">volunteer_activism</span>
-                    <span>Coordinator Hub</span>
-                  </div>
-                </div>
-                <p className="font-body-sm text-body-sm text-on-surface-variant mt-space-xs italic text-[11px]">
-                  No separate portals needed — your account unlocks your verified community permissions automatically.
-                </p>
+                ))}
+                <span className="text-on-surface-variant text-xs">Auto-detected roles</span>
               </div>
 
-              {/* Form */}
-              <form onSubmit={handleSubmit} className="mt-space-lg flex flex-col gap-space-md">
-                {errorMessage && (
-                  <div className="bg-error-container/40 border border-error text-on-surface px-space-md py-space-sm rounded-xl text-xs flex items-center gap-space-xs">
+              {/* Error / Feedback */}
+              {errorMessage && (
+                <div className="mb-5 bg-error-container/30 border border-error/30 text-on-surface px-4 py-3 rounded-xl text-sm flex items-center gap-3 animate-fade-in">
+                  <div className="w-8 h-8 rounded-full bg-error/15 flex items-center justify-center flex-shrink-0">
                     <span className="material-symbols-outlined text-error text-[18px]">error</span>
-                    <span>{errorMessage}</span>
                   </div>
-                )}
+                  <span>{errorMessage}</span>
+                </div>
+              )}
+
+              {/* Form */}
+              <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+                {/* Email */}
                 <div>
-                  <label className="block font-label-md text-label-md text-on-surface mb-space-xs text-xs font-bold" htmlFor="email">
+                  <label className="block font-bold text-on-surface text-xs mb-2 uppercase tracking-wider" htmlFor="email">
                     Email Address
                   </label>
-                  <div className="relative flex items-center">
-                    <span className="material-symbols-outlined absolute left-space-md text-on-surface-variant text-[20px] pointer-events-none">
-                      mail
-                    </span>
+                  <div className="relative group">
+                    <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px] group-focus-within:text-primary transition-colors pointer-events-none">mail</span>
                     <input
                       id="email"
                       name="email"
@@ -140,29 +130,27 @@ export default function LoginPage({ onNavigate, onLoginSuccess, onOpenRegister }
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="name@domain.com"
-                      className="w-full font-body-md text-body-md text-on-surface pl-12 pr-space-md py-3 bg-surface-container-lowest rounded-xl outline-none shadow-sm focus:shadow-[0_0_0_3px_rgba(46,107,58,0.15)] focus:bg-surface-container-lowest transition-all text-sm"
-                      style={{ border: '1.5px solid #c0c9bd' }}
+                      className="w-full pl-12 pr-4 py-3.5 bg-surface-container-low border border-outline-variant/40 rounded-xl text-sm text-on-surface placeholder:text-outline/60 focus:outline-none focus:border-primary focus:bg-white focus:shadow-[0_0_0_3px_rgba(18,82,36,0.1)] transition-all"
                     />
                   </div>
                 </div>
 
+                {/* Password */}
                 <div>
-                  <div className="flex items-center justify-between mb-space-xs text-xs">
-                    <label className="block font-label-md text-label-md text-on-surface font-bold" htmlFor="password">
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="font-bold text-on-surface text-xs uppercase tracking-wider" htmlFor="password">
                       Password
                     </label>
                     <button
                       type="button"
                       onClick={() => alert('Password reset link sent to your registered email.')}
-                      className="font-label-sm text-label-sm text-primary hover:underline hover:text-primary-container transition-colors cursor-pointer"
+                      className="font-semibold text-primary hover:text-primary-container text-xs transition-colors cursor-pointer hover:underline"
                     >
                       Forgot password?
                     </button>
                   </div>
-                  <div className="relative flex items-center">
-                    <span className="material-symbols-outlined absolute left-space-md text-on-surface-variant text-[20px] pointer-events-none">
-                      lock
-                    </span>
+                  <div className="relative group">
+                    <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px] group-focus-within:text-primary transition-colors pointer-events-none">lock</span>
                     <input
                       id="password"
                       name="password"
@@ -171,49 +159,48 @@ export default function LoginPage({ onNavigate, onLoginSuccess, onOpenRegister }
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••••••"
-                      className="w-full font-body-md text-body-md text-on-surface pl-12 pr-12 py-3 bg-surface-container-lowest rounded-xl outline-none shadow-sm focus:shadow-[0_0_0_3px_rgba(46,107,58,0.15)] focus:bg-surface-container-lowest transition-all text-sm"
-                      style={{ border: '1.5px solid #c0c9bd' }}
+                      className="w-full pl-12 pr-12 py-3.5 bg-surface-container-low border border-outline-variant/40 rounded-xl text-sm text-on-surface placeholder:text-outline/60 focus:outline-none focus:border-primary focus:bg-white focus:shadow-[0_0_0_3px_rgba(18,82,36,0.1)] transition-all"
                     />
                     <button
                       type="button"
                       aria-label="Toggle password visibility"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-space-md text-on-surface-variant hover:text-primary transition-colors flex items-center justify-center p-1 cursor-pointer"
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-primary transition-colors p-0.5 cursor-pointer"
                     >
-                      <span className="material-symbols-outlined text-[20px]">
-                        {showPassword ? 'visibility_off' : 'visibility'}
-                      </span>
+                      <span className="material-symbols-outlined text-[20px]">{showPassword ? 'visibility_off' : 'visibility'}</span>
                     </button>
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between pt-space-xs text-xs">
-                  <label className="flex items-center gap-space-xs cursor-pointer select-none">
+                {/* Remember */}
+                <label className="flex items-center gap-3 cursor-pointer select-none group">
+                  <div className={`relative w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${rememberMe ? 'bg-primary border-primary' : 'border-outline-variant/60 group-hover:border-primary/40'}`}>
                     <input
                       type="checkbox"
                       checked={rememberMe}
                       onChange={(e) => setRememberMe(e.target.checked)}
-                      className="w-4 h-4 rounded text-primary focus:ring-primary-container accent-primary cursor-pointer"
+                      className="sr-only"
                     />
-                    <span className="font-body-sm text-body-sm text-on-surface-variant">
-                      Remember this browser on market mornings
-                    </span>
-                  </label>
-                </div>
+                    {rememberMe && <span className="material-symbols-outlined text-on-primary text-[14px]">check</span>}
+                  </div>
+                  <span className="text-on-surface-variant text-sm">Remember this browser on market mornings</span>
+                </label>
 
+                {/* Submit */}
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full mt-space-xs inline-flex items-center justify-center gap-space-sm font-label-lg text-label-lg text-on-tertiary bg-tertiary-container hover:bg-tertiary transition-all duration-200 py-3.5 px-space-lg rounded-xl shadow-[0_4px_16px_rgba(145,77,0,0.2)] active:scale-[0.99] cursor-pointer text-sm font-bold"
+                  className="w-full mt-1 inline-flex items-center justify-center gap-3 font-bold text-sm py-4 rounded-xl text-on-primary active:scale-[0.99] cursor-pointer transition-all duration-300 disabled:opacity-70 hover:-translate-y-0.5 hover:shadow-[0_12px_32px_rgba(18,82,36,0.3)]"
+                  style={{ background: 'linear-gradient(135deg, #125224, #2e6b3a)' }}
                 >
                   {isLoading ? (
                     <>
-                      <span className="material-symbols-outlined animate-spin text-[20px]">sync</span>
+                      <span className="material-symbols-outlined text-[20px] animate-spin">sync</span>
                       <span>Checking Community Credentials...</span>
                     </>
                   ) : loginFeedback ? (
                     <>
-                      <span className="material-symbols-outlined text-[20px]">check</span>
+                      <span className="material-symbols-outlined text-[20px]">check_circle</span>
                       <span>{loginFeedback}</span>
                     </>
                   ) : (
@@ -225,26 +212,26 @@ export default function LoginPage({ onNavigate, onLoginSuccess, onOpenRegister }
                 </button>
               </form>
 
-              {/* Guest Reservation Note */}
-              <div className="mt-space-md p-space-sm rounded-lg bg-surface-container-low flex items-start gap-space-sm border border-outline-variant/20">
-                <span className="material-symbols-outlined text-primary text-[20px] mt-0.5">local_florist</span>
+              {/* Guest note */}
+              <div className="mt-6 p-4 rounded-2xl bg-secondary-fixed/15 border border-secondary-fixed/20 flex items-start gap-3">
+                <span className="material-symbols-outlined text-secondary text-[22px] mt-0.5 flex-shrink-0">local_florist</span>
                 <div className="flex-1 text-xs">
-                  <p className="font-label-sm text-label-sm text-on-surface font-bold">First time reserving this week's harvest?</p>
-                  <p className="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
+                  <p className="font-bold text-on-surface mb-0.5">First time reserving this week's harvest?</p>
+                  <p className="text-on-surface-variant leading-relaxed">
                     Guest reservations are held with zero prepayment. You can pay cash or card directly to your grower at pickup.
                   </p>
                 </div>
               </div>
             </div>
 
-            {/* Bottom Footer Bar within Left Column */}
-            <div className="pt-space-lg mt-space-lg flex flex-col sm:flex-row items-center justify-between gap-space-sm bg-surface-container-low/60 -mx-space-lg sm:-mx-space-xl -mb-space-lg sm:-mb-space-xl p-space-md sm:px-space-xl border-t border-outline-variant/30 text-xs">
-              <p className="font-body-sm text-body-sm text-on-surface">
-                New to MarketLink? 
+            {/* Bottom strip */}
+            <div className="mt-8 pt-6 border-t border-outline-variant/20 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm">
+              <p className="text-on-surface">
+                New to MarketLink?{' '}
                 <button
                   type="button"
                   onClick={() => (onOpenRegister ? onOpenRegister() : onNavigate('home'))}
-                  className="font-label-md text-label-md text-primary hover:underline ml-1 font-bold cursor-pointer"
+                  className="font-bold text-primary hover:underline ml-1 cursor-pointer"
                 >
                   Create a free account
                 </button>
@@ -252,68 +239,93 @@ export default function LoginPage({ onNavigate, onLoginSuccess, onOpenRegister }
               <button
                 type="button"
                 onClick={() => onNavigate('contact-us')}
-                className="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1 cursor-pointer"
+                className="text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1.5 cursor-pointer text-xs"
               >
-                <span className="material-symbols-outlined text-[16px]">contact_support</span>
+                <span className="material-symbols-outlined text-[15px]">contact_support</span>
                 Need assistance?
               </button>
             </div>
           </div>
 
-          {/* Right Column with Image and Ambience (5 Cols) */}
-          <div className="lg:col-span-5 relative overflow-hidden bg-primary p-space-lg sm:p-space-xl flex flex-col justify-between text-on-primary">
-            {/* Background Image and Gradient */}
+          {/* Right Column: Visual */}
+          <div
+            className="lg:col-span-5 relative overflow-hidden flex flex-col justify-between p-8 sm:p-10"
+            style={{
+              background: 'linear-gradient(160deg, #0a3d1a 0%, #125224 50%, #2e6b3a 100%)',
+            }}
+          >
+            {/* Pattern overlay */}
+            <div
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 20px, rgba(255,255,255,0.02) 20px, rgba(255,255,255,0.02) 40px)',
+              }}
+            />
+            {/* Background Image */}
             <div className="absolute inset-0 z-0">
               <img
                 src="https://lh3.googleusercontent.com/aida-public/AB6AXuCQx4zeFxfkQfCV8xOtyyZoij6plMebMpWiMQvY0Kg3T8vHuk09xwO7vo_22BQvNoYeq_YRvdi7utwl8vHxbtP412xVeQFK3umSuyotszCOHOP0AN2kvx2l-YufXoO2OWcyysGeFWzc6XRg1nmgBCBeFyggVSTynzQpMyZBAtUvx4kUlKB78hSg3ohvSkC3Xbshswlg5jyW1758RMwFdsUB5EzRMDm6XQOKW_gN_FxCBqR8VHtEeUsk"
-                alt="Warm morning sunlight streaming across fresh organic farm harvest produce baskets"
-                className="w-full h-full object-cover mix-blend-multiply opacity-50 scale-105"
+                alt="Warm morning sunlight streaming across fresh organic farm harvest"
+                className="w-full h-full object-cover mix-blend-multiply opacity-30 scale-105"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-primary via-primary/70 to-primary/40"></div>
+              <div className="absolute inset-0 bg-gradient-to-t from-primary/90 via-primary/50 to-primary/20" />
             </div>
+
+            {/* Ambient glow */}
+            <div
+              className="absolute -right-20 -top-20 w-64 h-64 rounded-full pointer-events-none"
+              style={{ background: 'radial-gradient(circle, rgba(185,244,116,0.15) 0%, transparent 70%)' }}
+            />
 
             {/* Top Content */}
-            <div className="relative z-10 flex flex-col gap-space-md">
-              <div className="inline-flex items-center gap-space-xs bg-surface/20 backdrop-blur-md px-space-md py-space-xs rounded-full w-fit">
-                <span className="material-symbols-outlined text-secondary-fixed text-[18px]">verified_user</span>
-                <span className="font-label-sm text-label-sm text-surface-bright text-xs">Community Supported • 42+ Local Growers</span>
+            <div className="relative z-10">
+              <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md px-3 py-1.5 rounded-full w-fit mb-6">
+                <span className="material-symbols-outlined text-secondary-fixed text-[16px]">verified_user</span>
+                <span className="font-bold text-on-primary text-xs">Community Supported • 42+ Local Growers</span>
               </div>
-              <div className="mt-space-md">
-                <p className="font-headline-md text-headline-md leading-snug text-surface-bright font-bold">
-                  Fresh soil, morning dew, direct harvest handshake.
-                </p>
-                <p className="font-body-md text-body-md text-primary-fixed-dim mt-space-xs text-xs leading-relaxed">
-                  Every crop reserved through MarketLink comes straight from verified regional family lands within 50 miles of your neighborhood.
-                </p>
-              </div>
+
+              <h2 className="font-headline-md text-on-primary font-bold leading-snug mb-3">
+                Fresh soil, morning dew,{' '}
+                <span className="text-secondary-fixed">direct harvest handshake.</span>
+              </h2>
+              <p className="text-primary-fixed-dim text-sm leading-relaxed">
+                Every crop reserved through MarketLink comes straight from verified regional family lands within 50 miles of your neighborhood.
+              </p>
             </div>
 
-            {/* Bottom Content & Testimonial */}
-            <div className="relative z-10 flex flex-col gap-space-md mt-space-xl">
-              <div className="bg-surface-container-lowest/90 backdrop-blur-md p-space-md rounded-xl text-on-surface shadow-lg border border-white/20">
-                <div className="flex items-center gap-space-xs text-tertiary-container mb-space-xs">
-                  {[...Array(5)].map((_, i) => (
-                    <span key={i} className="material-symbols-outlined text-[18px] text-tertiary fill">star</span>
-                  ))}
-                </div>
-                <blockquote className="font-body-md text-body-md italic text-on-surface leading-snug text-xs">
-                  “Reserve Friday, inspect at the stall Saturday. 100% in-person settlement means no fees, zero food waste, and pure neighborhood trust.”
-                </blockquote>
-                <div className="mt-space-xs flex items-center justify-between text-xs pt-1 border-t border-outline-variant/20">
-                  <span className="font-label-sm text-label-sm text-primary font-bold">Clara Vance</span>
-                  <span className="font-body-sm text-body-sm text-on-surface-variant">Oak Valley Market Patron</span>
-                </div>
+            {/* Stats Row */}
+            <div className="relative z-10 flex flex-col gap-4 mt-8">
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { icon: 'eco', value: '42+', label: 'Farm Partners' },
+                  { icon: 'schedule', value: '< 24h', label: 'Harvest to Stall' },
+                  { icon: 'payments', value: '0%', label: 'Transaction Fee' },
+                  { icon: 'diversity_1', value: '4,800+', label: 'Monthly Crates' },
+                ].map((s, i) => (
+                  <div key={i} className="bg-white/8 backdrop-blur-md border border-white/10 rounded-2xl p-3 flex items-center gap-2">
+                    <span className="material-symbols-outlined text-secondary-fixed text-[18px] flex-shrink-0">{s.icon}</span>
+                    <div>
+                      <p className="font-black text-on-primary text-sm leading-none">{s.value}</p>
+                      <p className="text-primary-fixed-dim text-[10px] mt-0.5">{s.label}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
 
-              <div className="flex items-center justify-between text-surface-bright font-label-sm text-label-sm pt-space-xs text-xs">
-                <span className="flex items-center gap-1">
-                  <span className="material-symbols-outlined text-[18px] text-secondary-fixed">payments</span>
-                  Zero Transaction Markups
-                </span>
-                <span className="flex items-center gap-1">
-                  <span className="material-symbols-outlined text-[18px] text-secondary-fixed">handshake</span>
-                  Farm-to-Hand Pickup
-                </span>
+              {/* Testimonial */}
+              <div className="bg-white/10 backdrop-blur-md p-5 rounded-2xl border border-white/15">
+                <div className="flex items-center gap-1 mb-3">
+                  {[...Array(5)].map((_, i) => (
+                    <span key={i} className="material-symbols-outlined text-[15px] text-tertiary-fixed-dim fill">star</span>
+                  ))}
+                </div>
+                <blockquote className="text-on-primary italic text-sm leading-relaxed">
+                  "Reserve Friday, inspect at the stall Saturday. 100% in-person settlement means no fees, zero food waste, and pure neighborhood trust."
+                </blockquote>
+                <div className="mt-3 flex items-center justify-between text-xs pt-3 border-t border-white/10">
+                  <span className="font-bold text-secondary-fixed">Clara Vance</span>
+                  <span className="text-primary-fixed-dim">Oak Valley Market Patron</span>
+                </div>
               </div>
             </div>
           </div>

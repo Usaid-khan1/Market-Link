@@ -6,6 +6,7 @@ import ContentModeration from './ContentModeration';
 import ReportsAnalytics from './ReportsAnalytics';
 import SystemConfiguration from './SystemConfiguration';
 import adminApi from '../api/admin';
+import { DashboardSidebar, DashboardHeader, DashboardToast, StatCard, StatusBadge, DashboardTickerBanner } from './DashboardShell';
 
 export default function AdminDashboard({ onNavigate, initialTab = 'dashboard' }) {
   const [activeTab, setActiveTab] = useState(initialTab);
@@ -307,13 +308,8 @@ export default function AdminDashboard({ onNavigate, initialTab = 'dashboard' })
 
   return (
     <div className="w-full min-h-screen bg-surface font-body-md text-on-surface antialiased flex">
-      {/* Toast Notification Alert */}
-      {toastMessage && (
-        <div className="fixed bottom-6 right-6 bg-inverse-surface text-inverse-on-surface px-4 py-3 rounded-xl shadow-2xl flex items-center gap-2.5 z-50 animate-fade-in border border-white/10">
-          <span className="material-symbols-outlined text-primary-fixed text-[20px]">check_circle</span>
-          <span className="font-label-md text-label-md text-xs font-bold">{toastMessage}</span>
-        </div>
-      )}
+      {/* Premium Toast */}
+      <DashboardToast message={toastMessage} onClose={() => setToastMessage(null)} />
 
       {/* Mobile Sidebar Backdrop */}
       {mobileSidebarOpen && (
@@ -323,158 +319,78 @@ export default function AdminDashboard({ onNavigate, initialTab = 'dashboard' })
         ></div>
       )}
 
-      {/* LEFT SIDEBAR NAVIGATION */}
-      <aside
-        className={`fixed left-0 top-0 h-full w-64 bg-primary text-on-primary z-50 flex flex-col justify-between shadow-[0_1px_8px_rgba(0,0,0,0.04)] transition-transform duration-300 lg:translate-x-0 ${
-          mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
-      >
-        <div className="flex flex-col">
-          {/* Header & Logo */}
-          <div className="h-16 px-space-md flex items-center justify-between bg-primary border-b border-white/10">
-            <button
-              type="button"
-              onClick={() => onNavigate('home')}
-              className="flex items-center gap-space-sm text-left cursor-pointer group"
-            >
-              <img
-                alt="MarketLink Logo"
-                className="h-8 w-auto object-contain transition-transform group-hover:scale-105"
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuCFwAFs6oHB8haDF1tl4Mghi6ExChfSnMT0HUZ3KzWZpfwDZmxDa5chfAz9TvTulJs3Bdw8iGQW1Gc4oovdfiDiFEAQ2AO__M63AeCprLWKXqNVfLMk-S8LaCZ1H-W0t-rB7U0Um8AXbt_zaXYass_8WIcTnOZZYWvQ2v_QvDSCkLFil8Bz8fkKvh0QKUHosXk5Ci9tCGYU9VbtwxlCDxU2nQ6f2Mk3PQVbgOKaADFK9ehQy4lbyNr9"
-              />
-              <span className="font-headline-sm text-headline-sm text-on-primary font-bold">MarketLink</span>
-            </button>
-            <span className="px-space-xs py-0.5 rounded-full bg-primary-container text-on-primary-container font-label-sm text-[11px] uppercase tracking-wider font-bold">
-              Admin
-            </span>
-          </div>
-
-          {/* Nav Items */}
-          <nav className="flex flex-col gap-1 px-space-sm mt-space-md">
-            {navItems.map((item) => {
-              const isActive = activeTab === item.id;
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => {
-                    setActiveTab(item.id);
-                    setMobileSidebarOpen(false);
-                  }}
-                  className={`flex items-center gap-space-sm px-space-md py-space-sm rounded-lg transition-colors cursor-pointer text-xs font-bold text-left ${
-                    isActive
-                      ? 'bg-primary-container text-on-primary-container font-label-md shadow-sm'
-                      : 'text-primary-fixed-dim hover:bg-primary-container hover:text-on-primary-container'
-                  }`}
-                >
-                  <span className="material-symbols-outlined text-[20px]">{item.icon}</span>
-                  <span>{item.label}</span>
-                </button>
-              );
-            })}
-          </nav>
-        </div>
-
-        {/* Sidebar Footer */}
-        <div className="p-space-md flex flex-col gap-1 border-t border-white/10">
-          <button
-            type="button"
-            onClick={() => onNavigate('contact-us')}
-            className="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-primary-fixed-dim hover:bg-primary-container hover:text-on-primary-container font-body-sm text-xs transition-colors cursor-pointer text-left"
-          >
-            <span className="material-symbols-outlined text-[18px]">help_outline</span>
-            <span>Admin Help &amp; Docs</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => onNavigate('home')}
-            className="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-primary-fixed-dim hover:bg-error-container hover:text-on-error-container font-body-sm text-xs transition-colors cursor-pointer text-left"
-          >
-            <span className="material-symbols-outlined text-[18px]">logout</span>
-            <span>Exit to Storefront</span>
-          </button>
-        </div>
-      </aside>
+      {/* Premium Sidebar */}
+      <DashboardSidebar
+        role="admin"
+        navItems={navItems}
+        activeTab={activeTab}
+        onSetTab={(id) => setActiveTab(id)}
+        mobileSidebarOpen={mobileSidebarOpen}
+        onCloseMobile={() => setMobileSidebarOpen(false)}
+        onNavigate={onNavigate}
+        profileCard={{ initials: 'HV', name: 'Hannah Vance', subtitle: 'Super Administrator' }}
+        footerActions={[
+          { icon: 'help_outline', label: 'Admin Help & Docs', onClick: () => onNavigate('contact-us') },
+          { icon: 'logout', label: 'Exit to Storefront', onClick: () => onNavigate('home'), danger: true },
+        ]}
+      />
 
       {/* RIGHT SIDE / MAIN WRAPPER */}
       <div className="flex-1 lg:pl-64 flex flex-col min-w-0">
-        
-        {/* TOP ADMIN HEADER */}
-        <header className="fixed top-0 left-0 lg:left-64 right-0 h-16 bg-surface/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-40 flex items-center justify-between px-gutter border-b border-outline-variant/30">
-          <div className="flex items-center gap-space-md">
-            <button
-              type="button"
-              onClick={() => setMobileSidebarOpen(true)}
-              aria-label="Toggle Sidebar"
-              className="lg:hidden p-2 rounded-lg text-on-surface-variant hover:bg-surface-container"
-            >
-              <span className="material-symbols-outlined text-[22px]">menu</span>
-            </button>
-            <div className="flex items-center gap-space-xs font-body-sm text-xs text-on-surface-variant">
-              <span className="material-symbols-outlined text-[18px]">home</span>
-              <span>/</span>
-              <span className="font-label-md text-on-surface font-bold">Portal</span>
-              <span>/</span>
-              <span className="text-primary font-bold">
-                {activeTab === 'farmers'
-                  ? 'Grower Registry'
-                  : activeTab === 'customers'
-                  ? 'Manage Customers'
-                  : activeTab === 'markets'
-                  ? 'Manage Markets'
-                  : activeTab === 'moderation'
-                  ? 'Content Moderation'
-                  : activeTab === 'reports'
-                  ? 'Reports & Analytics'
-                  : activeTab === 'settings'
-                  ? 'System Configuration'
-                  : activeTab === 'dashboard'
-                  ? 'Dashboard Overview'
-                  : activeTab}
-              </span>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-space-md sm:gap-space-lg">
-            {/* Global Search Box */}
-            <div className="relative hidden md:flex items-center">
-              <span className="material-symbols-outlined absolute left-3 text-on-surface-variant text-[18px]">search</span>
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search orders, farmers, markets..."
-                className="w-72 lg:w-80 pl-9 pr-space-md py-1.5 bg-surface-container-lowest rounded-full font-body-sm text-xs text-on-surface placeholder:text-on-surface-variant shadow-sm border border-outline-variant/40 focus:outline-none focus:ring-1 focus:ring-primary"
-              />
-            </div>
-
-            {/* Notification Bell */}
-            <button
-              type="button"
-              onClick={() => showToast('3 pending farmer audits & 1 weather advisory queued.')}
-              className="p-2 text-on-surface-variant hover:text-on-surface transition-colors relative cursor-pointer"
-            >
-              <span className="material-symbols-outlined text-[22px]">notifications</span>
-              <span className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-error text-on-error font-label-sm text-[10px] flex items-center justify-center font-bold">
-                3
-              </span>
-            </button>
-
-            {/* Admin Profile Chip */}
-            <div className="flex items-center gap-space-sm pl-space-xs">
-              <div className="hidden sm:flex flex-col text-right">
-                <span className="font-label-md text-on-surface text-xs font-bold">Hannah Vance</span>
-                <span className="font-label-sm text-on-surface-variant text-[11px]">Super Admin</span>
+        {/* Premium Header */}
+        <DashboardHeader
+          onOpenMobileSidebar={() => setMobileSidebarOpen(true)}
+          breadcrumb={[
+            'Admin Portal',
+            activeTab === 'farmers' ? 'Grower Registry'
+            : activeTab === 'customers' ? 'Manage Customers'
+            : activeTab === 'markets' ? 'Manage Markets'
+            : activeTab === 'moderation' ? 'Content Moderation'
+            : activeTab === 'reports' ? 'Reports & Analytics'
+            : activeTab === 'settings' ? 'System Configuration'
+            : 'Dashboard Overview'
+          ]}
+          headerRight={
+            <>
+              {/* Search */}
+              <div className="relative hidden md:flex items-center">
+                <span className="material-symbols-outlined absolute left-3 text-on-surface-variant/50 text-[17px] pointer-events-none">search</span>
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search orders, farmers..."
+                  className="w-64 pl-9 pr-4 py-2 bg-surface-container-low border border-outline-variant/30 rounded-xl text-xs text-on-surface focus:outline-none focus:border-primary focus:bg-white focus:shadow-[0_0_0_3px_rgba(18,82,36,0.08)] transition-all"
+                />
               </div>
-              <div className="w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center font-bold text-xs shadow-sm">
-                HV
+              {/* Bell */}
+              <button
+                type="button"
+                onClick={() => showToast('3 pending farmer audits & 1 weather advisory queued.')}
+                className="relative w-9 h-9 rounded-xl bg-surface-container flex items-center justify-center text-on-surface-variant hover:bg-primary/8 hover:text-primary transition-all cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-[20px]">notifications</span>
+                <span className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-error text-on-error text-[9px] font-black flex items-center justify-center">3</span>
+              </button>
+              {/* Avatar */}
+              <div className="flex items-center gap-2 pl-1 border-l border-outline-variant/30">
+                <div className="hidden sm:flex flex-col text-right">
+                  <span className="font-bold text-on-surface text-xs">Hannah Vance</span>
+                  <span className="text-on-surface-variant text-[10px]">Super Admin</span>
+                </div>
+                <div
+                  className="w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs shadow-sm"
+                  style={{ background: 'linear-gradient(135deg, #125224, #2e6b3a)', color: 'white' }}
+                >
+                  HV
+                </div>
               </div>
-            </div>
-          </div>
-        </header>
+            </>
+          }
+        />
 
         {/* MAIN DASHBOARD CONTENT */}
-        <main className="w-full pt-16 bg-surface min-h-screen">
+        <main className="w-full pt-16 bg-gradient-to-br from-surface via-surface-container-low/30 to-surface min-h-screen">
           {activeTab === 'farmers' && (
             <ManageFarmers onNavigate={onNavigate} showToast={showToast} />
           )}
@@ -504,6 +420,13 @@ export default function AdminDashboard({ onNavigate, initialTab = 'dashboard' })
             {/* Top Ambient Banner & Header Action Bar */}
             <div className="px-gutter py-space-lg flex flex-col gap-space-lg">
               
+              {/* Regional Broadcast Health Ticker */}
+              <DashboardTickerBanner
+                text="Regional Market Mesh Online: All 14 Weekend Farmers Markets Active • 58 Stalls Packing • SNAP / EBT Currency Matching Live"
+                badge="NETWORK STATUS"
+                icon="health_and_safety"
+              />
+
               {/* Welcome Header & Live Market Status Pill */}
               <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-space-md">
                 <div className="flex flex-col gap-1">
@@ -558,7 +481,7 @@ export default function AdminDashboard({ onNavigate, initialTab = 'dashboard' })
               </div>
 
               {/* 4 KPI Stat Metric Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-space-md">
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
                 
                 {/* Card 1: Total Farmers */}
                 <div className="bg-surface-container-lowest rounded-xl p-space-md shadow-sm hover:shadow-md transition-all flex flex-col justify-between relative overflow-hidden group border border-outline-variant/30">

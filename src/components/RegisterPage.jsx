@@ -169,18 +169,12 @@ export default function RegisterPage({ onNavigate, onRegisterSuccess, initialRol
                 <button
                   type="button"
                   onClick={() => onNavigate('home')}
-                  className="flex items-center gap-space-sm cursor-pointer group text-left"
+                  className="flex items-center gap-3 cursor-pointer group text-left"
                 >
-                  <img
-                    alt="MarketLink Emblem"
-                    className="h-9 w-auto object-contain transition-transform group-hover:scale-105"
-                    src="https://lh3.googleusercontent.com/aida/AEtjO1XyLNhrgmFrFFo4gB6piPZREBkCUbV9wnrxH7iRrQrW4ttpZ1oZwDj-de3cxm0jXtr_41E71Ke5msIDbHNH6AFdhvZwpXeppRET3orJnzIQ6d5u9aG-u7z9ZGa77644Tq6YKuGzPoDutV23ksERhKnsAghmbCx2DfzuSBT5-CIO-wOUTdrvNfcJIpKvi0ZNPxKC0X6eaFkWdbbBlsI0ikc7i_lgTZPdrGGGIvAZSGii-2J4ZvGdTWhBJcQ"
-                    onError={(e) => {
-                      // Fallback to navbar logo if emblem CDN has temporary issue
-                      e.currentTarget.src = "https://lh3.googleusercontent.com/aida-public/AB6AXuCFwAFs6oHB8haDF1tl4Mghi6ExChfSnMT0HUZ3KzWZpfwDZmxDa5chfAz9TvTulJs3Bdw8iGQW1Gc4oovdfiDiFEAQ2AO__M63AeCprLWKXqNVfLMk-S8LaCZ1H-W0t-rB7U0Um8AXbt_zaXYass_8WIcTnOZZYWvQ2v_QvDSCkLFil8Bz8fkKvh0QKUHosXk5Ci9tCGYU9VbtwxlCDxU2nQ6f2Mk3PQVbgOKaADFK9ehQy4lbyNr9";
-                    }}
-                  />
-                  <span className="font-headline-sm text-primary font-bold tracking-tight group-hover:text-primary-container transition-colors">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#092813] to-[#125224] border border-primary/20 flex items-center justify-center shadow-md group-hover:scale-105 transition-all">
+                    <span className="material-symbols-outlined text-secondary-fixed text-[22px]">eco</span>
+                  </div>
+                  <span className="font-headline-sm text-primary font-black tracking-tight group-hover:text-primary-container transition-colors">
                     MarketLink
                   </span>
                 </button>

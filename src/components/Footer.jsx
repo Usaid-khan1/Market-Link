@@ -1,150 +1,177 @@
 import React from 'react';
 
+const footerLinks = {
+  markets: [
+    'Saturday Downtown Farmers Market',
+    'Oak Valley Sunday Bazaar',
+    'Riverside Harvest Green',
+    'Sunnybrook Community Stalls',
+  ],
+  quick: [
+    { label: 'Home', view: 'home' },
+    { label: 'Browse Seasonal Harvest', view: 'products' },
+    { label: 'Meet the Farmers', view: 'about-us' },
+    { label: 'Pickup Guidelines', view: 'markets' },
+    { label: 'Farmer Partner Portal', view: 'farmer-dashboard' },
+    { label: 'Admin Portal', view: 'admin' },
+    { label: 'FAQ & Contact', view: 'contact-us' },
+  ],
+};
+
 export default function Footer({ onNavigate, onOpenPartnerModal }) {
   return (
-    <footer className="w-full bg-surface-container-low mt-space-xl pt-space-xl pb-space-lg border-t border-outline-variant/30">
-      <div className="max-w-7xl mx-auto px-gutter grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-space-xl">
-        {/* Column 1: Brand info & Socials */}
-        <div className="flex flex-col gap-space-sm">
-          <div className="flex items-center gap-space-sm">
-            <span className="material-symbols-outlined text-primary text-[28px]">psychiatry</span>
-            <span className="font-headline-sm text-primary font-bold">MarketLink</span>
+    <footer className="w-full relative overflow-hidden">
+      {/* Top gradient separator */}
+      <div className="h-px w-full bg-gradient-to-r from-transparent via-outline-variant/50 to-transparent" />
+
+      {/* Main footer content */}
+      <div
+        className="py-16 relative"
+        style={{
+          background: 'linear-gradient(160deg, #0d3b1c 0%, #125224 50%, #1a5c2e 100%)',
+        }}
+      >
+        {/* Background pattern */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 30px, rgba(255,255,255,0.01) 30px, rgba(255,255,255,0.01) 60px)',
+          }}
+        />
+        <div
+          className="absolute top-0 right-0 w-96 h-96 rounded-full pointer-events-none"
+          style={{ background: 'radial-gradient(circle, rgba(185,244,116,0.05) 0%, transparent 70%)' }}
+        />
+        <div
+          className="absolute bottom-0 left-0 w-64 h-64 rounded-full pointer-events-none"
+          style={{ background: 'radial-gradient(circle, rgba(176,242,180,0.04) 0%, transparent 70%)' }}
+        />
+
+        <div className="max-w-7xl mx-auto px-gutter relative z-10">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-10 mb-12">
+            {/* Brand Column */}
+            <div className="lg:col-span-4 flex flex-col gap-5">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-secondary-fixed/20 border border-secondary-fixed/30 flex items-center justify-center">
+                  <span className="material-symbols-outlined text-secondary-fixed text-[22px]">eco</span>
+                </div>
+                <span className="font-headline-sm text-on-primary font-black tracking-tight">MarketLink</span>
+              </div>
+
+              <p className="font-body-sm text-primary-fixed-dim leading-relaxed text-sm">
+                Connecting community members directly with regional family farmers. Fresh harvest, transparent prices, zero middlemen.
+              </p>
+
+              {/* Social Icons */}
+              <div className="flex items-center gap-2">
+                {[
+                  { label: 'Instagram', icon: 'photo_camera' },
+                  { label: 'Facebook', icon: 'public' },
+                  { label: 'Pinterest', icon: 'push_pin' },
+                  { label: 'Newsletter', icon: 'mail' },
+                ].map((social) => (
+                  <a
+                    key={social.label}
+                    href="#social"
+                    aria-label={social.label}
+                    className="w-9 h-9 rounded-xl bg-white/8 border border-white/10 flex items-center justify-center text-primary-fixed-dim hover:bg-secondary-fixed/20 hover:text-secondary-fixed hover:border-secondary-fixed/30 transition-all duration-200"
+                  >
+                    <span className="material-symbols-outlined text-[17px]">{social.icon}</span>
+                  </a>
+                ))}
+              </div>
+
+              {/* Newsletter mini CTA */}
+              <div className="mt-1">
+                <p className="font-label-sm text-primary-fixed-dim text-xs mb-2 font-bold uppercase tracking-wider">
+                  Get harvest alerts
+                </p>
+                <div className="flex gap-2">
+                  <input
+                    type="email"
+                    placeholder="your@email.com"
+                    className="flex-1 bg-white/8 border border-white/15 rounded-xl px-3 py-2 text-sm text-on-primary placeholder:text-primary-fixed-dim/60 focus:outline-none focus:border-secondary-fixed/50 focus:bg-white/12 transition-all"
+                  />
+                  <button className="px-3 py-2 rounded-xl bg-secondary-fixed text-on-secondary-fixed-variant font-bold text-xs hover:bg-secondary-fixed-dim transition-all cursor-pointer flex-shrink-0">
+                    <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Explore Markets */}
+            <div className="lg:col-span-3 flex flex-col gap-3">
+              <h4 className="font-label-sm text-secondary-fixed font-black uppercase tracking-widest text-xs mb-1">Explore Markets</h4>
+              {footerLinks.markets.map((name) => (
+                <button
+                  key={name}
+                  onClick={() => onNavigate('markets')}
+                  className="text-left font-body-sm text-primary-fixed-dim hover:text-secondary-fixed transition-all duration-200 cursor-pointer text-sm hover:translate-x-1 flex items-center gap-2 group"
+                >
+                  <span className="material-symbols-outlined text-[12px] text-primary-fixed-dim/40 group-hover:text-secondary-fixed transition-colors">chevron_right</span>
+                  {name}
+                </button>
+              ))}
+            </div>
+
+            {/* Quick Links */}
+            <div className="lg:col-span-2 flex flex-col gap-3">
+              <h4 className="font-label-sm text-secondary-fixed font-black uppercase tracking-widest text-xs mb-1">Quick Links</h4>
+              {footerLinks.quick.map((link) => (
+                <button
+                  key={link.view}
+                  onClick={() => onNavigate(link.view)}
+                  className="text-left font-body-sm text-primary-fixed-dim hover:text-secondary-fixed transition-all duration-200 cursor-pointer text-sm hover:translate-x-1 flex items-center gap-2 group"
+                >
+                  <span className="material-symbols-outlined text-[12px] text-primary-fixed-dim/40 group-hover:text-secondary-fixed transition-colors">chevron_right</span>
+                  {link.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Payment Policy */}
+            <div className="lg:col-span-3 flex flex-col gap-4">
+              <h4 className="font-label-sm text-secondary-fixed font-black uppercase tracking-widest text-xs mb-1">Pickup &amp; Payment Policy</h4>
+              <p className="font-body-sm text-primary-fixed-dim leading-relaxed text-sm">
+                100% In-Person Payment upon collection. Cash, local farm vouchers &amp; card accepted by vendors at stall. No online fees, no delivery.
+              </p>
+
+              <div className="flex flex-col gap-2.5 mt-1">
+                {[
+                  { icon: 'local_shipping', text: 'Zero Delivery • Direct Stall Handover' },
+                  { icon: 'payments', text: 'Cash, Card, or Farm Voucher' },
+                  { icon: 'verified_user', text: 'All Farmers Verified & Certified' },
+                ].map((item) => (
+                  <div key={item.icon} className="flex items-center gap-3 bg-white/6 px-3 py-2.5 rounded-xl border border-white/8">
+                    <span className="material-symbols-outlined text-secondary-fixed text-[18px] flex-shrink-0">{item.icon}</span>
+                    <span className="font-label-sm text-primary-fixed-dim text-xs">{item.text}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
-          <p className="font-body-sm text-on-surface-variant">
-            Connecting community members directly with regional family farmers. Fresh harvest, transparent prices, zero middlemen.
-          </p>
-          <div className="flex items-center gap-space-sm mt-space-xs text-on-surface-variant">
-            <a
-              href="#social"
-              aria-label="Instagram"
-              className="w-9 h-9 rounded-full bg-surface-container flex items-center justify-center hover:bg-surface-container-high hover:text-primary transition-colors"
-            >
-              <span className="material-symbols-outlined text-[18px]">photo_camera</span>
-            </a>
-            <a
-              href="#social"
-              aria-label="Facebook"
-              className="w-9 h-9 rounded-full bg-surface-container flex items-center justify-center hover:bg-surface-container-high hover:text-primary transition-colors"
-            >
-              <span className="material-symbols-outlined text-[18px]">public</span>
-            </a>
-            <a
-              href="#social"
-              aria-label="Pinterest"
-              className="w-9 h-9 rounded-full bg-surface-container flex items-center justify-center hover:bg-surface-container-high hover:text-primary transition-colors"
-            >
-              <span className="material-symbols-outlined text-[18px]">push_pin</span>
-            </a>
-            <a
-              href="#newsletter"
-              aria-label="Newsletter Updates"
-              className="w-9 h-9 rounded-full bg-surface-container flex items-center justify-center hover:bg-surface-container-high hover:text-primary transition-colors"
-            >
-              <span className="material-symbols-outlined text-[18px]">mail</span>
-            </a>
+
+          {/* Divider */}
+          <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent mb-6" />
+
+          {/* Bottom bar */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
+            <p className="font-body-sm text-primary-fixed-dim text-xs">
+              © 2025 MarketLink. Rooted in Community. All Rights Reserved.
+            </p>
+            <div className="flex items-center gap-4 font-body-sm text-primary-fixed-dim text-xs">
+              <a href="#privacy" className="hover:text-secondary-fixed transition-colors">Privacy Policy</a>
+              <span className="text-primary-fixed-dim/30">•</span>
+              <a href="#terms" className="hover:text-secondary-fixed transition-colors">Terms of Harvest</a>
+              <span className="text-primary-fixed-dim/30">•</span>
+              <button
+                onClick={onOpenPartnerModal}
+                className="hover:text-secondary-fixed transition-colors cursor-pointer"
+              >
+                Partner With Us
+              </button>
+            </div>
           </div>
-        </div>
-
-        {/* Column 2: Explore Markets */}
-        <div className="flex flex-col gap-space-xs">
-          <h4 className="font-headline-sm text-on-surface font-semibold mb-space-xs">Explore Markets</h4>
-          <button
-            onClick={() => onNavigate('markets')}
-            className="text-left font-body-sm text-on-surface-variant hover:text-primary transition-colors cursor-pointer"
-          >
-            Saturday Downtown Farmers Market
-          </button>
-          <button
-            onClick={() => onNavigate('markets')}
-            className="text-left font-body-sm text-on-surface-variant hover:text-primary transition-colors cursor-pointer"
-          >
-            Oak Valley Sunday Bazaar
-          </button>
-          <button
-            onClick={() => onNavigate('markets')}
-            className="text-left font-body-sm text-on-surface-variant hover:text-primary transition-colors cursor-pointer"
-          >
-            Riverside Harvest Green
-          </button>
-          <button
-            onClick={() => onNavigate('markets')}
-            className="text-left font-body-sm text-on-surface-variant hover:text-primary transition-colors cursor-pointer"
-          >
-            Sunnybrook Community Stalls
-          </button>
-        </div>
-
-        {/* Column 3: Quick Links */}
-        <div className="flex flex-col gap-space-xs">
-          <h4 className="font-headline-sm text-on-surface font-semibold mb-space-xs">Quick Links</h4>
-          <button
-            onClick={() => onNavigate('home')}
-            className="text-left font-body-sm text-on-surface-variant hover:text-primary transition-colors cursor-pointer"
-          >
-            Home
-          </button>
-          <button
-            onClick={() => onNavigate('products')}
-            className="text-left font-body-sm text-on-surface-variant hover:text-primary transition-colors cursor-pointer"
-          >
-            Browse Seasonal Harvest
-          </button>
-          <button
-            onClick={() => onNavigate('about-us')}
-            className="text-left font-body-sm text-on-surface-variant hover:text-primary transition-colors cursor-pointer"
-          >
-            Meet the Farmers
-          </button>
-          <button
-            onClick={() => onNavigate('markets')}
-            className="text-left font-body-sm text-on-surface-variant hover:text-primary transition-colors cursor-pointer"
-          >
-            Pickup Guidelines
-          </button>
-          <button
-            onClick={() => onNavigate('farmer-dashboard')}
-            className="text-left font-body-sm text-on-surface-variant hover:text-primary transition-colors cursor-pointer"
-          >
-            Farmer Partner Portal (Dashboard)
-          </button>
-          <button
-            onClick={() => onNavigate('admin')}
-            className="text-left font-body-sm text-on-surface-variant hover:text-primary transition-colors cursor-pointer"
-          >
-            Admin Portal (Hannah Vance)
-          </button>
-          <button
-            onClick={() => onNavigate('contact-us')}
-            className="text-left font-body-sm text-on-surface-variant hover:text-primary transition-colors cursor-pointer"
-          >
-            FAQ
-          </button>
-        </div>
-
-        {/* Column 4: Pickup & Payment Policy */}
-        <div className="flex flex-col gap-space-xs">
-          <h4 className="font-headline-sm text-on-surface font-semibold mb-space-xs">Pickup &amp; Payment Policy</h4>
-          <p className="font-body-sm text-on-surface-variant leading-relaxed">
-            100% In-Person Payment upon collection. Cash, local farm vouchers &amp; card accepted by vendors at stall. No online fees, no delivery.
-          </p>
-          <div className="mt-space-sm p-space-sm rounded-lg bg-surface-container flex items-center gap-space-sm border border-outline-variant/30">
-            <span className="material-symbols-outlined text-primary text-[22px]">local_shipping</span>
-            <span className="font-label-sm text-on-surface-variant">
-              Zero Delivery • Direct Stall Handover
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Bottom Legal bar */}
-      <div className="max-w-7xl mx-auto px-gutter mt-space-lg pt-space-md border-t border-outline-variant/30 flex flex-col sm:flex-row items-center justify-between gap-space-sm text-center sm:text-left">
-        <p className="font-body-sm text-on-surface-variant">
-          © 2025 MarketLink. Rooted in Community. All Rights Reserved.
-        </p>
-        <div className="flex items-center gap-space-md font-body-sm text-on-surface-variant">
-          <a href="#privacy" className="hover:text-primary transition-colors">Privacy Policy</a>
-          <span>•</span>
-          <a href="#terms" className="hover:text-primary transition-colors">Terms of Harvest</a>
         </div>
       </div>
     </footer>

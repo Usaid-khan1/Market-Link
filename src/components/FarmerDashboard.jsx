@@ -5,6 +5,7 @@ import FarmerPreOrders from './FarmerPreOrders';
 import FarmerReviews from './FarmerReviews';
 import FarmerSettings from './FarmerSettings';
 import farmerApi from '../api/farmer';
+import { DashboardSidebar, DashboardHeader, DashboardToast, StatCard, StatusBadge, DashboardTickerBanner } from './DashboardShell';
 
 export default function FarmerDashboard({ onNavigate, initialTab = 'dashboard' }) {
   const [activeTab, setActiveTab] = useState(initialTab);
@@ -93,13 +94,8 @@ export default function FarmerDashboard({ onNavigate, initialTab = 'dashboard' }
   return (
     <div className="w-full min-h-screen bg-surface font-body-md text-on-surface antialiased flex">
       
-      {/* Toast Notification Alert */}
-      {toastMessage && (
-        <div className="fixed bottom-6 right-6 bg-inverse-surface text-inverse-on-surface px-4 py-3 rounded-xl shadow-2xl flex items-center gap-2.5 z-50 animate-fade-in border border-white/10 text-xs font-bold">
-          <span className="material-symbols-outlined text-primary-fixed text-[20px]">check_circle</span>
-          <span>{toastMessage}</span>
-        </div>
-      )}
+      {/* Premium Toast */}
+      <DashboardToast message={toastMessage} onClose={() => setToastMessage(null)} />
 
       {/* Mobile Sidebar Backdrop */}
       {mobileSidebarOpen && (
@@ -112,222 +108,110 @@ export default function FarmerDashboard({ onNavigate, initialTab = 'dashboard' }
       {/* ======================================================== */}
       {/* LEFT SIDEBAR NAVIGATION                                 */}
       {/* ======================================================== */}
-      <aside
-        className={`fixed left-0 top-0 h-full w-64 bg-primary text-on-primary z-50 flex flex-col justify-between shadow-xl transition-transform duration-300 lg:translate-x-0 ${
-          mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
-      >
-        <div className="flex flex-col">
-          {/* Logo & Stall Badge */}
-          <div className="h-16 px-space-md flex items-center justify-between bg-primary border-b border-white/10">
-            <button
-              type="button"
-              onClick={() => onNavigate('home')}
-              className="flex items-center gap-space-sm text-left cursor-pointer group"
-            >
-              <img
-                alt="MarketLink Logo"
-                className="h-8 w-auto object-contain transition-transform group-hover:scale-105"
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuCFwAFs6oHB8haDF1tl4Mghi6ExChfSnMT0HUZ3KzWZpfwDZmxDa5chfAz9TvTulJs3Bdw8iGQW1Gc4oovdfiDiFEAQ2AO__M63AeCprLWKXqNVfLMk-S8LaCZ1H-W0t-rB7U0Um8AXbt_zaXYass_8WIcTnOZZYWvQ2v_QvDSCkLFil8Bz8fkKvh0QKUHosXk5Ci9tCGYU9VbtwxlCDxU2nQ6f2Mk3PQVbgOKaADFK9ehQy4lbyNr9"
-              />
-              <span className="font-headline-sm text-headline-sm text-on-primary font-bold">MarketLink</span>
-            </button>
-            <span className="px-space-xs py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed-variant font-label-sm text-[10px] uppercase tracking-wider font-bold">
-              Farmer
-            </span>
-          </div>
-
-          {/* Current Stall Quick Card */}
-          <div className="p-3 mx-space-sm mt-space-sm rounded-xl bg-primary-container/80 border border-white/10 flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-lg bg-surface-container-lowest text-primary font-bold flex items-center justify-center text-xs shrink-0 shadow-sm">
-              {stallInfo.initials}
-            </div>
-            <div className="flex flex-col min-w-0">
-              <span className="font-headline-sm text-xs font-bold text-white truncate">
-                {stallInfo.name}
-              </span>
-              <span className="text-[10px] text-primary-fixed-dim truncate">
-                {stallInfo.tagline}
-              </span>
-            </div>
-          </div>
-
-          {/* Nav Items */}
-          <nav className="flex flex-col gap-1 px-space-sm mt-space-md">
-            {navItems.map((item) => {
-              const isActive = activeTab === item.id;
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => {
-                    setActiveTab(item.id);
-                    setMobileSidebarOpen(false);
-                  }}
-                  className={`flex items-center gap-space-sm px-space-md py-2.5 rounded-xl transition-all cursor-pointer text-xs font-bold text-left ${
-                    isActive
-                      ? 'bg-surface-container-lowest text-primary font-label-md shadow-md'
-                      : 'text-primary-fixed-dim hover:bg-primary-container hover:text-white'
-                  }`}
-                >
-                  <span className="material-symbols-outlined text-[20px]">{item.icon}</span>
-                  <span>{item.label}</span>
-                </button>
-              );
-            })}
-          </nav>
-        </div>
-
-        {/* Sidebar Footer */}
-        <div className="p-space-md flex flex-col gap-1 border-t border-white/10">
-          <button
-            type="button"
-            onClick={() => onNavigate('farmer-profile')}
-            className="flex items-center gap-space-sm px-space-md py-2 rounded-lg text-primary-fixed-dim hover:bg-primary-container hover:text-white font-body-sm text-xs transition-colors cursor-pointer text-left"
-          >
-            <span className="material-symbols-outlined text-[18px]">visibility</span>
-            <span>View Public Stall Profile</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => onNavigate('home')}
-            className="flex items-center gap-space-sm px-space-md py-2 rounded-lg text-primary-fixed-dim hover:bg-error-container hover:text-on-error-container font-body-sm text-xs transition-colors cursor-pointer text-left"
-          >
-            <span className="material-symbols-outlined text-[18px]">logout</span>
-            <span>Exit / Logout</span>
-          </button>
-        </div>
-      </aside>
+      {/* Premium Sidebar */}
+      <DashboardSidebar
+        role="farmer"
+        navItems={navItems}
+        activeTab={activeTab}
+        onSetTab={(id) => setActiveTab(id)}
+        mobileSidebarOpen={mobileSidebarOpen}
+        onCloseMobile={() => setMobileSidebarOpen(false)}
+        onNavigate={onNavigate}
+        profileCard={{
+          initials: stallInfo.initials,
+          name: stallInfo.name,
+          subtitle: stallInfo.tagline,
+        }}
+        footerActions={[
+          { icon: 'visibility', label: 'View Public Stall Profile', onClick: () => onNavigate('farmer-profile') },
+          { icon: 'logout', label: 'Exit / Logout', onClick: () => onNavigate('home'), danger: true },
+        ]}
+      />
 
       {/* ======================================================== */}
       {/* RIGHT SIDE / MAIN WRAPPER                                */}
       {/* ======================================================== */}
       <div className="flex-1 lg:pl-64 flex flex-col min-w-0">
         
-        {/* TOP BAR */}
-        <header className="fixed top-0 left-0 lg:left-64 right-0 h-16 bg-surface/90 backdrop-blur-xl shadow-sm z-40 flex items-center justify-between px-gutter border-b border-outline-variant/30">
-          <div className="flex items-center gap-space-md">
-            <button
-              type="button"
-              onClick={() => setMobileSidebarOpen(true)}
-              aria-label="Toggle Sidebar"
-              className="lg:hidden p-2 rounded-lg text-on-surface-variant hover:bg-surface-container cursor-pointer"
-            >
-              <span className="material-symbols-outlined text-[22px]">menu</span>
-            </button>
-
-            {/* Breadcrumb */}
-            <div className="flex items-center gap-space-xs font-body-sm text-xs text-on-surface-variant">
-              <span className="material-symbols-outlined text-[17px]">agriculture</span>
-              <span>/</span>
-              <span className="font-label-md text-on-surface font-bold">Farmer Portal</span>
-              <span>/</span>
-              <span className="text-primary font-bold">
-                {activeTab === 'dashboard'
-                  ? 'Stall Overview'
-                  : activeTab === 'products'
-                  ? 'My Products'
-                  : activeTab === 'stock-template'
-                  ? 'Weekly Stock Template'
-                  : activeTab === 'pre-orders'
-                  ? 'Pre-Orders Queue'
-                  : activeTab === 'reviews'
-                  ? 'Customer Feedback'
-                  : 'Stall Settings'}
-              </span>
-            </div>
-          </div>
-
-          {/* Right Top Bar Controls */}
-          <div className="flex items-center gap-space-md sm:gap-space-lg">
-            {/* Notification Bell */}
-            <button
-              type="button"
-              onClick={() => showToast('🔔 2 new reservations waiting for weekend packing.')}
-              className="p-2 text-on-surface-variant hover:text-on-surface transition-colors relative cursor-pointer"
-              title="Notifications"
-            >
-              <span className="material-symbols-outlined text-[22px]">notifications</span>
-              <span className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-[#F28C28] text-white font-label-sm text-[10px] flex items-center justify-center font-bold">
-                2
-              </span>
-            </button>
-
-            {/* Farmer Avatar & Dropdown */}
-            <div className="relative">
+        {/* Premium Header */}
+        <DashboardHeader
+          onOpenMobileSidebar={() => setMobileSidebarOpen(true)}
+          breadcrumb={[
+            'Farmer Portal',
+            activeTab === 'dashboard' ? 'Stall Overview'
+            : activeTab === 'products' ? 'My Products'
+            : activeTab === 'stock-template' ? 'Weekly Stock Template'
+            : activeTab === 'pre-orders' ? 'Pre-Orders Queue'
+            : activeTab === 'reviews' ? 'Customer Feedback'
+            : 'Stall Settings'
+          ]}
+          headerRight={
+            <>
               <button
                 type="button"
-                onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                className="flex items-center gap-space-sm pl-space-xs cursor-pointer group"
+                onClick={() => showToast('🔔 2 new reservations waiting for weekend packing.')}
+                className="relative w-9 h-9 rounded-xl bg-surface-container flex items-center justify-center text-on-surface-variant hover:bg-primary/8 hover:text-primary transition-all cursor-pointer"
               >
-                <div className="hidden sm:flex flex-col text-right">
-                  <span className="font-label-md text-on-surface text-xs font-bold group-hover:text-primary">
-                    {stallInfo.name}
-                  </span>
-                  <span className="font-label-sm text-secondary text-[11px] font-bold">
-                    {stallInfo.owner} • {stallInfo.rating}
-                  </span>
-                </div>
-                <div className="w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center font-bold text-xs shadow-sm">
-                  MT
-                </div>
-                <span className="material-symbols-outlined text-on-surface-variant text-[18px]">
-                  expand_more
-                </span>
+                <span className="material-symbols-outlined text-[20px]">notifications</span>
+                <span className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-tertiary text-white text-[9px] font-black flex items-center justify-center">2</span>
               </button>
-
-              {/* Dropdown Menu */}
-              {userDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-surface-container-lowest rounded-xl shadow-xl border border-outline-variant/30 py-1.5 z-50 animate-fade-in text-xs">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setActiveTab('settings');
-                      setUserDropdownOpen(false);
-                    }}
-                    className="w-full text-left px-4 py-2 hover:bg-surface-container text-on-surface flex items-center gap-2 cursor-pointer font-bold"
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setUserDropdownOpen(!userDropdownOpen)}
+                  className="flex items-center gap-2 pl-1 border-l border-outline-variant/30 cursor-pointer"
+                >
+                  <div className="hidden sm:flex flex-col text-right">
+                    <span className="font-bold text-on-surface text-xs">{stallInfo.name}</span>
+                    <span className="text-secondary font-bold text-[10px]">{stallInfo.owner} • {stallInfo.rating}</span>
+                  </div>
+                  <div
+                    className="w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs shadow-sm"
+                    style={{ background: 'linear-gradient(135deg, #3e6a00, #125224)', color: 'white' }}
                   >
-                    <span className="material-symbols-outlined text-[16px] text-primary">person</span>
-                    <span>Stall Profile</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onNavigate('farmer-profile');
-                      setUserDropdownOpen(false);
-                    }}
-                    className="w-full text-left px-4 py-2 hover:bg-surface-container text-on-surface flex items-center gap-2 cursor-pointer"
-                  >
-                    <span className="material-symbols-outlined text-[16px] text-secondary">storefront</span>
-                    <span>Public Storefront</span>
-                  </button>
-                  <div className="my-1 border-t border-outline-variant/20"></div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onNavigate('home');
-                      setUserDropdownOpen(false);
-                    }}
-                    className="w-full text-left px-4 py-2 hover:bg-error-container text-error flex items-center gap-2 cursor-pointer font-bold"
-                  >
-                    <span className="material-symbols-outlined text-[16px]">logout</span>
-                    <span>Logout</span>
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        </header>
+                    {stallInfo.initials}
+                  </div>
+                  <span className="material-symbols-outlined text-on-surface-variant text-[18px]">expand_more</span>
+                </button>
+                {userDropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-52 bg-white rounded-2xl shadow-[0_16px_40px_rgba(18,82,36,0.15)] border border-outline-variant/20 py-2 z-50 animate-bounce-in">
+                    <div className="px-4 py-2 border-b border-outline-variant/15">
+                      <p className="text-xs font-bold text-on-surface">{stallInfo.name}</p>
+                      <p className="text-[10px] text-on-surface-variant">{stallInfo.owner}</p>
+                    </div>
+                    <button type="button" onClick={() => { setActiveTab('settings'); setUserDropdownOpen(false); }} className="w-full text-left px-4 py-2 hover:bg-surface-container text-on-surface flex items-center gap-2 cursor-pointer font-bold text-xs">
+                      <span className="material-symbols-outlined text-[16px] text-primary">person</span><span>Stall Profile</span>
+                    </button>
+                    <button type="button" onClick={() => { onNavigate('farmer-profile'); setUserDropdownOpen(false); }} className="w-full text-left px-4 py-2 hover:bg-surface-container text-on-surface flex items-center gap-2 cursor-pointer text-xs">
+                      <span className="material-symbols-outlined text-[16px] text-secondary">storefront</span><span>Public Storefront</span>
+                    </button>
+                    <div className="my-1 border-t border-outline-variant/20" />
+                    <button type="button" onClick={() => { onNavigate('home'); setUserDropdownOpen(false); }} className="w-full text-left px-4 py-2 hover:bg-error-container/30 text-error flex items-center gap-2 cursor-pointer font-bold text-xs">
+                      <span className="material-symbols-outlined text-[16px]">logout</span><span>Logout</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            </>
+          }
+        />
 
         {/* ======================================================== */}
         {/* MAIN BODY CONTENT                                       */}
         {/* ======================================================== */}
-        <main className="w-full pt-16 bg-surface min-h-screen">
+        <main className="w-full pt-16 bg-gradient-to-br from-surface via-surface-container-low/30 to-surface min-h-screen">
           
           {/* TAB 1: DASHBOARD HOME */}
           {activeTab === 'dashboard' && (
             <div className="px-gutter py-space-lg max-w-7xl mx-auto w-full flex flex-col gap-space-lg animate-fade-in">
               
+              {/* Live Harvest Ticker */}
+              <DashboardTickerBanner
+                text="Harvest Staging Active: 14 of 18 Saturday Pre-Orders packed and crates tagged • Pioneer Pavilion Stall #08 • Forecast: 68°F Sunny"
+                badge="STALL STATUS"
+                icon="agriculture"
+              />
+
               {/* Reminder Banner: Order Cut-off Approaching */}
               <div className="p-space-md rounded-2xl bg-[#ffedd5] border border-[#fed7aa] flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm shadow-sm text-xs">
                 <div className="flex items-center gap-3">
@@ -377,70 +261,78 @@ export default function FarmerDashboard({ onNavigate, initialTab = 'dashboard' }
                 </button>
               </div>
 
-              {/* Row of 4 Stat Cards */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-space-md">
-                {/* Total Orders */}
-                <div className="bg-surface-container-lowest p-space-md rounded-2xl shadow-sm border border-outline-variant/30 flex flex-col gap-1">
-                  <div className="flex items-center justify-between">
-                    <span className="font-label-sm text-[11px] uppercase tracking-wider text-on-surface-variant font-bold">
-                      Total Orders
-                    </span>
-                    <span className="material-symbols-outlined text-primary text-[22px]">shopping_bag</span>
+              {/* Row of 4 Stat Cards with Sparklines */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-space-md">
+                <StatCard
+                  icon="shopping_bag"
+                  label="Total Pre-Orders"
+                  value={insights?.total_orders ?? 128}
+                  trend="+18% this month"
+                  trendUp={true}
+                  iconBg="bg-primary/10"
+                  iconColor="text-primary"
+                  sparkline={[20, 35, 45, 60, 55, 78, 92]}
+                />
+                <StatCard
+                  icon="pending_actions"
+                  label="Pending Packing"
+                  value={insights?.pending_orders ?? 6}
+                  trend="4 awaiting harvest"
+                  trendUp={false}
+                  iconBg="bg-tertiary/10"
+                  iconColor="text-tertiary"
+                  sparkline={[60, 50, 45, 30, 25, 18, 12]}
+                />
+                <StatCard
+                  icon="payments"
+                  label="Est. Revenue (Week)"
+                  value={insights?.total_revenue ? `$${Number(insights.total_revenue).toFixed(2)}` : '$2,480.00'}
+                  trend="+14% vs last Sat"
+                  trendUp={true}
+                  iconBg="bg-primary/10"
+                  iconColor="text-primary"
+                  sparkline={[40, 50, 55, 70, 68, 85, 96]}
+                />
+                <StatCard
+                  icon="eco"
+                  label="Best-Selling Harvest"
+                  value={insights?.best_seller?.name ? (insights.best_seller.name.length > 18 ? insights.best_seller.name.substring(0, 16) + '...' : insights.best_seller.name) : 'Brandywines'}
+                  trend={insights?.best_seller?.total_sold ? `${insights.best_seller.total_sold} units sold` : '980 lbs sold'}
+                  trendUp={true}
+                  iconBg="bg-secondary/10"
+                  iconColor="text-secondary"
+                  sparkline={[30, 42, 60, 65, 80, 88, 98]}
+                />
+              </div>
+
+              {/* Harvest Staging & Packing Live Bar */}
+              <div className="p-4 sm:p-5 rounded-2xl bg-surface-container-lowest border border-outline-variant/30 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center font-bold shadow-xs flex-shrink-0">
+                    <span className="material-symbols-outlined text-[22px]">inventory_2</span>
                   </div>
-                  <span className="font-headline-md text-2xl sm:text-3xl font-bold text-on-surface">
-                    {insights?.total_orders ?? 128}
-                  </span>
-                  <span className="font-body-sm text-secondary flex items-center gap-1 font-bold text-xs">
-                    <span className="material-symbols-outlined text-[15px]">trending_up</span> +18% this month
-                  </span>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-on-surface">Saturday Downtown Market Staging</span>
+                      <span className="px-2 py-0.5 rounded-full bg-secondary-fixed text-[#0d3b1c] text-[10px] font-black">78% COMPLETE</span>
+                    </div>
+                    <p className="text-[11px] text-on-surface-variant mt-0.5">
+                      14 of 18 crates washed, sorted, and packed with customer voucher tags for Booth 12
+                    </p>
+                  </div>
                 </div>
 
-                {/* Pending Orders */}
-                <div className="bg-surface-container-lowest p-space-md rounded-2xl shadow-sm border border-outline-variant/30 flex flex-col gap-1">
-                  <div className="flex items-center justify-between">
-                    <span className="font-label-sm text-[11px] uppercase tracking-wider text-tertiary font-bold">
-                      Pending Orders
-                    </span>
-                    <span className="material-symbols-outlined text-tertiary text-[22px]">pending_actions</span>
+                <div className="flex items-center gap-3 w-full md:w-64">
+                  <div className="flex-1 bg-surface-container-high h-2.5 rounded-full overflow-hidden">
+                    <div className="bg-primary h-full rounded-full transition-all duration-500" style={{ width: '78%' }} />
                   </div>
-                  <span className="font-headline-md text-2xl sm:text-3xl font-bold text-tertiary">
-                    {insights?.pending_orders ?? 6}
-                  </span>
-                  <span className="font-body-sm text-on-surface-variant text-xs">
-                    Awaiting harvest pack
-                  </span>
-                </div>
-
-                {/* Revenue Summary */}
-                <div className="bg-surface-container-lowest p-space-md rounded-2xl shadow-sm border border-outline-variant/30 flex flex-col gap-1">
-                  <div className="flex items-center justify-between">
-                    <span className="font-label-sm text-[11px] uppercase tracking-wider text-primary font-bold">
-                      Revenue (This Week)
-                    </span>
-                    <span className="material-symbols-outlined text-primary text-[22px]">payments</span>
-                  </div>
-                  <span className="font-headline-md text-2xl sm:text-3xl font-bold text-primary font-mono">
-                    {insights?.total_revenue ? `$${Number(insights.total_revenue).toFixed(2)}` : '$2,480.00'}
-                  </span>
-                  <span className="font-body-sm text-on-surface-variant text-xs">
-                    Direct in-person collections
-                  </span>
-                </div>
-
-                {/* Best-Selling Product */}
-                <div className="bg-surface-container-lowest p-space-md rounded-2xl shadow-sm border border-outline-variant/30 flex flex-col gap-1">
-                  <div className="flex items-center justify-between">
-                    <span className="font-label-sm text-[11px] uppercase tracking-wider text-secondary font-bold">
-                      Best-Seller
-                    </span>
-                    <span className="material-symbols-outlined text-secondary text-[22px]">eco</span>
-                  </div>
-                  <span className="font-headline-sm text-sm font-bold text-on-surface truncate">
-                    {insights?.best_seller?.name ?? 'Brandywine Tomatoes'}
-                  </span>
-                  <span className="font-body-sm text-secondary font-bold text-xs">
-                    {insights?.best_seller?.total_sold ? `${insights.best_seller.total_sold} units sold` : '980 lbs sold this season'}
-                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('pre-orders')}
+                    className="px-3 py-1.5 rounded-xl bg-primary hover:bg-primary-container text-white text-xs font-bold transition-all shadow-xs shrink-0 cursor-pointer"
+                  >
+                    Pack Crates
+                  </button>
                 </div>
               </div>
 

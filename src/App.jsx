@@ -33,8 +33,235 @@ import { INITIAL_PRODUCTS, MARKETS } from './data/mockData';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import browseApi from './api/browse';
 
+// Ultra-luxury Dashboard Gateway component for authenticating and switching roles effortlessly
+function DashboardAccessGateway({
+  targetRole,
+  isDenied = false,
+  currentUser,
+  currentRole,
+  onDemoLogin,
+  onLogin,
+  onRegister,
+  onHome,
+  isLoadingDemo,
+}) {
+  const configs = {
+    admin: {
+      title: 'Administrator Executive Desk',
+      badge: 'MARKETLINK MANAGEMENT',
+      icon: 'admin_panel_settings',
+      accentColor: '#125224',
+      glowColor: 'rgba(18, 82, 36, 0.25)',
+      description:
+        'Centralized governance for regional market pavilions, compliance verification, real-time volume metrics, and platform moderation.',
+      demoLabel: 'Instant Demo Access as Administrator',
+      badgeBg: 'bg-primary-fixed text-on-primary-fixed',
+    },
+    farmer: {
+      title: 'Grower Stallholder Portal',
+      badge: 'PRODUCER & VENDOR NETWORK',
+      icon: 'agriculture',
+      accentColor: '#3e6a00',
+      glowColor: 'rgba(62, 106, 0, 0.25)',
+      description:
+        'Manage live harvest availability, calibrate Friday pre-order cutoffs, accept weekend crate reservations, and connect with patrons.',
+      demoLabel: 'Instant Demo Access as Farm Stall',
+      badgeBg: 'bg-tertiary-fixed text-on-tertiary-fixed',
+    },
+    customer: {
+      title: 'Shopper Harvest Crate & Orders',
+      badge: 'COMMUNITY PATRON PORTAL',
+      icon: 'shopping_bag',
+      accentColor: '#125224',
+      glowColor: 'rgba(18, 82, 36, 0.25)',
+      description:
+        'Track your reserved harvest slips, manage weekly pre-orders across stalls, save your favorite growers, and review fresh produce.',
+      demoLabel: 'Instant Demo Access as Shopper',
+      badgeBg: 'bg-primary-fixed text-on-primary-fixed',
+    },
+  };
+
+  const cfg = configs[targetRole] || configs.admin;
+
+  return (
+    <div className="flex-1 flex items-center justify-center p-4 sm:p-8 mt-16 min-h-[calc(100vh-140px)] relative overflow-hidden">
+      {/* Radiant Background Auroras */}
+      <div
+        className="absolute w-[600px] h-[600px] rounded-full blur-[120px] pointer-events-none -top-40 -left-40"
+        style={{ background: cfg.glowColor }}
+      />
+      <div
+        className="absolute w-[500px] h-[500px] rounded-full blur-[100px] pointer-events-none -bottom-30 -right-30"
+        style={{ background: 'rgba(185, 244, 116, 0.12)' }}
+      />
+
+      <div className="relative z-10 w-full max-w-xl rounded-3xl p-6 sm:p-10 border border-outline-variant/30 shadow-[0_24px_64px_rgba(18,82,36,0.12)] bg-surface-container-lowest/95 backdrop-blur-2xl flex flex-col items-center text-center animate-fade-in">
+        {/* Top Accent Gradient Line */}
+        <div
+          className="absolute top-0 left-0 right-0 h-1.5 rounded-t-3xl"
+          style={{ background: 'linear-gradient(90deg, #125224, #3e6a00, #b9f474, #914d00)' }}
+        />
+
+        {/* Floating Badge */}
+        <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider mb-5 ${cfg.badgeBg}`}>
+          <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
+          {cfg.badge}
+        </span>
+
+        {/* Icon with Glowing Backdrop */}
+        <div className="relative mb-4">
+          <div
+            className="absolute inset-0 rounded-2xl blur-lg opacity-60"
+            style={{ background: cfg.accentColor }}
+          />
+          <div
+            className="relative w-16 h-16 rounded-2xl flex items-center justify-center text-white shadow-lg"
+            style={{ background: `linear-gradient(135deg, ${cfg.accentColor}, #0d3b1c)` }}
+          >
+            <span className="material-symbols-outlined text-[36px]">
+              {isDenied ? 'gpp_bad' : cfg.icon}
+            </span>
+          </div>
+        </div>
+
+        {/* Title & Description */}
+        <h2 className="font-headline-md text-2xl sm:text-3xl text-on-surface font-black tracking-tight mb-2">
+          {isDenied ? 'Access Authorization Required' : cfg.title}
+        </h2>
+        <p className="font-body-md text-sm text-on-surface-variant max-w-md mb-6 leading-relaxed">
+          {isDenied
+            ? `Your active account (${currentUser?.name || 'User'} • ${currentRole}) does not have ${targetRole} privileges. Switch persona below or sign in with verified credentials.`
+            : cfg.description}
+        </p>
+
+        {/* 1-Click Instant Demo Button */}
+        <div className="w-full space-y-3 mb-6">
+          <button
+            type="button"
+            disabled={isLoadingDemo}
+            onClick={() => onDemoLogin && onDemoLogin(targetRole)}
+            className="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-primary via-primary-container to-secondary text-on-primary font-black text-sm shadow-md hover:shadow-lg hover:scale-[1.01] active:scale-[0.99] transition-all cursor-pointer flex items-center justify-center gap-2 group relative overflow-hidden"
+          >
+            <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+            <span className="material-symbols-outlined text-[20px] text-secondary-fixed animate-pulse">bolt</span>
+            <span>{isLoadingDemo ? 'Calibrating Portal Access...' : cfg.demoLabel}</span>
+            <span className="material-symbols-outlined text-[18px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
+          </button>
+
+          {/* Quick Demo Switcher Strip */}
+          <div className="p-2.5 rounded-xl bg-surface-container border border-outline-variant/30 flex items-center justify-between text-xs">
+            <span className="text-[11px] font-bold text-on-surface-variant flex items-center gap-1">
+              <span className="material-symbols-outlined text-[15px] text-primary">group</span>
+              Switch Demo Role:
+            </span>
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => onDemoLogin && onDemoLogin('admin')}
+                className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+                  targetRole === 'admin'
+                    ? 'bg-primary text-white shadow-xs'
+                    : 'bg-surface-container-high text-on-surface hover:bg-primary/10'
+                }`}
+              >
+                Admin
+              </button>
+              <button
+                type="button"
+                onClick={() => onDemoLogin && onDemoLogin('farmer')}
+                className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+                  targetRole === 'farmer'
+                    ? 'bg-secondary text-white shadow-xs'
+                    : 'bg-surface-container-high text-on-surface hover:bg-secondary/10'
+                }`}
+              >
+                Farmer
+              </button>
+              <button
+                type="button"
+                onClick={() => onDemoLogin && onDemoLogin('customer')}
+                className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+                  targetRole === 'customer'
+                    ? 'bg-primary text-white shadow-xs'
+                    : 'bg-surface-container-high text-on-surface hover:bg-primary/10'
+                }`}
+              >
+                Shopper
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Secondary Standard Login & Home Actions */}
+        <div className="w-full flex flex-col sm:flex-row items-center justify-center gap-3 pt-4 border-t border-outline-variant/20">
+          <button
+            type="button"
+            onClick={onLogin}
+            className="w-full sm:w-auto px-4 py-2.5 rounded-xl border border-outline hover:border-primary text-on-surface-variant hover:text-primary text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5"
+          >
+            <span className="material-symbols-outlined text-[16px]">login</span>
+            <span>Sign In with Password</span>
+          </button>
+
+          {onRegister && (
+            <button
+              type="button"
+              onClick={onRegister}
+              className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5"
+            >
+              <span className="material-symbols-outlined text-[16px]">person_add</span>
+              <span>Create Account</span>
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={onHome}
+            className="w-full sm:w-auto px-4 py-2.5 rounded-xl text-on-surface-variant hover:text-primary text-xs font-semibold transition-all cursor-pointer flex items-center justify-center gap-1"
+          >
+            <span className="material-symbols-outlined text-[16px]">storefront</span>
+            <span>Back to Home</span>
+          </button>
+        </div>
+
+        {/* Trust Stamp */}
+        <div className="mt-5 text-[11px] text-on-surface-variant/70 flex items-center gap-2">
+          <span className="material-symbols-outlined text-[14px] text-secondary">verified_user</span>
+          <span>100% Direct Farm Network &bull; Zero Middleman Cut &bull; Verified Stalls</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function AppContent() {
-  const { user, isAuthenticated, role, isLoading } = useAuth();
+  const { user, isAuthenticated, role, isLoading, login, logout, setUser } = useAuth();
+  const [demoLoggingIn, setDemoLoggingIn] = useState(false);
+
+  const handleQuickDemoLogin = async (targetRole) => {
+    setDemoLoggingIn(true);
+    try {
+      const email =
+        targetRole === 'admin'
+          ? 'admin@marketlink.test'
+          : targetRole === 'farmer'
+          ? 'farmer1@marketlink.test'
+          : 'customer1@marketlink.test';
+      await login({ email, password: 'password' });
+      showToast(`⚡ Authenticated as Demo ${targetRole.toUpperCase()}! Welcome.`);
+    } catch (err) {
+      // Fallback: mock login session
+      const mockUsers = {
+        admin: { id: 1, name: 'Platform Admin', email: 'admin@marketlink.test', role: 'admin' },
+        farmer: { id: 2, name: 'Marcus & Sarah (Green Pastures)', email: 'farmer1@marketlink.test', role: 'farmer' },
+        customer: { id: 3, name: 'Elena Rostova', email: 'customer1@marketlink.test', role: 'customer' }
+      };
+      if (setUser) setUser(mockUsers[targetRole]);
+      showToast(`🌾 Switched to Demo ${targetRole.toUpperCase()}!`);
+    } finally {
+      setDemoLoggingIn(false);
+    }
+  };
 
   const [currentView, setCurrentView] = useState(() => {
     const hash = typeof window !== 'undefined' ? window.location.hash.replace('#', '') : '';
@@ -286,21 +513,14 @@ function AppContent() {
       return (
         <div className="min-h-screen flex flex-col bg-surface">
           <Navbar currentView={currentView} onNavigate={handleNavigate} onOpenAuth={() => setAuthMode('login')} onFocusSearch={() => {}} />
-          <div className="flex-1 flex items-center justify-center p-6 mt-20">
-            <div className="bg-surface-container-lowest p-8 rounded-2xl max-w-md w-full text-center border border-outline-variant/30 shadow-xl">
-              <span className="material-symbols-outlined text-tertiary text-5xl mb-3">admin_panel_settings</span>
-              <h2 className="text-xl font-bold text-on-surface">Admin Access Required</h2>
-              <p className="text-sm text-on-surface-variant mt-2 mb-6">
-                Please log in with an administrator account to access the MarketLink Administration Desk.
-              </p>
-              <button
-                onClick={() => handleNavigate('login')}
-                className="w-full py-3 px-4 rounded-xl bg-primary text-on-primary font-bold text-sm shadow hover:bg-primary-container transition-colors cursor-pointer"
-              >
-                Log In as Administrator
-              </button>
-            </div>
-          </div>
+          <DashboardAccessGateway
+            targetRole="admin"
+            onDemoLogin={handleQuickDemoLogin}
+            onLogin={() => handleNavigate('login')}
+            onRegister={() => handleNavigate('register')}
+            onHome={() => handleNavigate('home')}
+            isLoadingDemo={demoLoggingIn}
+          />
           <Footer onNavigate={handleNavigate} onOpenPartnerModal={() => setAuthMode('farmer')} />
         </div>
       );
@@ -310,21 +530,17 @@ function AppContent() {
       return (
         <div className="min-h-screen flex flex-col bg-surface">
           <Navbar currentView={currentView} onNavigate={handleNavigate} onOpenAuth={() => setAuthMode('login')} onFocusSearch={() => {}} />
-          <div className="flex-1 flex items-center justify-center p-6 mt-20">
-            <div className="bg-surface-container-lowest p-8 rounded-2xl max-w-md w-full text-center border border-outline-variant/30 shadow-xl">
-              <span className="material-symbols-outlined text-error text-5xl mb-3">gpp_bad</span>
-              <h2 className="text-xl font-bold text-on-surface">Access Denied</h2>
-              <p className="text-sm text-on-surface-variant mt-2 mb-6">
-                Your current account ({user?.name} &bull; {role}) is not authorized to access administrator controls.
-              </p>
-              <button
-                onClick={() => handleNavigate('home')}
-                className="w-full py-3 px-4 rounded-xl bg-primary text-on-primary font-bold text-sm shadow hover:bg-primary-container transition-colors cursor-pointer"
-              >
-                Return to Home
-              </button>
-            </div>
-          </div>
+          <DashboardAccessGateway
+            targetRole="admin"
+            isDenied={true}
+            currentUser={user}
+            currentRole={role}
+            onDemoLogin={handleQuickDemoLogin}
+            onLogin={() => handleNavigate('login')}
+            onRegister={() => handleNavigate('register')}
+            onHome={() => handleNavigate('home')}
+            isLoadingDemo={demoLoggingIn}
+          />
           <Footer onNavigate={handleNavigate} onOpenPartnerModal={() => setAuthMode('farmer')} />
         </div>
       );
@@ -365,21 +581,14 @@ function AppContent() {
       return (
         <div className="min-h-screen flex flex-col bg-surface">
           <Navbar currentView={currentView} onNavigate={handleNavigate} onOpenAuth={() => setAuthMode('farmer')} onFocusSearch={() => {}} />
-          <div className="flex-1 flex items-center justify-center p-6 mt-20">
-            <div className="bg-surface-container-lowest p-8 rounded-2xl max-w-md w-full text-center border border-outline-variant/30 shadow-xl">
-              <span className="material-symbols-outlined text-secondary text-5xl mb-3">agriculture</span>
-              <h2 className="text-xl font-bold text-on-surface">Farmer Stall Portal</h2>
-              <p className="text-sm text-on-surface-variant mt-2 mb-6">
-                Please log in with your registered producer / vendor account to manage your stall catalog, stock, and pre-orders.
-              </p>
-              <button
-                onClick={() => handleNavigate('login')}
-                className="w-full py-3 px-4 rounded-xl bg-tertiary-container text-on-tertiary font-bold text-sm shadow hover:bg-tertiary transition-colors cursor-pointer"
-              >
-                Log In as Farmer
-              </button>
-            </div>
-          </div>
+          <DashboardAccessGateway
+            targetRole="farmer"
+            onDemoLogin={handleQuickDemoLogin}
+            onLogin={() => handleNavigate('login')}
+            onRegister={() => handleNavigate('register')}
+            onHome={() => handleNavigate('home')}
+            isLoadingDemo={demoLoggingIn}
+          />
           <Footer onNavigate={handleNavigate} onOpenPartnerModal={() => setAuthMode('farmer')} />
         </div>
       );
@@ -389,21 +598,17 @@ function AppContent() {
       return (
         <div className="min-h-screen flex flex-col bg-surface">
           <Navbar currentView={currentView} onNavigate={handleNavigate} onOpenAuth={() => setAuthMode('farmer')} onFocusSearch={() => {}} />
-          <div className="flex-1 flex items-center justify-center p-6 mt-20">
-            <div className="bg-surface-container-lowest p-8 rounded-2xl max-w-md w-full text-center border border-outline-variant/30 shadow-xl">
-              <span className="material-symbols-outlined text-error text-5xl mb-3">lock</span>
-              <h2 className="text-xl font-bold text-on-surface">Farmer Role Required</h2>
-              <p className="text-sm text-on-surface-variant mt-2 mb-6">
-                This portal is reserved for verified grower stalls. Your account is registered as a customer.
-              </p>
-              <button
-                onClick={() => handleNavigate('home')}
-                className="w-full py-3 px-4 rounded-xl bg-primary text-on-primary font-bold text-sm shadow hover:bg-primary-container transition-colors cursor-pointer"
-              >
-                Back to MarketLink
-              </button>
-            </div>
-          </div>
+          <DashboardAccessGateway
+            targetRole="farmer"
+            isDenied={true}
+            currentUser={user}
+            currentRole={role}
+            onDemoLogin={handleQuickDemoLogin}
+            onLogin={() => handleNavigate('login')}
+            onRegister={() => handleNavigate('register')}
+            onHome={() => handleNavigate('home')}
+            isLoadingDemo={demoLoggingIn}
+          />
           <Footer onNavigate={handleNavigate} onOpenPartnerModal={() => setAuthMode('farmer')} />
         </div>
       );
@@ -447,29 +652,14 @@ function AppContent() {
       return (
         <div className="min-h-screen flex flex-col bg-surface">
           <Navbar currentView={currentView} onNavigate={handleNavigate} onOpenAuth={() => setAuthMode('login')} onFocusSearch={() => {}} />
-          <div className="flex-1 flex items-center justify-center p-6 mt-20">
-            <div className="bg-surface-container-lowest p-8 rounded-2xl max-w-md w-full text-center border border-outline-variant/30 shadow-xl">
-              <span className="material-symbols-outlined text-primary text-5xl mb-3">shopping_bag</span>
-              <h2 className="text-xl font-bold text-on-surface">Sign In to View Your Orders & Cart</h2>
-              <p className="text-sm text-on-surface-variant mt-2 mb-6">
-                Your pre-orders, stall pickup schedule, and saved favorite growers require a customer account.
-              </p>
-              <div className="flex flex-col gap-3">
-                <button
-                  onClick={() => handleNavigate('login')}
-                  className="w-full py-3 px-4 rounded-xl bg-primary text-on-primary font-bold text-sm shadow hover:bg-primary-container transition-colors cursor-pointer"
-                >
-                  Log In to Customer Account
-                </button>
-                <button
-                  onClick={() => handleNavigate('register')}
-                  className="w-full py-3 px-4 rounded-xl bg-surface-container text-on-surface font-bold text-sm hover:bg-surface-container-high transition-colors cursor-pointer"
-                >
-                  Create Free Account
-                </button>
-              </div>
-            </div>
-          </div>
+          <DashboardAccessGateway
+            targetRole="customer"
+            onDemoLogin={handleQuickDemoLogin}
+            onLogin={() => handleNavigate('login')}
+            onRegister={() => handleNavigate('register')}
+            onHome={() => handleNavigate('home')}
+            isLoadingDemo={demoLoggingIn}
+          />
           <Footer onNavigate={handleNavigate} onOpenPartnerModal={() => setAuthMode('farmer')} />
         </div>
       );
@@ -498,16 +688,24 @@ function AppContent() {
     <div className="w-full min-h-screen bg-surface font-body-md text-on-surface antialiased flex flex-col">
       {/* Toast Alert */}
       {toastMessage && (
-        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-50 bg-primary text-on-primary px-space-md py-space-sm rounded-full shadow-2xl flex items-center gap-space-xs text-sm font-label-md animate-fade-in border border-primary-fixed/30 max-w-[90vw]">
-          <span className="material-symbols-outlined text-[20px] text-secondary-fixed">
-            verified
-          </span>
-          <span>{toastMessage}</span>
+        <div
+          className="fixed top-24 left-1/2 -translate-x-1/2 z-[60] flex items-center gap-3 px-5 py-3 rounded-2xl text-sm font-bold animate-bounce-in max-w-[90vw] border border-white/20"
+          style={{
+            background: 'linear-gradient(135deg, #125224, #2e6b3a)',
+            color: 'white',
+            boxShadow: '0 12px 40px rgba(18,82,36,0.4), 0 4px 12px rgba(0,0,0,0.15)',
+            backdropFilter: 'blur(12px)',
+          }}
+        >
+          <div className="w-7 h-7 rounded-xl bg-secondary-fixed/20 border border-secondary-fixed/30 flex items-center justify-center flex-shrink-0">
+            <span className="material-symbols-outlined text-secondary-fixed text-[16px]">verified</span>
+          </div>
+          <span className="flex-1">{toastMessage}</span>
           <button
             onClick={() => setToastMessage(null)}
-            className="ml-2 text-on-primary/70 hover:text-on-primary cursor-pointer"
+            className="w-6 h-6 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center flex-shrink-0 cursor-pointer transition-all"
           >
-            <span className="material-symbols-outlined text-[16px]">close</span>
+            <span className="material-symbols-outlined text-[14px]">close</span>
           </button>
         </div>
       )}

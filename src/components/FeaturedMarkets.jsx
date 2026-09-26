@@ -1,81 +1,124 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 export default function FeaturedMarkets({ markets, onSelectMarket, activeMarketFilter }) {
+  const [visible, setVisible] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) setVisible(true); },
+      { threshold: 0.1 }
+    );
+    if (ref.current) observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, []);
+
   return (
-    <section id="markets" className="w-full py-space-xl bg-surface-container-low">
+    <section
+      ref={ref}
+      id="markets"
+      className="w-full py-20 relative overflow-hidden"
+      style={{ background: 'linear-gradient(180deg, #f0f7f1 0%, #fcf9f8 100%)' }}
+    >
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-2/3 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
+
       <div className="max-w-7xl mx-auto px-gutter">
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-space-lg gap-space-sm">
+        {/* Header */}
+        <div className={`flex flex-col sm:flex-row sm:items-end justify-between mb-12 gap-4 transition-all duration-700 ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}>
           <div>
-            <span className="font-label-sm text-primary uppercase tracking-widest font-bold">
+            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/8 border border-primary/15 font-black text-primary uppercase tracking-widest text-[10px] mb-3">
+              <span className="material-symbols-outlined text-[14px]">location_on</span>
               Community Gathering Hubs
             </span>
-            <h2 className="font-headline-lg text-on-surface mt-space-xs">
-              Featured Regional Markets
-            </h2>
-            <p className="font-body-md text-on-surface-variant">
+            <h2 className="font-headline-lg text-on-surface mt-1 mb-1">Featured Regional Markets</h2>
+            <p className="font-body-md text-on-surface-variant text-sm">
               Reserve items ahead and pick up at these active market plazas.
             </p>
           </div>
-          
+
           <button
             onClick={() => onSelectMarket('all')}
-            className="inline-flex items-center gap-space-xs font-label-md text-primary hover:text-primary-container transition-colors cursor-pointer"
+            className="group inline-flex items-center gap-2 font-bold text-sm text-primary hover:text-primary-container transition-all duration-200 cursor-pointer px-4 py-2 rounded-xl hover:bg-primary/8"
           >
             <span>{activeMarketFilter && activeMarketFilter !== 'all' ? 'Show All Markets' : 'View All 14 Nearby Markets'}</span>
-            <span className="material-symbols-outlined text-[18px]">chevron_right</span>
+            <span className="material-symbols-outlined text-[18px] group-hover:translate-x-1 transition-transform duration-200">chevron_right</span>
           </button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-space-lg">
-          {markets.map((market) => {
+        {/* Market Cards Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {markets.map((market, i) => {
             const isSelected = activeMarketFilter === market.key;
             return (
               <div
                 key={market.id}
-                className={`bg-surface-container-lowest rounded-xl overflow-hidden shadow-md flex flex-col group hover:-translate-y-1 transition-all border ${
-                  isSelected ? 'border-primary ring-2 ring-primary/20' : 'border-outline-variant/30'
-                }`}
+                className={`group relative bg-white rounded-2xl overflow-hidden flex flex-col cursor-default transition-all duration-500 ${
+                  visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
+                } ${
+                  isSelected
+                    ? 'ring-2 ring-primary shadow-[0_12px_40px_rgba(18,82,36,0.2)]'
+                    : 'shadow-[0_4px_16px_rgba(18,82,36,0.07)] hover:shadow-[0_20px_48px_rgba(18,82,36,0.14)] hover:-translate-y-2'
+                } border ${isSelected ? 'border-primary/30' : 'border-outline-variant/20'}`}
+                style={{ transitionDelay: `${i * 80}ms` }}
               >
-                {/* Image Banner with schedule badge */}
-                <div 
-                  className="w-full h-44 bg-surface-container-high relative flex items-end p-space-sm bg-cover bg-center"
-                  style={{ backgroundImage: `url('${market.image}')` }}
-                >
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
-                  <span className="relative z-10 bg-surface/95 backdrop-blur-md px-space-sm py-space-xs rounded-full font-label-sm text-primary flex items-center gap-space-xs shadow-sm">
-                    <span className="material-symbols-outlined text-[14px]">event</span>
-                    {market.schedule}
-                  </span>
+                {/* Image Banner */}
+                <div className="w-full h-48 relative overflow-hidden bg-surface-container-high flex-shrink-0">
+                  <div
+                    className="w-full h-full bg-cover bg-center market-card-img"
+                    style={{ backgroundImage: `url('${market.image}')` }}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+
+                  {/* Schedule Badge */}
+                  <div className="absolute bottom-3 left-3 right-3 flex items-end justify-between z-10">
+                    <span className="flex items-center gap-1.5 bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-full font-bold text-primary text-xs shadow-sm border border-white/50">
+                      <span className="material-symbols-outlined text-[14px]">event</span>
+                      {market.schedule}
+                    </span>
+                    {isSelected && (
+                      <span className="flex items-center gap-1 bg-primary text-on-primary px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider">
+                        <span className="material-symbols-outlined text-[12px]">check</span>
+                        Active
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Hover overlay */}
+                  <div className="absolute inset-0 bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 </div>
 
-                <div className="p-space-lg flex flex-col flex-1">
-                  <div className="flex items-center justify-between mb-space-xs">
-                    <span className="font-label-sm text-on-surface-variant flex items-center gap-1">
-                      <span className="material-symbols-outlined text-[16px] text-tertiary">near_me</span>
+                {/* Content */}
+                <div className="p-5 flex flex-col flex-1">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="flex items-center gap-1.5 text-on-surface-variant text-xs font-semibold">
+                      <span className="material-symbols-outlined text-[15px] text-tertiary">near_me</span>
                       {market.distance}
                     </span>
-                    <span className="bg-secondary-fixed text-on-secondary-fixed font-label-sm px-space-xs py-0.5 rounded-full text-xs">
+                    <span className="flex items-center gap-1 bg-secondary-fixed text-on-secondary-fixed-variant px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wide">
+                      <span className="material-symbols-outlined text-[12px]">storefront</span>
                       {market.stalls} Stalls
                     </span>
                   </div>
 
-                  <h3 className="font-headline-md text-on-surface mb-space-xs">
-                    {market.name}
-                  </h3>
-                  <p className="font-body-sm text-on-surface-variant mb-space-sm">
-                    {market.address} • Special: {market.special}
+                  <h3 className="font-headline-md text-on-surface font-bold mb-1.5">{market.name}</h3>
+                  <p className="font-body-sm text-on-surface-variant text-xs leading-relaxed mb-4 flex-1">
+                    {market.address}
+                    {market.special && (
+                      <> &bull; <span className="text-tertiary font-semibold">Special: {market.special}</span></>
+                    )}
                   </p>
 
-                  <div className="mt-auto pt-space-md border-t border-outline-variant/30 flex items-center justify-between">
-                    <span className="font-label-sm text-on-surface-variant">
-                      Stall pickup: {market.pickupBay}
+                  <div className="pt-3 border-t border-outline-variant/20 flex items-center justify-between">
+                    <span className="flex items-center gap-1.5 text-on-surface-variant text-xs">
+                      <span className="material-symbols-outlined text-[14px] text-primary">local_shipping</span>
+                      Pickup: {market.pickupBay}
                     </span>
                     <button
                       onClick={() => onSelectMarket(market.key)}
-                      className="font-label-sm text-tertiary-container hover:text-tertiary font-bold inline-flex items-center gap-1 cursor-pointer transition-colors"
+                      className="group/btn inline-flex items-center gap-1.5 font-bold text-xs text-tertiary-container hover:text-tertiary transition-all duration-200 cursor-pointer"
                     >
                       <span>Stall List &amp; Reserve</span>
-                      <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+                      <span className="material-symbols-outlined text-[15px] group-hover/btn:translate-x-0.5 transition-transform duration-200">arrow_forward</span>
                     </button>
                   </div>
                 </div>
