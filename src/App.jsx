@@ -10,6 +10,7 @@ import GrowersShowcase from './components/GrowersShowcase';
 import CommunitySection from './components/CommunitySection';
 import FarmerCtaBanner from './components/FarmerCtaBanner';
 import ChatAssistant from './components/ChatAssistant';
+import FloatingVideoWidget from './components/FloatingVideoWidget';
 import ReservationModal from './components/ReservationModal';
 import AuthModal from './components/AuthModal';
 import GuideModal from './components/GuideModal';
@@ -419,6 +420,10 @@ function AppContent() {
       target = `${viewOrSection}/${id}`;
     }
 
+    if (viewOrSection === 'home') {
+      setSelectedDay('any');
+    }
+
     setCurrentView(viewOrSection);
     window.location.hash = `#${target}`;
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -730,7 +735,7 @@ function AppContent() {
       />
 
       {/* Main Page Body */}
-      <main className="w-full pt-20 bg-surface flex-1">
+      <main className={`w-full bg-surface flex-1 ${currentView === 'home' || !currentView ? 'pt-0' : 'pt-24 sm:pt-28'}`}>
         {currentView === 'contact-us' ? (
           <ContactPage onNavigate={handleNavigate} />
         ) : currentView === '404' ? (
@@ -804,7 +809,7 @@ function AppContent() {
             />
 
             {/* BENEFITS & TRUST STRIP */}
-            <Benefits />
+            <Benefits onNavigate={handleNavigate} />
 
             {/* HOW MARKETLINK WORKS (3-Step Workflow) */}
             <HowItWorks />
@@ -875,6 +880,9 @@ function AppContent() {
           </div>
         )}
       </main>
+
+      {/* FLOATING HOW IT WORKS VIDEO WIDGET */}
+      <FloatingVideoWidget />
 
       {/* FLOATING CHAT ASSISTANT */}
       <ChatAssistant

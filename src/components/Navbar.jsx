@@ -13,11 +13,11 @@ export default function Navbar({ currentView, onNavigate, onOpenAuth, onFocusSea
   }, []);
 
   const navLinks = [
-    { id: 'home', label: 'Home', icon: 'home' },
-    { id: 'markets', label: 'Markets', icon: 'storefront' },
-    { id: 'products', label: 'Products', icon: 'shopping_basket' },
-    { id: 'about-us', label: 'About Us', icon: 'groups' },
-    { id: 'contact-us', label: 'Contact', icon: 'mail' },
+    { id: 'home', label: 'Home' },
+    { id: 'markets', label: 'Markets' },
+    { id: 'products', label: 'Products' },
+    { id: 'about-us', label: 'About Us' },
+    { id: 'contact-us', label: 'Contact' },
   ];
 
   const handleLinkClick = (id) => {
@@ -25,179 +25,142 @@ export default function Navbar({ currentView, onNavigate, onOpenAuth, onFocusSea
     setMobileMenuOpen(false);
   };
 
+  const handleAuthClick = () => {
+    if (isAuthenticated) {
+      if (role === 'admin') onNavigate('admin');
+      else if (role === 'farmer') onNavigate('farmer-dashboard');
+      else onNavigate('customer-dashboard');
+    } else {
+      onNavigate('login');
+    }
+    setMobileMenuOpen(false);
+  };
+
+  const isLinkActive = (id) => {
+    if (id === 'home') return currentView === 'home' || !currentView;
+    if (id === 'markets') return currentView === 'markets' || currentView === 'market-details';
+    if (id === 'products') return currentView === 'products' || currentView === 'product-details';
+    if (id === 'about-us') return currentView === 'about-us' || currentView === 'farmer-profile';
+    if (id === 'contact-us') return currentView === 'contact-us';
+    return currentView === id;
+  };
+
   return (
-    <header
-      className={`fixed top-0 w-full z-50 transition-all duration-500 ${
-        scrolled
-          ? 'bg-surface/80 backdrop-blur-2xl shadow-[0_4px_24px_rgba(18,82,36,0.08)] border-b border-outline-variant/20'
-          : 'bg-surface/60 backdrop-blur-xl border-b border-transparent'
-      }`}
-    >
-      {/* Announcement Banner */}
-      <div className="relative overflow-hidden bg-gradient-to-r from-primary via-primary-container to-secondary px-gutter py-1.5 text-center">
-        <div className="absolute inset-0 opacity-10" style={{backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.1) 10px, rgba(255,255,255,0.1) 20px)'}} />
-        <div className="relative flex items-center justify-center gap-space-xs">
-          <span className="material-symbols-outlined text-secondary-fixed text-[15px]">eco</span>
-          <p className="font-label-sm text-on-primary text-xs tracking-wide">
-            🌾 Support Local Growers &bull; Reserve Weekly Produce Online &amp; Pay In-Person at Your Local Market Pickup!
-          </p>
-          <span className="material-symbols-outlined text-secondary-fixed text-[15px]">eco</span>
-        </div>
-      </div>
+    <header className="fixed top-4 sm:top-6 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-1.5rem)] sm:w-[calc(100%-2.5rem)] max-w-[1260px] transition-all duration-300">
+      {/* Floating Pill Container */}
+      <div
+        className={`h-[72px] sm:h-[76px] px-4 sm:px-7 rounded-full flex items-center justify-between transition-all duration-300 ${
+          scrolled
+            ? 'bg-white/95 shadow-[0_16px_45px_rgba(7,35,18,0.12),0_2px_10px_rgba(0,0,0,0.06)] border border-white/80'
+            : 'bg-white/90 shadow-[0_12px_40px_rgba(0,0,0,0.08),0_2px_10px_rgba(0,0,0,0.04)] border border-white/60'
+        } backdrop-blur-xl`}
+      >
+        {/* LEFT: Brand Logo & Tagline */}
+        <button
+          onClick={() => handleLinkClick('home')}
+          className="flex items-center gap-3 text-left cursor-pointer focus:outline-none group flex-shrink-0"
+          aria-label="MarketLink Home"
+        >
+          {/* Circular Dark Green Logo */}
+          <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-[#0b3d20] flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform duration-200">
+            <span className="material-symbols-outlined text-[22px] sm:text-[24px] text-white">
+              eco
+            </span>
+          </div>
 
-      {/* Main Header Bar */}
-      <div className="h-16 max-w-7xl mx-auto px-gutter flex items-center justify-between gap-space-md">
-        {/* Brand / Logo */}
-        <div className="flex items-center gap-space-md">
-          <button
-            onClick={() => handleLinkClick('home')}
-            className="flex items-center gap-space-sm group text-left cursor-pointer focus:outline-none"
-            aria-label="MarketLink Home"
-          >
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#092813] to-[#125224] border border-primary/20 flex items-center justify-center shadow-md group-hover:scale-105 transition-all duration-300">
-              <span className="material-symbols-outlined text-secondary-fixed text-[22px]">eco</span>
-            </div>
-            <div className="flex flex-col">
-              <span className="font-headline-sm text-primary tracking-tight font-black leading-none group-hover:gradient-text transition-all">
-                MarketLink
-              </span>
-              <span className="font-label-sm text-on-surface-variant text-[10px] hidden sm:block tracking-wide">
-                Farm Fresh Just a Click Away
-              </span>
-            </div>
-          </button>
-        </div>
+          <div className="flex flex-col">
+            <span className="text-[18px] sm:text-[20px] font-black text-[#0b3d20] tracking-tight leading-none">
+              MarketLink
+            </span>
+            <span className="text-[9.5px] sm:text-[10px] text-[#4a584c] font-semibold tracking-tight mt-0.5 whitespace-nowrap">
+              Farm Fresh Just a Click Away
+            </span>
+          </div>
+        </button>
 
-        {/* Desktop Navigation */}
-        <nav className="hidden lg:flex items-center gap-1">
+        {/* CENTER: Navigation Links */}
+        <nav className="hidden lg:flex items-center gap-6 xl:gap-8">
           {navLinks.map((link) => {
-            const isActive =
-              currentView === link.id ||
-              (currentView === 'market-details' && link.id === 'markets') ||
-              (currentView === 'farmer-profile' && link.id === 'about-us') ||
-              (currentView === 'product-details' && link.id === 'products');
+            const active = isLinkActive(link.id);
             return (
               <button
                 key={link.id}
                 onClick={() => handleLinkClick(link.id)}
-                aria-current={isActive ? 'page' : undefined}
-                className={`relative px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 cursor-pointer group ${
-                  isActive
-                    ? 'text-primary bg-primary/8'
-                    : 'text-on-surface-variant hover:text-primary hover:bg-surface-container'
+                className={`relative py-1 text-[14.5px] transition-colors duration-200 cursor-pointer flex flex-col items-center group ${
+                  active
+                    ? 'text-[#0b3d20] font-bold'
+                    : 'text-[#2e3d30] font-semibold hover:text-[#0b3d20]'
                 }`}
               >
-                {link.label}
-                {isActive && (
-                  <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary animate-bounce-in" />
+                <span>{link.label}</span>
+                {/* Active Indicator Dot exactly matching reference screenshot */}
+                {active && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#0b3d20] mt-0.5 animate-bounce-in" />
                 )}
               </button>
             );
           })}
         </nav>
 
-        {/* Action Controls */}
-        <div className="flex items-center gap-2">
+        {/* RIGHT: Search + Circular Action + ADMIN Pill */}
+        <div className="flex items-center gap-2 sm:gap-3">
+          {/* Search Icon */}
           <button
             aria-label="Search"
             onClick={onFocusSearch}
-            className="w-9 h-9 flex items-center justify-center rounded-xl text-on-surface-variant hover:bg-surface-container hover:text-primary transition-all duration-200 cursor-pointer hover:shadow-sm"
+            className="w-9 h-9 rounded-full flex items-center justify-center text-[#2e3d30] hover:text-[#0b3d20] hover:bg-black/5 transition-all cursor-pointer"
+            title="Search markets and produce"
           >
             <span className="material-symbols-outlined text-[20px]">search</span>
           </button>
 
-          {isAuthenticated ? (
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => {
-                  if (role === 'admin') onNavigate('admin');
-                  else if (role === 'farmer') onNavigate('farmer-dashboard');
-                  else onNavigate('customer-dashboard');
-                }}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gradient-to-r from-surface-container to-surface-container-high hover:from-primary/10 hover:to-secondary/10 transition-all duration-200 text-xs font-bold text-on-surface cursor-pointer border border-outline-variant/20 shadow-sm hover:shadow-green-sm"
-                title={`Open ${role} dashboard`}
-              >
-                <span className="material-symbols-outlined text-[16px] text-primary">
-                  {role === 'admin' ? 'admin_panel_settings' : role === 'farmer' ? 'agriculture' : 'shopping_bag'}
-                </span>
-                <span className="max-w-[100px] truncate">{user?.name}</span>
-                <span className="text-[9px] uppercase tracking-wider text-primary font-black px-1.5 py-0.5 rounded-full bg-primary/10 border border-primary/20">
-                  {role}
-                </span>
-              </button>
+          {/* Circular Sprout / Produce shortcut button */}
+          <button
+            onClick={() => handleLinkClick('products')}
+            aria-label="Fresh Products"
+            title="Browse Fresh Harvest"
+            className="w-9 h-9 rounded-full bg-[#e8f5e9] hover:bg-[#d8eedb] text-[#125224] flex items-center justify-center transition-all cursor-pointer group"
+          >
+            <span className="material-symbols-outlined text-[19px] group-hover:scale-110 transition-transform">
+              psychiatry
+            </span>
+          </button>
 
-              <button
-                onClick={async () => {
-                  await logout();
-                  onNavigate('home');
-                }}
-                title="Sign Out"
-                className="w-9 h-9 rounded-xl flex items-center justify-center text-on-surface-variant hover:text-error hover:bg-error-container/20 transition-all duration-200 cursor-pointer"
-              >
-                <span className="material-symbols-outlined text-[18px]">logout</span>
-              </button>
-            </div>
-          ) : (
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => onNavigate('login')}
-                className={`hidden sm:inline-flex items-center gap-1.5 font-semibold text-sm px-4 py-2 rounded-xl transition-all duration-200 cursor-pointer ${
-                  currentView === 'login'
-                    ? 'bg-primary/10 text-primary'
-                    : 'text-primary hover:bg-primary/8'
-                }`}
-              >
-                Log In
-              </button>
+          {/* Auth / Role Pill Button */}
+          <button
+            onClick={handleAuthClick}
+            className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-[#eef8f1] hover:bg-[#dff2e4] border border-[#c4e6cb] text-[#0b3d20] text-xs sm:text-[12.5px] font-extrabold tracking-wider uppercase shadow-sm hover:shadow transition-all cursor-pointer group"
+            title={isAuthenticated ? `Logged in as ${user?.name || 'User'} (${role})` : 'Log in to MarketLink'}
+          >
+            <span className="material-symbols-outlined text-[17px] text-[#0b3d20] group-hover:scale-105 transition-transform">
+              {isAuthenticated ? 'person' : 'login'}
+            </span>
+            <span>
+              {isAuthenticated
+                ? (role === 'admin' ? 'ADMIN' : role === 'farmer' ? 'FARMER' : 'ACCOUNT')
+                : 'LOGIN'}
+            </span>
+          </button>
 
-              <button
-                onClick={() => onNavigate('register')}
-                className={`inline-flex items-center justify-center font-bold text-sm px-4 py-2 rounded-xl shadow-green-sm transition-all duration-200 cursor-pointer active:scale-95 hover:shadow-green-md ${
-                  currentView === 'register'
-                    ? 'bg-primary text-on-primary ring-2 ring-primary/30'
-                    : 'text-on-primary bg-gradient-to-r from-primary to-primary-container hover:from-primary-container hover:to-secondary'
-                }`}
-              >
-                Register
-              </button>
-
-              {/* Quick portal shortcuts */}
-              <div className="hidden sm:flex items-center gap-1">
-                <button
-                  onClick={() => onNavigate('customer-dashboard')}
-                  aria-label="Customer Portal"
-                  title="Customer Portal"
-                  className="w-8 h-8 rounded-lg bg-surface-container flex items-center justify-center text-primary hover:bg-primary/10 transition-all duration-200 cursor-pointer active:scale-95"
-                >
-                  <span className="material-symbols-outlined text-[16px]">shopping_bag</span>
-                </button>
-
-                <button
-                  onClick={() => onNavigate('farmer-dashboard')}
-                  aria-label="Farmer Portal"
-                  title="Farmer Portal"
-                  className="w-8 h-8 rounded-lg bg-surface-container flex items-center justify-center text-secondary hover:bg-secondary/10 transition-all duration-200 cursor-pointer active:scale-95"
-                >
-                  <span className="material-symbols-outlined text-[16px]">agriculture</span>
-                </button>
-
-                <button
-                  onClick={() => onNavigate('admin')}
-                  aria-label="Admin Portal"
-                  title="Admin Portal"
-                  className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary hover:bg-primary hover:text-on-primary transition-all duration-200 cursor-pointer active:scale-95"
-                >
-                  <span className="material-symbols-outlined text-[16px]">shield_person</span>
-                </button>
-              </div>
-            </div>
+          {/* Sign Out Button (when authenticated) */}
+          {isAuthenticated && (
+            <button
+              onClick={async () => {
+                await logout();
+                onNavigate('home');
+              }}
+              title="Sign Out"
+              className="w-9 h-9 rounded-full flex items-center justify-center text-[#556957] hover:text-red-600 hover:bg-red-50 transition-all cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-[18px]">logout</span>
+            </button>
           )}
 
           {/* Mobile Menu Hamburger */}
           <button
             aria-label="Toggle Mobile Menu"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="lg:hidden w-9 h-9 flex items-center justify-center rounded-xl text-on-surface-variant hover:bg-surface-container hover:text-on-surface cursor-pointer transition-all"
+            className="lg:hidden w-9 h-9 rounded-full flex items-center justify-center text-[#2e3d30] hover:bg-black/5 transition-all cursor-pointer"
           >
             <span className="material-symbols-outlined text-[22px]">
               {mobileMenuOpen ? 'close' : 'menu'}
@@ -206,38 +169,63 @@ export default function Navbar({ currentView, onNavigate, onOpenAuth, onFocusSea
         </div>
       </div>
 
-      {/* Mobile Drawer */}
+      {/* Mobile Drawer (Nested directly under pill navbar) */}
       {mobileMenuOpen && (
-        <div className="lg:hidden bg-surface/95 backdrop-blur-2xl border-t border-outline-variant/20 px-gutter py-4 animate-slide-down shadow-[0_8px_32px_rgba(18,82,36,0.08)]">
-          <div className="flex flex-col gap-1">
-            {navLinks.map((link) => (
+        <div className="lg:hidden mt-2 bg-white/95 backdrop-blur-2xl border border-white/60 rounded-3xl p-4 shadow-[0_16px_40px_rgba(0,0,0,0.14)] flex flex-col gap-1.5 animate-slide-down">
+          {navLinks.map((link) => {
+            const active = isLinkActive(link.id);
+            return (
               <button
                 key={link.id}
                 onClick={() => handleLinkClick(link.id)}
-                className={`text-left flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer ${
-                  currentView === link.id
-                    ? 'text-primary bg-primary/8 font-bold'
-                    : 'text-on-surface-variant hover:text-primary hover:bg-surface-container'
+                className={`text-left px-4 py-2.5 rounded-2xl text-sm font-semibold transition-all cursor-pointer flex items-center justify-between ${
+                  active
+                    ? 'bg-[#eef8f1] text-[#0b3d20] font-bold'
+                    : 'text-[#2e3d30] hover:bg-black/5'
                 }`}
               >
-                <span className="material-symbols-outlined text-[18px]">{link.icon}</span>
-                {link.label}
+                <span>{link.label}</span>
+                {active && <span className="w-1.5 h-1.5 rounded-full bg-[#0b3d20]" />}
               </button>
-            ))}
-            <div className="pt-3 mt-2 border-t border-outline-variant/20 flex flex-col gap-2 sm:hidden">
-              <button
-                onClick={() => { onNavigate('login'); setMobileMenuOpen(false); }}
-                className="text-center font-semibold text-primary py-2.5 px-4 rounded-xl hover:bg-primary/8 transition-all cursor-pointer"
-              >
-                Log In
-              </button>
-              <button
-                onClick={() => { onNavigate('register'); setMobileMenuOpen(false); }}
-                className="text-center font-bold text-on-primary bg-gradient-to-r from-primary to-primary-container py-2.5 rounded-xl shadow-green-sm cursor-pointer hover:shadow-green-md transition-all"
-              >
-                Register Free
-              </button>
-            </div>
+            );
+          })}
+
+          <div className="pt-2 mt-2 border-t border-gray-100 flex flex-col gap-2">
+            <button
+              onClick={handleAuthClick}
+              className="w-full py-2.5 rounded-2xl bg-[#eef8f1] text-[#0b3d20] font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-[16px]">
+                {isAuthenticated ? 'person' : 'login'}
+              </span>
+              <span>
+                {isAuthenticated
+                  ? `${(role === 'admin' ? 'ADMIN' : role === 'farmer' ? 'FARMER' : 'ACCOUNT')} PORTAL`
+                  : 'LOG IN'}
+              </span>
+            </button>
+            {!isAuthenticated && (
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => {
+                    onNavigate('login');
+                    setMobileMenuOpen(false);
+                  }}
+                  className="py-2 rounded-xl text-center text-xs font-bold text-[#0b3d20] bg-black/5 hover:bg-black/10 cursor-pointer"
+                >
+                  Log In
+                </button>
+                <button
+                  onClick={() => {
+                    onNavigate('register');
+                    setMobileMenuOpen(false);
+                  }}
+                  className="py-2 rounded-xl text-center text-xs font-bold text-white bg-[#0b3d20] hover:bg-[#125224] cursor-pointer"
+                >
+                  Register
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}

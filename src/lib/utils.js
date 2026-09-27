@@ -1,0 +1,9 @@
+export function cn(...inputs) {
+  return inputs
+    .flat(Infinity)
+    .filter(Boolean)
+    .join(' ')
+    .trim();
+}
+
+export default cn;

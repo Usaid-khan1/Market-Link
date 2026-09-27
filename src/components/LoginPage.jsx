@@ -34,12 +34,6 @@ export default function LoginPage({ onNavigate, onLoginSuccess, onOpenRegister }
     }
   };
 
-  const quickRoles = [
-    { icon: 'shopping_bag', label: 'Shopper', color: 'bg-primary/8 text-primary border-primary/20' },
-    { icon: 'agriculture', label: 'Farmer', color: 'bg-secondary/8 text-secondary border-secondary/20' },
-    { icon: 'admin_panel_settings', label: 'Admin', color: 'bg-tertiary/8 text-tertiary border-tertiary/20' },
-  ];
-
   return (
     <div className="flex flex-col w-full">
       {/* Breadcrumb */}
@@ -67,7 +61,7 @@ export default function LoginPage({ onNavigate, onLoginSuccess, onOpenRegister }
           {/* Left Column: Form */}
           <div className="lg:col-span-7 p-8 sm:p-12 flex flex-col justify-between bg-white">
             <div>
-              {/* Brand + Security Badge */}
+              {/* Brand */}
               <div className="flex items-center justify-between mb-8">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#092813] to-[#125224] border border-primary/20 flex items-center justify-center shadow-md">
@@ -75,10 +69,6 @@ export default function LoginPage({ onNavigate, onLoginSuccess, onOpenRegister }
                   </div>
                   <span className="font-headline-sm text-primary tracking-tight font-black">MarketLink</span>
                 </div>
-                <span className="inline-flex items-center gap-1.5 font-bold text-primary bg-primary/8 px-3 py-1.5 rounded-full text-xs border border-primary/15">
-                  <span className="w-2 h-2 rounded-full bg-secondary-fixed animate-pulse" />
-                  Secure Portal
-                </span>
               </div>
 
               {/* Title */}
@@ -90,17 +80,6 @@ export default function LoginPage({ onNavigate, onLoginSuccess, onOpenRegister }
                 <p className="text-on-surface-variant text-sm leading-relaxed">
                   One unified community login for shoppers, family farmers, artisans, and market volunteers.
                 </p>
-              </div>
-
-              {/* Role pills */}
-              <div className="flex items-center gap-2 mb-8">
-                {quickRoles.map((r, i) => (
-                  <div key={i} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold ${r.color}`}>
-                    <span className="material-symbols-outlined text-[14px]">{r.icon}</span>
-                    {r.label}
-                  </div>
-                ))}
-                <span className="text-on-surface-variant text-xs">Auto-detected roles</span>
               </div>
 
               {/* Error / Feedback */}
@@ -137,17 +116,10 @@ export default function LoginPage({ onNavigate, onLoginSuccess, onOpenRegister }
 
                 {/* Password */}
                 <div>
-                  <div className="flex items-center justify-between mb-2">
+                  <div className="mb-2">
                     <label className="font-bold text-on-surface text-xs uppercase tracking-wider" htmlFor="password">
                       Password
                     </label>
-                    <button
-                      type="button"
-                      onClick={() => alert('Password reset link sent to your registered email.')}
-                      className="font-semibold text-primary hover:text-primary-container text-xs transition-colors cursor-pointer hover:underline"
-                    >
-                      Forgot password?
-                    </button>
                   </div>
                   <div className="relative group">
                     <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px] group-focus-within:text-primary transition-colors pointer-events-none">lock</span>
@@ -236,14 +208,14 @@ export default function LoginPage({ onNavigate, onLoginSuccess, onOpenRegister }
                   Create a free account
                 </button>
               </p>
-              <button
+              {/* <button
                 type="button"
                 onClick={() => onNavigate('contact-us')}
                 className="text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1.5 cursor-pointer text-xs"
               >
                 <span className="material-symbols-outlined text-[15px]">contact_support</span>
                 Need assistance?
-              </button>
+              </button> */}
             </div>
           </div>
 

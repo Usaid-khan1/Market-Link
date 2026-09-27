@@ -76,6 +76,19 @@ export default function HowItWorks() {
           <p className="font-body-md text-sm sm:text-base text-on-surface-variant leading-relaxed">
             Skip supermarket middlemen, industrial packaging, and hidden platform fees. Connect directly to regional family growers.
           </p>
+
+          <div className="mt-4 flex items-center justify-center">
+            <button
+              type="button"
+              onClick={() => {
+                window.dispatchEvent(new CustomEvent('open-how-it-works-video'));
+              }}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 hover:bg-primary text-primary hover:text-white border border-primary/20 text-xs font-bold transition-all duration-200 active:scale-95 cursor-pointer shadow-xs"
+            >
+              <span className="material-symbols-outlined text-[16px]">play_circle</span>
+              <span>Watch Video Walkthrough</span>
+            </button>
+          </div>
         </div>
 
         {/* 3 Step Cards Grid (Clean layout, NO messy slicing lines or awkward floating badges) */}

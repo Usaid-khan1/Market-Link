@@ -24,6 +24,10 @@ export const browseApi = {
   getAnnouncements() {
     return apiClient.get('/announcements');
   },
+
+  getStalls(params = {}) {
+    return apiClient.get('/browse/stalls', params);
+  },
 };
 
 export default browseApi;

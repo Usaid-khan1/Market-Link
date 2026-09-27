@@ -136,10 +136,10 @@ export default function ContactPage({ onNavigate }) {
         {/* 3. Two-Column Main Content Section */}
         <section className="max-w-7xl mx-auto px-gutter py-space-md w-full">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-space-xl items-start">
-            
+
             {/* LEFT COLUMN: Static Contact Details & Support Channels */}
             <div className="lg:col-span-5 flex flex-col gap-space-md">
-              
+
               {/* Physical Hub & Booth Card */}
               <div className="rounded-xl p-space-lg bg-surface-container-lowest shadow-md flex flex-col gap-space-md border border-outline-variant/30">
                 <div className="flex items-center justify-between">
@@ -415,11 +415,10 @@ export default function ContactPage({ onNavigate }) {
                             key={item.id}
                             type="button"
                             onClick={() => setFormData({ ...formData, role: item.id })}
-                            className={`p-space-sm text-center rounded-xl font-label-sm text-xs transition-all cursor-pointer font-bold ${
-                              isSelected
+                            className={`p-space-sm text-center rounded-xl font-label-sm text-xs transition-all cursor-pointer font-bold ${isSelected
                                 ? 'bg-primary text-on-primary shadow-sm'
                                 : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container border border-outline-variant/30'
-                            }`}
+                              }`}
                           >
                             {item.label}
                           </button>
@@ -558,20 +557,20 @@ export default function ContactPage({ onNavigate }) {
 
                 {/* River Edge Decorative Accent */}
                 <path d="M0,0 C300,60 500,40 1200,90 L1200,0 L0,0 Z" fill="#b0f2b4" fillOpacity="0.35"></path>
-                <text fill="#125224" fontFamily="Nunito Sans" fontSize="14" fontWeight="700" letterSpacing="1" x="40" y="35">
+                <text fill="#125224" fontFamily="'Rubik', sans-serif" fontSize="14" fontWeight="700" letterSpacing="1" x="40" y="35">
                   WILLAMETTE RIVER PROMENADE
                 </text>
 
                 {/* Streets */}
                 {/* 2nd Ave */}
                 <rect fill="#e5e2e1" height="500" width="70" x="180" y="0"></rect>
-                <text fill="#71796f" fontFamily="Nunito Sans" fontSize="12" fontWeight="700" transform="rotate(-90 220 470)" x="220" y="470">
+                <text fill="#71796f" fontFamily="'Rubik', sans-serif" fontSize="12" fontWeight="700" transform="rotate(-90 220 470)" x="220" y="470">
                   2ND AVENUE (NORTH / SOUTH)
                 </text>
 
                 {/* Market Boulevard */}
                 <rect fill="#e5e2e1" height="75" width="1200" x="0" y="320"></rect>
-                <text fill="#71796f" fontFamily="Nunito Sans" fontSize="13" fontWeight="700" letterSpacing="2" x="50" y="365">
+                <text fill="#71796f" fontFamily="'Rubik', sans-serif" fontSize="13" fontWeight="700" letterSpacing="2" x="50" y="365">
                   SW MARKET BOULEVARD
                 </text>
 
@@ -581,37 +580,37 @@ export default function ContactPage({ onNavigate }) {
 
                 {/* Pioneer Pavilion Footprint */}
                 <rect fill="#b0f2b4" fillOpacity="0.5" height="110" rx="12" width="380" x="420" y="150"></rect>
-                <text fill="#125224" fontFamily="Playfair Display" fontSize="18" fontWeight="600" textAnchor="middle" x="610" y="195">
+                <text fill="#125224" fontFamily="'Rubik', sans-serif" fontSize="18" fontWeight="600" textAnchor="middle" x="610" y="195">
                   Pioneer Pavilion Walkway
                 </text>
-                <text fill="#414940" fontFamily="Nunito Sans" fontSize="12" textAnchor="middle" x="610" y="215">
+                <text fill="#414940" fontFamily="'Rubik', sans-serif" fontSize="12" textAnchor="middle" x="610" y="215">
                   Weekly Saturday Harvest Stalls &amp; Direct Farmers
                 </text>
 
                 {/* Gazebo / Courtyard */}
                 <circle cx="890" cy="205" fill="#ffdcc3" r="32"></circle>
-                <text fill="#6e3900" fontFamily="Nunito Sans" fontSize="11" fontWeight="700" textAnchor="middle" x="890" y="209">
+                <text fill="#6e3900" fontFamily="'Rubik', sans-serif" fontSize="11" fontWeight="700" textAnchor="middle" x="890" y="209">
                   Central Gazebo
                 </text>
 
                 {/* North Arch Entrance Marker */}
                 <rect fill="#125224" height="60" rx="4" width="28" x="390" y="135"></rect>
-                <text fill="#125224" fontFamily="Nunito Sans" fontSize="11" fontWeight="700" x="350" y="145">
+                <text fill="#125224" fontFamily="'Rubik', sans-serif" fontSize="11" fontWeight="700" x="350" y="145">
                   North Arch Entrance
                 </text>
 
                 {/* Suite 204 Building Footprint */}
                 <rect fill="#fcf9f8" height="160" rx="8" width="90" x="70" y="130"></rect>
-                <text fill="#1b1c1c" fontFamily="Nunito Sans" fontSize="11" fontWeight="700" textAnchor="middle" x="115" y="210">
+                <text fill="#1b1c1c" fontFamily="'Rubik', sans-serif" fontSize="11" fontWeight="700" textAnchor="middle" x="115" y="210">
                   120 Market Sq
                 </text>
 
                 {/* Parking Garage Footprint */}
                 <rect fill="#fcf9f8" height="150" rx="8" width="130" x="1030" y="140"></rect>
-                <text fill="#1b1c1c" fontFamily="Nunito Sans" fontSize="12" fontWeight="700" textAnchor="middle" x="1095" y="205">
+                <text fill="#1b1c1c" fontFamily="'Rubik', sans-serif" fontSize="12" fontWeight="700" textAnchor="middle" x="1095" y="205">
                   Public Garage
                 </text>
-                <text fill="#71796f" fontFamily="Nunito Sans" fontSize="10" textAnchor="middle" x="1095" y="225">
+                <text fill="#71796f" fontFamily="'Rubik', sans-serif" fontSize="10" textAnchor="middle" x="1095" y="225">
                   2hr Free with Stall Ticket
                 </text>
               </svg>

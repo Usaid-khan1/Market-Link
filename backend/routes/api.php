@@ -17,6 +17,7 @@ use App\Http\Controllers\Api\Customer\CustomerFavoriteController;
 use App\Http\Controllers\Api\Customer\CustomerNotificationController;
 use App\Http\Controllers\Api\Customer\CustomerOrderController;
 use App\Http\Controllers\Api\Customer\CustomerReviewController;
+use App\Http\Controllers\Api\ChatController;
 use App\Http\Controllers\Api\Farmer\FarmerStockTemplateController;
 use Illuminate\Support\Facades\Route;
 
@@ -28,6 +29,9 @@ use Illuminate\Support\Facades\Route;
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 
+// AI-Powered MarketLink Assistant Chatbot (Groq integration)
+Route::post('/chat', [ChatController::class, 'chat'])->middleware('throttle:60,1');
+
 // Announcements visible to all users (public & authenticated)
 Route::get('/announcements', [AnnouncementController::class, 'publicIndex']);
 
@@ -38,6 +42,7 @@ Route::prefix('browse')->group(function () {
     Route::get('/products', [CustomerBrowseController::class, 'products']);
     Route::get('/products/{id}', [CustomerBrowseController::class, 'productShow']);
     Route::get('/farmers/{id}', [CustomerBrowseController::class, 'farmerShow']);
+    Route::get('/stalls', [CustomerBrowseController::class, 'stalls']);
 });
 
 /*

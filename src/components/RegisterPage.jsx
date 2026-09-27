@@ -87,10 +87,6 @@ export default function RegisterPage({ onNavigate, onRegisterSuccess, initialRol
       setErrorMessage('Passwords do not match. Please verify your password entry.');
       return;
     }
-    if (!agreeTerms) {
-      setErrorMessage('Please accept the MarketLink Terms of Harvest & Community Trust Guidelines to proceed.');
-      return;
-    }
 
     setIsLoading(true);
 
@@ -158,14 +154,15 @@ export default function RegisterPage({ onNavigate, onRegisterSuccess, initialRol
       {/* Main Container */}
       <div className="w-full max-w-7xl mx-auto px-gutter py-space-lg lg:py-space-xl">
         {/* 2-Column Split Card Wrapper */}
-        <div className="w-full bg-surface-container-lowest rounded-2xl shadow-xl overflow-hidden grid grid-cols-1 lg:grid-cols-12 border border-outline-variant/30">
-          
-          {/* Left Column: Registration Form (approx 62%) */}
-          <div className="lg:col-span-7 xl:col-span-8 p-space-md sm:p-space-lg lg:p-space-xl flex flex-col justify-between">
+        <div
+          className="w-full rounded-3xl overflow-hidden grid grid-cols-1 lg:grid-cols-12 min-h-[700px] border border-outline-variant/20"
+          style={{ boxShadow: '0 24px 64px rgba(18,82,36,0.10), 0 8px 24px rgba(0,0,0,0.05)' }}
+        >
+          {/* Left Column: Registration Form */}
+          <div className="lg:col-span-7 xl:col-span-8 p-8 sm:p-12 flex flex-col justify-between bg-white">
             <div className="w-full max-w-2xl mx-auto">
-              
-              {/* Header badge & Branding */}
-              <div className="flex flex-wrap items-center justify-between gap-space-sm mb-space-md">
+              {/* Header Branding */}
+              <div className="flex items-center justify-between mb-8">
                 <button
                   type="button"
                   onClick={() => onNavigate('home')}
@@ -174,97 +171,87 @@ export default function RegisterPage({ onNavigate, onRegisterSuccess, initialRol
                   <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#092813] to-[#125224] border border-primary/20 flex items-center justify-center shadow-md group-hover:scale-105 transition-all">
                     <span className="material-symbols-outlined text-secondary-fixed text-[22px]">eco</span>
                   </div>
-                  <span className="font-headline-sm text-primary font-black tracking-tight group-hover:text-primary-container transition-colors">
+                  <span className="font-headline-sm text-primary tracking-tight font-black">
                     MarketLink
                   </span>
                 </button>
-                <span className="inline-flex items-center gap-1.5 px-space-sm py-1 rounded-full bg-surface-container-low text-primary font-label-sm text-xs font-bold border border-outline-variant/30">
-                  <span className="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
-                  Free Community Membership • Zero Fees
-                </span>
               </div>
 
               {/* Page Heading */}
-              <div className="space-y-space-xs mb-space-lg">
-                <h1 className="font-display-lg text-headline-lg sm:text-display-lg text-on-surface leading-tight font-bold">
+              <div className="mb-8">
+                <h1 className="font-headline-lg text-on-surface font-black text-3xl mb-2">
                   {role === 'farmer' ? 'Grow With Your Local Community' : 'Join Your Local Harvest Community'}
                 </h1>
-                <p className="font-body-md text-on-surface-variant leading-relaxed text-sm sm:text-base">
+                <p className="text-on-surface-variant text-sm leading-relaxed">
                   {role === 'farmer'
                     ? 'Register your regional farm, micro-orchard, or artisan kitchen to reserve weekend pavilion stalls and offer fresh harvest holds with zero commission.'
                     : 'Create your neighbor account to reserve peak dawn produce, hold farmstead goods, and meet your growers directly at Saturday pickups.'}
                 </p>
               </div>
 
-              {/* Role Selector Tabs / Segmented Switcher */}
-              <div className="mb-space-lg p-1.5 bg-surface-container-low rounded-xl flex flex-col sm:flex-row items-stretch gap-1.5 border border-outline-variant/30">
+              {/* Role Selector Tabs (Single clean line) */}
+              <div className="mb-8 p-1.5 bg-surface-container-low rounded-2xl flex items-center gap-2 border border-outline-variant/30">
                 {/* Shopper Tab */}
                 <button
                   type="button"
                   onClick={() => setRole('shopper')}
-                  className={`flex-1 flex items-center justify-center gap-space-xs py-space-sm px-space-md rounded-lg transition-all cursor-pointer ${
+                  className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl transition-all cursor-pointer font-bold text-sm ${
                     role === 'shopper'
-                      ? 'bg-surface-container-lowest text-primary shadow-sm font-label-md font-bold border border-outline-variant/20'
-                      : 'text-on-surface-variant hover:text-primary hover:bg-surface-container'
+                      ? 'bg-white text-primary shadow-sm border border-outline-variant/20'
+                      : 'text-on-surface-variant hover:text-primary hover:bg-white/50'
                   }`}
                 >
                   <span
-                    className="material-symbols-outlined text-[20px]"
+                    className="material-symbols-outlined text-[19px]"
                     style={{ fontVariationSettings: "'FILL' 1" }}
                   >
                     shopping_basket
                   </span>
-                  <span className="text-sm">Shopper / Household</span>
+                  <span>Shopper / Household</span>
                 </button>
 
                 {/* Farmer Tab */}
                 <button
                   type="button"
                   onClick={() => setRole('farmer')}
-                  className={`flex-1 flex flex-col sm:flex-row items-center justify-center gap-1 py-space-sm px-space-md rounded-lg transition-all text-center cursor-pointer ${
+                  className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl transition-all cursor-pointer font-bold text-sm ${
                     role === 'farmer'
-                      ? 'bg-surface-container-lowest text-primary shadow-sm font-label-md font-bold border border-outline-variant/20'
-                      : 'text-on-surface-variant hover:text-primary hover:bg-surface-container'
+                      ? 'bg-white text-primary shadow-sm border border-outline-variant/20'
+                      : 'text-on-surface-variant hover:text-primary hover:bg-white/50'
                   }`}
                 >
-                  <div className="flex items-center gap-1.5">
-                    <span className="material-symbols-outlined text-[20px]">agriculture</span>
-                    <span className="font-label-md text-sm">Farmer / Producer</span>
-                  </div>
-                  {role !== 'farmer' && (
-                    <span className="font-label-sm text-tertiary font-bold sm:ml-1 text-xs">
-                      Switch to Farmer Registration →
-                    </span>
-                  )}
+                  <span className="material-symbols-outlined text-[19px]">agriculture</span>
+                  <span>Farmer / Producer</span>
                 </button>
               </div>
 
               {/* Error & Success Feedback alerts */}
               {errorMessage && (
-                <div className="mb-space-md p-space-sm bg-error-container text-on-error-container rounded-xl flex items-center gap-space-xs text-xs font-label-md">
-                  <span className="material-symbols-outlined text-[18px]">error</span>
+                <div className="mb-5 bg-error-container/30 border border-error/30 text-on-surface px-4 py-3 rounded-xl text-sm flex items-center gap-3 animate-fade-in">
+                  <div className="w-8 h-8 rounded-full bg-error/15 flex items-center justify-center flex-shrink-0">
+                    <span className="material-symbols-outlined text-error text-[18px]">error</span>
+                  </div>
                   <span>{errorMessage}</span>
                 </div>
               )}
 
               {successNotice && (
-                <div className="mb-space-md p-space-sm bg-secondary-fixed text-on-secondary-fixed rounded-xl flex items-center gap-space-xs text-xs font-label-md animate-fade-in shadow-sm">
+                <div className="mb-5 bg-secondary-fixed text-on-secondary-fixed px-4 py-3 rounded-xl flex items-center gap-3 text-sm font-semibold animate-fade-in shadow-sm">
                   <span className="material-symbols-outlined text-[18px]">check_circle</span>
                   <span>{successNotice}</span>
                 </div>
               )}
 
               {/* Registration Form */}
-              <form onSubmit={handleSubmit} className="space-y-space-md" id="shopper-registration-form">
-                
+              <form onSubmit={handleSubmit} className="flex flex-col gap-5" id="shopper-registration-form">
                 {/* Full Name & Phone Row */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-space-md">
-                  <div className="flex flex-col gap-1.5">
-                    <label className="font-label-md text-on-surface flex items-center gap-1 text-xs font-bold" htmlFor="fullName">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block font-bold text-on-surface text-xs mb-2 uppercase tracking-wider" htmlFor="fullName">
                       {role === 'farmer' ? 'Farm & Contact Name' : 'Full Name'} <span className="text-error">*</span>
                     </label>
-                    <div className="relative flex items-center">
-                      <span className="material-symbols-outlined absolute left-3.5 text-outline text-[20px] pointer-events-none">
+                    <div className="relative group">
+                      <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px] group-focus-within:text-primary transition-colors pointer-events-none">
                         {role === 'farmer' ? 'store' : 'person'}
                       </span>
                       <input
@@ -275,20 +262,22 @@ export default function RegisterPage({ onNavigate, onRegisterSuccess, initialRol
                         value={fullName}
                         onChange={(e) => setFullName(e.target.value)}
                         placeholder={role === 'farmer' ? 'Green Pastures - Sarah Miller' : 'Clara Vance'}
-                        className="w-full bg-surface-container-lowest pl-11 pr-4 py-3 rounded-xl font-body-md text-on-surface shadow-sm focus:outline-none focus:bg-surface-container-lowest text-sm transition-all border border-outline-variant/60 focus:border-primary focus:ring-2 focus:ring-primary/15"
+                        className="w-full pl-12 pr-4 py-3.5 bg-surface-container-low border border-outline-variant/40 rounded-xl text-sm text-on-surface placeholder:text-outline/60 focus:outline-none focus:border-primary focus:bg-white focus:shadow-[0_0_0_3px_rgba(18,82,36,0.1)] transition-all"
                       />
                     </div>
                   </div>
 
-                  <div className="flex flex-col gap-1.5">
-                    <label className="font-label-md text-on-surface flex items-center justify-between text-xs font-bold" htmlFor="phoneNumber">
-                      <span>Contact Phone <span className="text-error">*</span></span>
-                      <span className="text-[11px] font-normal text-on-surface-variant bg-surface-container px-1.5 py-0.5 rounded">
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="font-bold text-on-surface text-xs uppercase tracking-wider" htmlFor="phoneNumber">
+                        Contact Phone <span className="text-error">*</span>
+                      </label>
+                      <span className="text-[10px] font-bold text-on-surface-variant bg-surface-container px-2 py-0.5 rounded-full uppercase tracking-wider">
                         Pickup SMS
                       </span>
-                    </label>
-                    <div className="relative flex items-center">
-                      <span className="material-symbols-outlined absolute left-3.5 text-outline text-[20px] pointer-events-none">
+                    </div>
+                    <div className="relative group">
+                      <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px] group-focus-within:text-primary transition-colors pointer-events-none">
                         phone_iphone
                       </span>
                       <input
@@ -299,22 +288,19 @@ export default function RegisterPage({ onNavigate, onRegisterSuccess, initialRol
                         value={phoneNumber}
                         onChange={(e) => setPhoneNumber(e.target.value)}
                         placeholder="(503) 555-0142"
-                        className="w-full bg-surface-container-lowest pl-11 pr-4 py-3 rounded-xl font-body-md text-on-surface shadow-sm focus:outline-none focus:bg-surface-container-lowest text-sm transition-all border border-outline-variant/60 focus:border-primary focus:ring-2 focus:ring-primary/15"
+                        className="w-full pl-12 pr-4 py-3.5 bg-surface-container-low border border-outline-variant/40 rounded-xl text-sm text-on-surface placeholder:text-outline/60 focus:outline-none focus:border-primary focus:bg-white focus:shadow-[0_0_0_3px_rgba(18,82,36,0.1)] transition-all"
                       />
                     </div>
-                    <p className="font-body-sm text-on-surface-variant text-[11px]">
-                      Used strictly for urgent Saturday morning stall alerts.
-                    </p>
                   </div>
                 </div>
 
                 {/* Email Address Field */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="font-label-md text-on-surface flex items-center gap-1 text-xs font-bold" htmlFor="emailAddress">
+                <div>
+                  <label className="block font-bold text-on-surface text-xs mb-2 uppercase tracking-wider" htmlFor="emailAddress">
                     Email Address <span className="text-error">*</span>
                   </label>
-                  <div className="relative flex items-center">
-                    <span className="material-symbols-outlined absolute left-3.5 text-outline text-[20px] pointer-events-none">
+                  <div className="relative group">
+                    <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px] group-focus-within:text-primary transition-colors pointer-events-none">
                       mail
                     </span>
                     <input
@@ -325,18 +311,18 @@ export default function RegisterPage({ onNavigate, onRegisterSuccess, initialRol
                       value={emailAddress}
                       onChange={(e) => setEmailAddress(e.target.value)}
                       placeholder="clara@example.com"
-                      className="w-full bg-surface-container-lowest pl-11 pr-4 py-3 rounded-xl font-body-md text-on-surface shadow-sm focus:outline-none focus:bg-surface-container-lowest text-sm transition-all border border-outline-variant/60 focus:border-primary focus:ring-2 focus:ring-primary/15"
+                      className="w-full pl-12 pr-4 py-3.5 bg-surface-container-low border border-outline-variant/40 rounded-xl text-sm text-on-surface placeholder:text-outline/60 focus:outline-none focus:border-primary focus:bg-white focus:shadow-[0_0_0_3px_rgba(18,82,36,0.1)] transition-all"
                     />
                   </div>
                 </div>
 
                 {/* Neighborhood / Street Address */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="font-label-md text-on-surface flex items-center gap-1 text-xs font-bold" htmlFor="neighborhood">
+                <div>
+                  <label className="block font-bold text-on-surface text-xs mb-2 uppercase tracking-wider" htmlFor="neighborhood">
                     {role === 'farmer' ? 'Farm Location / Primary Market' : 'Your Neighborhood / Street Address'}
                   </label>
-                  <div className="relative flex items-center">
-                    <span className="material-symbols-outlined absolute left-3.5 text-outline text-[20px] pointer-events-none">
+                  <div className="relative group">
+                    <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px] group-focus-within:text-primary transition-colors pointer-events-none">
                       location_on
                     </span>
                     <input
@@ -346,24 +332,20 @@ export default function RegisterPage({ onNavigate, onRegisterSuccess, initialRol
                       value={neighborhood}
                       onChange={(e) => setNeighborhood(e.target.value)}
                       placeholder={role === 'farmer' ? 'Clackamas River Valley or Downtown Pavilion' : '742 Evergreen Terrace, River District or 97201'}
-                      className="w-full bg-surface-container-lowest pl-11 pr-4 py-3 rounded-xl font-body-md text-on-surface shadow-sm focus:outline-none focus:bg-surface-container-lowest text-sm transition-all border border-outline-variant/60 focus:border-primary focus:ring-2 focus:ring-primary/15"
+                      className="w-full pl-12 pr-4 py-3.5 bg-surface-container-low border border-outline-variant/40 rounded-xl text-sm text-on-surface placeholder:text-outline/60 focus:outline-none focus:border-primary focus:bg-white focus:shadow-[0_0_0_3px_rgba(18,82,36,0.1)] transition-all"
                     />
                   </div>
-                  <p className="font-body-sm text-on-surface-variant text-[11px] flex items-center gap-1">
-                    <span className="material-symbols-outlined text-[14px] text-primary">pin_drop</span>
-                    Helps us recommend your closest weekend market pavilion and nearest artisan stalls.
-                  </p>
                 </div>
 
                 {/* Password & Confirmation Row */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-space-md">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {/* Password */}
-                  <div className="flex flex-col gap-1.5">
-                    <label className="font-label-md text-on-surface flex items-center gap-1 text-xs font-bold" htmlFor="passwordField">
+                  <div>
+                    <label className="block font-bold text-on-surface text-xs mb-2 uppercase tracking-wider" htmlFor="passwordField">
                       Password <span className="text-error">*</span>
                     </label>
-                    <div className="relative flex items-center">
-                      <span className="material-symbols-outlined absolute left-3.5 text-outline text-[20px] pointer-events-none">
+                    <div className="relative group">
+                      <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px] group-focus-within:text-primary transition-colors pointer-events-none">
                         lock
                       </span>
                       <input
@@ -374,13 +356,13 @@ export default function RegisterPage({ onNavigate, onRegisterSuccess, initialRol
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="Create a strong password"
-                        className="w-full bg-surface-container-lowest pl-11 pr-11 py-3 rounded-xl font-body-md text-on-surface shadow-sm focus:outline-none text-sm transition-all border border-outline-variant/60 focus:border-primary focus:ring-2 focus:ring-primary/15"
+                        className="w-full pl-12 pr-12 py-3.5 bg-surface-container-low border border-outline-variant/40 rounded-xl text-sm text-on-surface placeholder:text-outline/60 focus:outline-none focus:border-primary focus:bg-white focus:shadow-[0_0_0_3px_rgba(18,82,36,0.1)] transition-all"
                       />
                       <button
                         type="button"
                         aria-label="Toggle password visibility"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 text-outline hover:text-on-surface transition-colors cursor-pointer p-1"
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-primary transition-colors cursor-pointer p-1"
                       >
                         <span className="material-symbols-outlined text-[20px]">
                           {showPassword ? 'visibility_off' : 'visibility'}
@@ -388,7 +370,7 @@ export default function RegisterPage({ onNavigate, onRegisterSuccess, initialRol
                       </button>
                     </div>
                     {/* Dynamic Strength Meter */}
-                    <div className="w-full bg-surface-container-high h-1.5 rounded-full overflow-hidden mt-1">
+                    <div className="w-full bg-surface-container-high h-1.5 rounded-full overflow-hidden mt-2">
                       <div
                         className={`h-full transition-all duration-300 ${passwordStrength.widthClass}`}
                         id="strength-bar"
@@ -400,12 +382,12 @@ export default function RegisterPage({ onNavigate, onRegisterSuccess, initialRol
                   </div>
 
                   {/* Confirm Password */}
-                  <div className="flex flex-col gap-1.5">
-                    <label className="font-label-md text-on-surface flex items-center gap-1 text-xs font-bold" htmlFor="confirmPasswordField">
+                  <div>
+                    <label className="block font-bold text-on-surface text-xs mb-2 uppercase tracking-wider" htmlFor="confirmPasswordField">
                       Confirm Password <span className="text-error">*</span>
                     </label>
-                    <div className="relative flex items-center">
-                      <span className="material-symbols-outlined absolute left-3.5 text-outline text-[20px] pointer-events-none">
+                    <div className="relative group">
+                      <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px] group-focus-within:text-primary transition-colors pointer-events-none">
                         lock_reset
                       </span>
                       <input
@@ -416,10 +398,10 @@ export default function RegisterPage({ onNavigate, onRegisterSuccess, initialRol
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         placeholder="Repeat your password"
-                        className="w-full bg-surface-container-lowest pl-11 pr-11 py-3 rounded-xl font-body-md text-on-surface shadow-sm focus:outline-none text-sm transition-all border border-outline-variant/60 focus:border-primary focus:ring-2 focus:ring-primary/15"
+                        className="w-full pl-12 pr-12 py-3.5 bg-surface-container-low border border-outline-variant/40 rounded-xl text-sm text-on-surface placeholder:text-outline/60 focus:outline-none focus:border-primary focus:bg-white focus:shadow-[0_0_0_3px_rgba(18,82,36,0.1)] transition-all"
                       />
                       {passwordMatch.icon ? (
-                        <span className={`material-symbols-outlined absolute right-3.5 text-[20px] ${
+                        <span className={`material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-[20px] ${
                           passwordMatch.matched ? 'text-secondary' : 'text-error'
                         }`}>
                           {passwordMatch.icon}
@@ -429,7 +411,7 @@ export default function RegisterPage({ onNavigate, onRegisterSuccess, initialRol
                           type="button"
                           aria-label="Toggle confirm password visibility"
                           onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                          className="absolute right-3 text-outline hover:text-on-surface transition-colors cursor-pointer p-1"
+                          className="absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-primary transition-colors cursor-pointer p-1"
                         >
                           <span className="material-symbols-outlined text-[20px]">
                             {showConfirmPassword ? 'visibility_off' : 'visibility'}
@@ -437,62 +419,18 @@ export default function RegisterPage({ onNavigate, onRegisterSuccess, initialRol
                         </button>
                       )}
                     </div>
-                    <span className={`text-[11px] font-label-sm ${passwordMatch.colorClass}`}>
+                    <span className={`text-[11px] font-label-sm ${passwordMatch.colorClass} block mt-2`}>
                       {passwordMatch.text}
                     </span>
                   </div>
                 </div>
 
-                {/* Agreement & Trust Checkboxes */}
-                <div className="space-y-space-sm pt-space-xs">
-                  <label className="flex items-start gap-space-sm cursor-pointer group select-none">
-                    <input
-                      type="checkbox"
-                      required
-                      checked={agreeTerms}
-                      onChange={(e) => setAgreeTerms(e.target.checked)}
-                      className="mt-1 w-4 h-4 rounded text-primary focus:ring-primary accent-primary cursor-pointer"
-                    />
-                    <span className="font-body-sm text-on-surface-variant group-hover:text-on-surface transition-colors leading-relaxed text-xs">
-                      I agree to the{' '}
-                      <button
-                        type="button"
-                        onClick={() => setShowTermsModal(true)}
-                        className="text-primary font-bold underline hover:text-primary-container cursor-pointer"
-                      >
-                        MarketLink Terms of Harvest
-                      </button>{' '}
-                      &amp;{' '}
-                      <button
-                        type="button"
-                        onClick={() => setShowTermsModal(true)}
-                        className="text-primary font-bold underline hover:text-primary-container cursor-pointer"
-                      >
-                        Community Trust Guidelines
-                      </button>{' '}
-                      (100% in-person stall payment honor system).
-                    </span>
-                  </label>
-
-                  <label className="flex items-start gap-space-sm cursor-pointer group select-none">
-                    <input
-                      type="checkbox"
-                      checked={subscribeNewsletter}
-                      onChange={(e) => setSubscribeNewsletter(e.target.checked)}
-                      className="mt-1 w-4 h-4 rounded text-primary focus:ring-primary accent-primary cursor-pointer"
-                    />
-                    <span className="font-body-sm text-on-surface-variant group-hover:text-on-surface transition-colors leading-relaxed text-xs">
-                      Send me the <strong className="text-on-surface font-semibold">Friday Morning Harvest Sheet</strong> — a weekly dawn preview of peak seasonal produce across our 14 regional weekend markets.
-                    </span>
-                  </label>
-                </div>
-
                 {/* Submit CTA */}
-                <div className="pt-space-sm space-y-space-sm">
+                <div className="pt-2">
                   <button
                     type="submit"
                     disabled={isLoading}
-                    className="w-full py-4 px-space-lg rounded-xl font-label-lg text-on-tertiary bg-tertiary-container hover:bg-tertiary active:scale-[0.99] transition-all duration-200 shadow-md flex items-center justify-center gap-space-sm cursor-pointer text-sm font-bold"
+                    className="w-full py-4 rounded-xl font-bold text-white bg-gradient-to-r from-primary to-[#186a2f] hover:from-[#0d401c] hover:to-primary active:scale-[0.99] shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer text-sm"
                   >
                     {isLoading ? (
                       <>
@@ -502,25 +440,19 @@ export default function RegisterPage({ onNavigate, onRegisterSuccess, initialRol
                     ) : (
                       <>
                         <span>{role === 'farmer' ? 'Register Farm Stand Partner' : 'Create My Free Shopper Account'}</span>
-                        <span className="material-symbols-outlined text-[20px]">arrow_forward</span>
+                        <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
                       </>
                     )}
                   </button>
-
-                  {/* Trust Guarantee text */}
-                  <div className="flex items-center justify-center gap-2 text-center text-on-surface-variant font-label-sm text-xs py-1">
-                    <span className="material-symbols-outlined text-[16px] text-primary">security</span>
-                    <span>256-bit encryption • Zero online card storage • No payment needed to reserve</span>
-                  </div>
                 </div>
 
                 {/* Footer Login Switcher */}
-                <div className="pt-space-md border-t-0 text-center font-body-sm text-on-surface-variant text-xs">
+                <div className="pt-4 border-t-0 text-center text-on-surface-variant text-xs">
                   Already have a MarketLink account?
                   <button
                     type="button"
                     onClick={() => onNavigate('login')}
-                    className="font-label-md text-primary font-bold hover:underline ml-1 cursor-pointer"
+                    className="font-bold text-primary hover:underline ml-1 cursor-pointer"
                   >
                     Sign In to Your Stand →
                   </button>

@@ -168,4 +168,51 @@ class CustomerBrowseController extends Controller
 
         return $this->success($data, 'Farmer profile retrieved successfully');
     }
+
+    /**
+     * Public/Customer list of all active farmer stalls with coordinates and available products.
+     */
+    public function stalls(Request $request): JsonResponse
+    {
+        $farmers = User::where('role', 'farmer')
+            ->whereHas('farmerProfile', fn ($q) => $q->where('status', 'approved')->whereNotNull('latitude')->whereNotNull('longitude'))
+            ->with([
+                'farmerProfile',
+                'products' => fn ($q) => $q->where('status', 'available')->with(['category', 'market']),
+                'reviewsReceived'
+            ])
+            ->get();
+
+        $stalls = $farmers->map(function ($farmer) {
+            $profile = $farmer->farmerProfile;
+            $products = $farmer->products;
+            $avgRating = (float) $farmer->reviewsReceived()->avg('rating');
+            $reviewsCount = $farmer->reviewsReceived()->count();
+
+            // Associated market
+            $market = $products->first()?->market;
+
+            return [
+                'id' => $profile->id,
+                'farmer_id' => $farmer->id,
+                'farmer_name' => $farmer->name,
+                'stall_name' => $profile->stall_name,
+                'contact_person' => $profile->contact_person,
+                'address' => $profile->address,
+                'latitude' => (float) $profile->latitude,
+                'longitude' => (float) $profile->longitude,
+                'operating_days' => $profile->operating_days,
+                'pickup_time_start' => $profile->pickup_time_start,
+                'pickup_time_end' => $profile->pickup_time_end,
+                'market_name' => $market ? $market->market_name : null,
+                'market_id' => $market ? $market->id : null,
+                'rating' => $avgRating ? round($avgRating, 1) : 4.9,
+                'reviews_count' => $reviewsCount,
+                'total_stock' => (int) $products->sum('stock_quantity'),
+                'products' => ProductResource::collection($products)->resolve(),
+            ];
+        });
+
+        return $this->success($stalls, 'Farmer stalls retrieved successfully');
+    }
 }

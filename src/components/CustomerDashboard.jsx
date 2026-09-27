@@ -4,9 +4,136 @@ import CustomerCart from './CustomerCart';
 import CustomerFavorites from './CustomerFavorites';
 import CustomerReviews from './CustomerReviews';
 import CustomerSettings from './CustomerSettings';
+import FarmerStallMap from './FarmerStallMap';
+import ReservationModal from './ReservationModal';
 import customerApi from '../api/customer';
+import browseApi from '../api/browse';
 import { useAuth } from '../context/AuthContext';
-import { DashboardSidebar, DashboardHeader, DashboardToast, StatusBadge, StatCard, DashboardTickerBanner } from './DashboardShell';
+import { DashboardSidebar, DashboardHeader, DashboardToast, StatCard, DashboardTickerBanner } from './DashboardShell';
+
+// Fallback stalls with precise numeric coordinates if API is loading/offline
+const FALLBACK_STALLS = [
+  {
+    id: 1,
+    farmer_id: 2,
+    farmer_name: 'John Farmer',
+    stall_name: 'Green Valley Organics',
+    contact_person: 'John Farmer',
+    address: 'Stall #12, Riverside Green Market',
+    latitude: 37.774929,
+    longitude: -122.419416,
+    operating_days: ['Monday', 'Wednesday', 'Saturday'],
+    pickup_time_start: '08:00',
+    pickup_time_end: '14:00',
+    market_name: 'Riverside Green Market',
+    market_id: 2,
+    rating: 4.95,
+    reviews_count: 148,
+    total_stock: 42,
+    products: [
+      {
+        id: 1,
+        farmer_id: 2,
+        name: 'Heirloom Brandywine Tomatoes',
+        price: 4.50,
+        unit: 'lb',
+        stock_quantity: 24,
+        category_name: 'Fresh Vegetables',
+        image: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?auto=format&fit=crop&w=600&q=80',
+      },
+      {
+        id: 2,
+        farmer_id: 2,
+        name: 'Rainbow Chard & Kale Bundle',
+        price: 3.75,
+        unit: 'bunch',
+        stock_quantity: 18,
+        category_name: 'Fresh Vegetables',
+        image: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=600&q=80',
+      },
+    ],
+  },
+  {
+    id: 2,
+    farmer_id: 3,
+    farmer_name: 'Sarah Miller',
+    stall_name: 'Sunny Acres Farm',
+    contact_person: 'Sarah Miller',
+    address: 'Stall #5, Central City Farmers Market',
+    latitude: 37.783333,
+    longitude: -122.416667,
+    operating_days: ['Tuesday', 'Thursday', 'Sunday'],
+    pickup_time_start: '09:00',
+    pickup_time_end: '15:00',
+    market_name: 'Central City Farmers Market',
+    market_id: 1,
+    rating: 4.88,
+    reviews_count: 94,
+    total_stock: 42,
+    products: [
+      {
+        id: 3,
+        farmer_id: 3,
+        name: 'Honeycrisp Orchard Apples',
+        price: 3.20,
+        unit: 'lb',
+        stock_quantity: 30,
+        category_name: 'Orchard Fruits',
+        image: 'https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?auto=format&fit=crop&w=600&q=80',
+      },
+      {
+        id: 4,
+        farmer_id: 3,
+        name: 'Wildflower Raw Honey (16oz)',
+        price: 12.00,
+        unit: 'jar',
+        stock_quantity: 12,
+        category_name: 'Honey & Jams',
+        image: 'https://images.unsplash.com/photo-1587049352846-4a222e784d38?auto=format&fit=crop&w=600&q=80',
+      },
+    ],
+  },
+  {
+    id: 3,
+    farmer_id: 4,
+    farmer_name: 'Elena Rostova',
+    stall_name: 'Heritage Hearth & Dairy',
+    contact_person: 'Elena Rostova',
+    address: 'Stall #8, Pioneer Pavilion Heritage Market',
+    latitude: 37.7792,
+    longitude: -122.4220,
+    operating_days: ['Wednesday', 'Saturday'],
+    pickup_time_start: '08:30',
+    pickup_time_end: '13:30',
+    market_name: 'Pioneer Pavilion Heritage Market',
+    market_id: 1,
+    rating: 4.98,
+    reviews_count: 210,
+    total_stock: 35,
+    products: [
+      {
+        id: 5,
+        farmer_id: 4,
+        name: 'Artisan Herbed Goat Chèvre',
+        price: 9.00,
+        unit: 'tub',
+        stock_quantity: 15,
+        category_name: 'Farmstead Dairy',
+        image: 'https://images.unsplash.com/photo-1452195100486-9cc805987862?auto=format&fit=crop&w=400&q=80',
+      },
+      {
+        id: 6,
+        farmer_id: 4,
+        name: 'Rustic Seeded Miche Sourdough',
+        price: 8.00,
+        unit: 'boule',
+        stock_quantity: 20,
+        category_name: 'Hearth Breads',
+        image: 'https://images.unsplash.com/photo-1589367920969-ab8e050bbb04?auto=format&fit=crop&w=400&q=80',
+      },
+    ],
+  },
+];
 
 export default function CustomerDashboard({ onNavigate, initialTab = 'dashboard' }) {
   const { user } = useAuth();
@@ -14,6 +141,12 @@ export default function CustomerDashboard({ onNavigate, initialTab = 'dashboard'
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
+
+  // Stalls & Booking state for the interactive map
+  const [stalls, setStalls] = useState(FALLBACK_STALLS);
+  const [activeBooking, setActiveBooking] = useState(null);
+  const [bookingModalProduct, setBookingModalProduct] = useState(null);
+  const [bookingTargetStall, setBookingTargetStall] = useState(null);
 
   // Quick Toast Notification helper
   const showToast = (msg) => {
@@ -35,12 +168,26 @@ export default function CustomerDashboard({ onNavigate, initialTab = 'dashboard'
   // Sidebar Nav Items (Matching Customer Dashboard Layout Rules)
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
+    { id: 'map', label: 'Stall Map & Route', icon: 'map' },
     { id: 'orders', label: 'My Orders', icon: 'receipt_long' },
     { id: 'cart', label: 'Cart & Checkout', icon: 'shopping_cart' },
     { id: 'favorites', label: 'Favorites', icon: 'favorite' },
     { id: 'reviews', label: 'My Reviews', icon: 'rate_review' },
     { id: 'settings', label: 'Profile & Settings', icon: 'settings' }
   ];
+
+  // Load stalls from backend API with fallback
+  useEffect(() => {
+    browseApi.getStalls()
+      .then((res) => {
+        if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
+          setStalls(res.data);
+        }
+      })
+      .catch((err) => {
+        console.warn('Using fallback stall directory:', err);
+      });
+  }, []);
 
   // Active Orders Mini Table Data for Dashboard Home
   const [activeOrdersMini, setActiveOrdersMini] = useState([
@@ -202,6 +349,58 @@ export default function CustomerDashboard({ onNavigate, initialTab = 'dashboard'
 
   const handleAddToCartQuick = (prod) => {
     showToast(`🧺 Added 1 ${prod.name} to your pre-order cart!`);
+  };
+
+  const handleBookStall = (stall) => {
+    if (!stall) return;
+    setBookingTargetStall(stall);
+    const prod = (stall.products && stall.products.length > 0)
+      ? stall.products[0]
+      : {
+          id: stall.id || 1,
+          name: `${stall.stall_name} Fresh Harvest Bundle`,
+          price: 15.00,
+          unit: 'crate',
+          farmer_id: stall.farmer_id || 2,
+          market_id: stall.market_id || 1,
+          farmer_name: stall.farmer_name,
+          stall_name: stall.stall_name,
+        };
+    setBookingModalProduct(prod);
+  };
+
+  const handleConfirmStallReservation = (slip, targetStall) => {
+    const stall = targetStall || bookingTargetStall;
+    const vId = slip?.voucherId || `ML-${Math.floor(1000 + Math.random() * 9000)}`;
+    showToast(`🎉 Produce Held! Reservation #${vId} confirmed at ${stall?.stall_name || 'Stall'}. Calculating pickup route...`);
+    setBookingModalProduct(null);
+
+    if (stall) {
+      setActiveBooking({
+        stallId: stall.id,
+        farmerId: stall.farmer_id,
+        farmer: stall.stall_name,
+        voucherId: vId,
+      });
+
+      // Prepend to active pre-orders mini table
+      setActiveOrdersMini((prev) => [
+        {
+          id: `#${vId}`,
+          farmer: stall.stall_name,
+          items: `${slip?.quantity || 1} ${slip?.productName || 'Harvest Item'}`,
+          pickupSlot: `This Weekend • ${stall.pickup_time_start || '08:00'} – ${stall.pickup_time_end || '14:00'}`,
+          market: stall.market_name || 'Market Stall',
+          status: 'Placed',
+          stallData: stall,
+        },
+        ...prev,
+      ]);
+
+      setTimeout(() => {
+        document.getElementById('farmer-stalls-map')?.scrollIntoView({ behavior: 'smooth' });
+      }, 300);
+    }
   };
 
   return (
@@ -416,6 +615,22 @@ export default function CustomerDashboard({ onNavigate, initialTab = 'dashboard'
                   </div>
                   <button
                     type="button"
+                    onClick={() => {
+                      const match = stalls.find(s => s.stall_name.toLowerCase().includes('riverside') || s.stall_name.toLowerCase().includes('green') || s.stall_name.toLowerCase().includes('mountain') || s.stall_name.toLowerCase().includes('sunny')) || stalls[0];
+                      if (match) {
+                        setActiveBooking({ stallId: match.id, farmerId: match.farmer_id, farmer: match.stall_name, voucherId: 'ML-8918' });
+                        document.getElementById('farmer-stalls-map')?.scrollIntoView({ behavior: 'smooth' });
+                        showToast(`🚗 Plotting pickup route to ${match.stall_name}...`);
+                      }
+                    }}
+                    className="px-3.5 py-2.5 rounded-xl border border-primary/40 bg-white hover:bg-primary/5 text-primary text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">navigation</span>
+                    <span>Route to Stall</span>
+                  </button>
+
+                  <button
+                    type="button"
                     onClick={() => setActiveTab('orders')}
                     className="px-4 py-2.5 rounded-xl bg-primary hover:bg-primary-container text-white text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
                   >
@@ -424,6 +639,20 @@ export default function CustomerDashboard({ onNavigate, initialTab = 'dashboard'
                   </button>
                 </div>
               </div>
+
+              {/* ======================================================== */}
+              {/* AVAILABLE FARMER STALLS & INTERACTIVE PICKUP MAP        */}
+              {/* ======================================================== */}
+              <section id="farmer-stalls-map" className="scroll-mt-24 space-y-3">
+                <FarmerStallMap
+                  stalls={stalls}
+                  activeBooking={activeBooking}
+                  onBookStall={handleBookStall}
+                  onViewStallDetails={() => {
+                    if (onNavigate) onNavigate('farmer-profile');
+                  }}
+                />
+              </section>
 
               {/* Widget 1: "Active Orders" Mini Table */}
               <div className="bg-surface-container-lowest rounded-2xl border border-outline-variant/40 overflow-hidden shadow-sm">
@@ -482,13 +711,31 @@ export default function CustomerDashboard({ onNavigate, initialTab = 'dashboard'
                             {renderStatusBadge(ord.status)}
                           </td>
                           <td className="py-3.5 px-4 text-right whitespace-nowrap">
-                            <button
-                              type="button"
-                              onClick={() => setActiveTab('orders')}
-                              className="px-3 py-1.5 rounded-lg border border-outline hover:border-primary text-primary font-bold text-xs bg-surface cursor-pointer shadow-2xs"
-                            >
-                              View
-                            </button>
+                            <div className="flex items-center justify-end gap-1.5">
+                              <button
+                                type="button"
+                                title="Trace Pickup Route on Map"
+                                onClick={() => {
+                                  const match = stalls.find(s => s.stall_name.toLowerCase().includes(ord.farmer.toLowerCase().slice(0, 5))) || stalls[0];
+                                  if (match) {
+                                    setActiveBooking({ stallId: match.id, farmerId: match.farmer_id, farmer: match.stall_name, voucherId: ord.id });
+                                    document.getElementById('farmer-stalls-map')?.scrollIntoView({ behavior: 'smooth' });
+                                    showToast(`🚗 Plotting pickup route to ${match.stall_name}...`);
+                                  }
+                                }}
+                                className="px-2.5 py-1.5 rounded-lg border border-primary/30 hover:border-primary text-primary font-bold text-xs bg-primary/5 hover:bg-primary/10 cursor-pointer shadow-2xs flex items-center gap-1"
+                              >
+                                <span className="material-symbols-outlined text-[14px]">directions</span>
+                                <span>Route</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setActiveTab('orders')}
+                                className="px-3 py-1.5 rounded-lg border border-outline hover:border-primary text-primary font-bold text-xs bg-surface cursor-pointer shadow-2xs"
+                              >
+                                View
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -632,6 +879,37 @@ export default function CustomerDashboard({ onNavigate, initialTab = 'dashboard'
                 </div>
               </div>
             </div>
+          ) : activeTab === 'map' ? (
+            /* STALL MAP & ROUTE VIEW */
+            <div className="px-gutter py-space-lg max-w-7xl mx-auto w-full flex flex-col gap-6 animate-fade-in">
+              <div className="border-b border-outline-variant/40 pb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div>
+                  <h1 className="font-headline-md text-2xl text-on-surface font-bold tracking-tight">
+                    Farmer Stall Map & Pickup Navigation
+                  </h1>
+                  <p className="font-body-md text-xs sm:text-sm text-on-surface-variant mt-1">
+                    Locate regional farm stalls, view available harvest stock, reserve pickups, and view driving directions with distance & travel time.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('dashboard')}
+                  className="px-3.5 py-2 rounded-xl border border-outline-variant/30 hover:border-primary text-xs font-bold text-on-surface hover:text-primary transition-all self-start sm:self-auto cursor-pointer flex items-center gap-1.5"
+                >
+                  <span className="material-symbols-outlined text-[16px]">arrow_back</span>
+                  <span>Back to Dashboard</span>
+                </button>
+              </div>
+
+              <FarmerStallMap
+                stalls={stalls}
+                activeBooking={activeBooking}
+                onBookStall={handleBookStall}
+                onViewStallDetails={() => {
+                  if (onNavigate) onNavigate('farmer-profile');
+                }}
+              />
+            </div>
           ) : activeTab === 'orders' ? (
             /* 2. MY ORDERS VIEW */
             <CustomerOrders
@@ -691,6 +969,18 @@ export default function CustomerDashboard({ onNavigate, initialTab = 'dashboard'
           )}
         </main>
       </div>
+
+      {/* IN-DASHBOARD RESERVATION MODAL */}
+      {bookingModalProduct && (
+        <ReservationModal
+          product={bookingModalProduct}
+          onClose={() => {
+            setBookingModalProduct(null);
+            setBookingTargetStall(null);
+          }}
+          onConfirmReservation={(slip) => handleConfirmStallReservation(slip, bookingTargetStall)}
+        />
+      )}
     </div>
   );
 }
