@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import customerApi from '../api/customer';
+import browseApi from '../api/browse';
 import { useAuth } from '../context/AuthContext';
 
 export default function ReservationModal({
@@ -58,11 +59,23 @@ export default function ReservationModal({
         ? product.id
         : (parseInt(String(product.id).replace(/\D/g, ''), 10) || 1);
 
-      const farmerId = product.farmer_id || product.farmerId;
-      const marketId = product.market_id || product.marketId || product.market?.id || null;
+      let farmerId = product.farmer_id || product.farmerId || product.farmer?.id || product.user_id;
+      let marketId = product.market_id || product.marketId || product.market?.id || null;
+
+      // If farmerId is still missing, fetch product details to get its farmer_id and market_id
+      if (!farmerId && prodId) {
+        try {
+          const prodRes = await browseApi.getProduct(prodId);
+          if (prodRes?.data) {
+            if (prodRes.data.farmer_id) farmerId = prodRes.data.farmer_id;
+            if (!marketId && prodRes.data.market_id) marketId = prodRes.data.market_id;
+          }
+        } catch (fetchErr) {
+          console.warn('Could not auto-fetch product details:', fetchErr);
+        }
+      }
 
       const orderPayload = {
-        farmer_id: farmerId,
         pickup_date: pickupDate.toISOString().split('T')[0],
         pickup_time: 'This Weekend (Opening Hours)',
         notes: notes ? `${notes} (Contact: ${customerPhone})` : `Storefront hold (Contact: ${customerPhone})`,
@@ -73,8 +86,11 @@ export default function ReservationModal({
           }
         ]
       };
+      if (farmerId) {
+        orderPayload.farmer_id = Number(farmerId);
+      }
       if (marketId) {
-        orderPayload.market_id = marketId;
+        orderPayload.market_id = Number(marketId);
       }
 
       const res = await customerApi.createOrder(orderPayload);

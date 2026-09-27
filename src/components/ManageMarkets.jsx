@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import adminApi from '../api/admin';
 import MarketLocationPicker from './MarketLocationPicker';
 import PageLoader from './PageLoader';
@@ -44,6 +45,28 @@ export default function ManageMarkets({ onNavigate, showToast, autoOpenAddModal 
     setEditingMarket(null);
     if (onCloseAddModal) onCloseAddModal();
   };
+
+  // Lock body scroll and handle Escape key when modals are open
+  useEffect(() => {
+    if (isFormModalOpen || deleteModalMarket) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        if (isFormModalOpen) handleCloseFormModal();
+        if (deleteModalMarket) setDeleteModalMarket(null);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.body.style.overflow = '';
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isFormModalOpen, deleteModalMarket]);
 
   // Initial Markets Dataset
   const [markets, setMarkets] = useState([]);
@@ -647,23 +670,30 @@ export default function ManageMarkets({ onNavigate, showToast, autoOpenAddModal 
       {/* ======================================================== */}
       {/* MODAL: ADD / EDIT MARKET FORM                           */}
       {/* ======================================================== */}
-      {isFormModalOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto animate-fade-in">
-          <div className="bg-surface-container-lowest rounded-2xl max-w-2xl w-full p-space-lg shadow-2xl flex flex-col gap-space-md border border-outline-variant/40 my-8">
-            
-            {/* Modal Header */}
-            <div className="flex items-start justify-between border-b border-outline-variant/20 pb-space-sm">
-              <div className="flex items-center gap-2.5">
-                <div className="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center text-primary">
+      {isFormModalOpen && typeof document !== 'undefined' && createPortal(
+        <div
+          className="fixed inset-0 bg-black/80 backdrop-blur-md z-[99999] flex items-center justify-center p-3 sm:p-6 overflow-hidden animate-fade-in"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) handleCloseFormModal();
+          }}
+        >
+          <div
+            className="bg-white rounded-2xl max-w-2xl w-full max-h-[88vh] shadow-[0_25px_70px_rgba(0,0,0,0.5)] flex flex-col border border-slate-200 overflow-hidden animate-bounce-in relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header (Fixed at top) */}
+            <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4 shrink-0 bg-slate-50">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shadow-xs">
                   <span className="material-symbols-outlined text-[22px]">
                     {editingMarket ? 'edit_location' : 'add_location_alt'}
                   </span>
                 </div>
                 <div>
-                  <h3 className="font-headline-sm text-on-surface font-bold text-lg">
+                  <h3 className="font-headline-sm text-slate-900 font-bold text-base sm:text-lg">
                     {editingMarket ? `Edit: ${editingMarket.name}` : 'Add New Market Location'}
                   </h3>
-                  <p className="font-body-sm text-on-surface-variant text-xs">
+                  <p className="text-[11px] text-slate-500">
                     Configure regional pavilion details, operating timings, and coordinates.
                   </p>
                 </div>
@@ -672,260 +702,277 @@ export default function ManageMarkets({ onNavigate, showToast, autoOpenAddModal 
               <button
                 type="button"
                 onClick={handleCloseFormModal}
-                className="p-1 text-on-surface-variant hover:text-on-surface rounded-lg hover:bg-surface-container cursor-pointer"
+                className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-slate-800 hover:bg-slate-200/60 rounded-lg cursor-pointer transition-colors"
+                title="Close"
               >
                 <span className="material-symbols-outlined text-[20px]">close</span>
               </button>
             </div>
 
             {/* Modal Form */}
-            <form onSubmit={handleSaveForm} className="flex flex-col gap-space-md text-xs">
-              
-              {/* Market Name & Neighborhood */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-space-md">
-                <div className="flex flex-col gap-1">
-                  <label className="font-bold text-on-surface">Market Name *</label>
+            <form onSubmit={handleSaveForm} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+              {/* Scrollable Form Body */}
+              <div className="overflow-y-auto px-6 py-5 space-y-4 text-xs flex-1 bg-white">
+                
+                {/* Market Name & Neighborhood */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="flex flex-col gap-1.5">
+                    <label className="font-bold text-slate-800">Market Name *</label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      placeholder="e.g. South Waterfront Sunday Market"
+                      className="p-2.5 bg-slate-50 rounded-xl border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-primary focus:border-primary focus:outline-none transition-all"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="font-bold text-slate-800">Neighborhood / Area Description</label>
+                    <input
+                      type="text"
+                      value={formData.description}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      placeholder="e.g. South Park Blocks & Urban Plaza"
+                      className="p-2.5 bg-slate-50 rounded-xl border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-primary focus:border-primary focus:outline-none transition-all"
+                    />
+                  </div>
+                </div>
+
+                {/* Physical Address */}
+                <div className="flex flex-col gap-1.5">
+                  <label className="font-bold text-slate-800">Full Street Address *</label>
                   <input
                     type="text"
                     required
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    placeholder="e.g. South Waterfront Sunday Market"
-                    className="p-2.5 bg-surface-container-low rounded-xl border border-outline-variant/40 focus:ring-2 focus:ring-primary focus:outline-none"
+                    value={formData.address}
+                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                    placeholder="e.g. SW Park Ave & Montgomery St, Portland, OR 97201"
+                    className="p-2.5 bg-slate-50 rounded-xl border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-primary focus:border-primary focus:outline-none transition-all"
                   />
                 </div>
-                <div className="flex flex-col gap-1">
-                  <label className="font-bold text-on-surface">Neighborhood / Area Description</label>
-                  <input
-                    type="text"
-                    value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    placeholder="e.g. South Park Blocks & Urban Plaza"
-                    className="p-2.5 bg-surface-container-low rounded-xl border border-outline-variant/40 focus:ring-2 focus:ring-primary focus:outline-none"
-                  />
-                </div>
-              </div>
 
-              {/* Physical Address */}
-              <div className="flex flex-col gap-1">
-                <label className="font-bold text-on-surface">Full Street Address *</label>
-                <input
-                  type="text"
-                  required
-                  value={formData.address}
-                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  placeholder="e.g. SW Park Ave & Montgomery St, Portland, OR 97201"
-                  className="p-2.5 bg-surface-container-low rounded-xl border border-outline-variant/40 focus:ring-2 focus:ring-primary focus:outline-none"
-                />
-              </div>
+                {/* Operating Days Multi-Select */}
+                <div className="flex flex-col gap-1.5">
+                  <label className="font-bold text-slate-800">Operating Days (Multi-Select)</label>
+                  <div className="flex flex-wrap gap-2">
+                    {daysOfWeek.map((day) => {
+                      const isSelected = formData.operatingDays.includes(day);
+                      return (
+                        <button
+                          key={day}
+                          type="button"
+                          onClick={() => handleToggleDay(day)}
+                          className={`px-3 py-1.5 rounded-lg font-bold text-xs transition-colors cursor-pointer border ${
+                            isSelected
+                              ? 'bg-primary text-white border-primary shadow-sm'
+                              : 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200'
+                          }`}
+                        >
+                          {isSelected && <span className="mr-1">✓</span>}
+                          {day}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
 
-              {/* Operating Days Multi-Select */}
-              <div className="flex flex-col gap-1.5">
-                <label className="font-bold text-on-surface">Operating Days (Multi-Select)</label>
-                <div className="flex flex-wrap gap-2">
-                  {daysOfWeek.map((day) => {
-                    const isSelected = formData.operatingDays.includes(day);
-                    return (
-                      <button
-                        key={day}
-                        type="button"
-                        onClick={() => handleToggleDay(day)}
-                        className={`px-3 py-1.5 rounded-lg font-bold text-xs transition-colors cursor-pointer border ${
-                          isSelected
-                            ? 'bg-primary text-on-primary border-primary shadow-sm'
-                            : 'bg-surface-container-low text-on-surface-variant border-outline-variant/40 hover:bg-surface-container'
-                        }`}
-                      >
-                        {isSelected && <span className="mr-1">✓</span>}
-                        {day}
-                      </button>
-                    );
-                  })}
+                {/* Timings (Start & End Time) */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="flex flex-col gap-1.5">
+                    <label className="font-bold text-slate-800">Opening Time</label>
+                    <input
+                      type="text"
+                      value={formData.startTime}
+                      onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
+                      placeholder="08:00 AM"
+                      className="p-2.5 bg-slate-50 rounded-xl border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-primary focus:border-primary focus:outline-none transition-all"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="font-bold text-slate-800">Closing Time</label>
+                    <input
+                      type="text"
+                      value={formData.endTime}
+                      onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
+                      placeholder="02:00 PM"
+                      className="p-2.5 bg-slate-50 rounded-xl border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-primary focus:border-primary focus:outline-none transition-all"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="font-bold text-slate-800">Registered Farmers Stalls</label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={formData.farmersCount}
+                      onChange={(e) => setFormData({ ...formData, farmersCount: e.target.value })}
+                      className="p-2.5 bg-slate-50 rounded-xl border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-primary focus:border-primary focus:outline-none transition-all"
+                    />
+                  </div>
                 </div>
-              </div>
 
-              {/* Timings (Start & End Time) */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-space-md">
-                <div className="flex flex-col gap-1">
-                  <label className="font-bold text-on-surface">Opening Time</label>
-                  <input
-                    type="text"
-                    value={formData.startTime}
-                    onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
-                    placeholder="08:00 AM"
-                    className="p-2.5 bg-surface-container-low rounded-xl border border-outline-variant/40 focus:ring-2 focus:ring-primary focus:outline-none"
-                  />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label className="font-bold text-on-surface">Closing Time</label>
-                  <input
-                    type="text"
-                    value={formData.endTime}
-                    onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
-                    placeholder="02:00 PM"
-                    className="p-2.5 bg-surface-container-low rounded-xl border border-outline-variant/40 focus:ring-2 focus:ring-primary focus:outline-none"
-                  />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label className="font-bold text-on-surface">Registered Farmers Stalls</label>
-                  <input
-                    type="number"
-                    min="1"
-                    value={formData.farmersCount}
-                    onChange={(e) => setFormData({ ...formData, farmersCount: e.target.value })}
-                    className="p-2.5 bg-surface-container-low rounded-xl border border-outline-variant/40 focus:ring-2 focus:ring-primary focus:outline-none"
-                  />
-                </div>
-              </div>
+                {/* Map Location Section */}
+                <div className="flex flex-col gap-2 pt-2 border-t border-slate-200">
+                  <div className="flex items-center justify-between">
+                    <label className="font-bold text-slate-800 flex items-center gap-1.5">
+                      <span className="material-symbols-outlined text-[18px] text-primary">pin_drop</span>
+                      <span>Geospatial Pin &amp; Map Coordinates</span>
+                    </label>
+                    <span className="text-[11px] text-slate-500 font-mono">
+                      Lat: {formData.lat || '—'}, Lng: {formData.lng || '—'}
+                    </span>
+                  </div>
 
-              {/* Map Location Section */}
-              <div className="flex flex-col gap-2 pt-2 border-t border-outline-variant/20">
-                <div className="flex items-center justify-between">
-                  <label className="font-bold text-on-surface flex items-center gap-1.5">
-                    <span className="material-symbols-outlined text-[18px] text-primary">pin_drop</span>
-                    <span>Geospatial Pin &amp; Map Coordinates</span>
+                  {/* Real Interactive Map Component for Market Geolocation */}
+                  <MarketLocationPicker
+                    latitude={formData.lat}
+                    longitude={formData.lng}
+                    marketName={formData.name}
+                    address={formData.address}
+                    onLocationChange={({ lat, lng }) => {
+                      setFormData((prev) => ({ ...prev, lat, lng }));
+                    }}
+                    onAddressChange={(newAddr) => {
+                      setFormData((prev) => ({ ...prev, address: newAddr }));
+                    }}
+                    showToast={showToast}
+                  />
+
+                  {/* Latitude & Longitude Input Fields */}
+                  <div className="grid grid-cols-2 gap-4 mt-1">
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[11px] font-bold text-slate-600 flex items-center justify-between">
+                        <span>Latitude</span>
+                        <span className="text-[10px] text-primary font-mono font-semibold">Synced with Pin</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.lat}
+                        onChange={(e) => setFormData({ ...formData, lat: e.target.value })}
+                        placeholder="e.g. 45.5152"
+                        className="p-2.5 bg-slate-50 rounded-xl font-mono text-xs border border-slate-300 text-slate-900 focus:bg-white focus:ring-2 focus:ring-primary focus:border-primary focus:outline-none transition-all"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[11px] font-bold text-slate-600 flex items-center justify-between">
+                        <span>Longitude</span>
+                        <span className="text-[10px] text-primary font-mono font-semibold">Synced with Pin</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.lng}
+                        onChange={(e) => setFormData({ ...formData, lng: e.target.value })}
+                        placeholder="e.g. -122.6784"
+                        className="p-2.5 bg-slate-50 rounded-xl font-mono text-xs border border-slate-300 text-slate-900 focus:bg-white focus:ring-2 focus:ring-primary focus:border-primary focus:outline-none transition-all"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Status Radio */}
+                <div className="flex items-center gap-4 pt-1">
+                  <span className="font-bold text-slate-800">Publish Status:</span>
+                  <label className="flex items-center gap-1.5 cursor-pointer font-bold text-slate-700">
+                    <input
+                      type="radio"
+                      name="status"
+                      checked={formData.status === 'Active'}
+                      onChange={() => setFormData({ ...formData, status: 'Active' })}
+                      className="text-primary focus:ring-primary"
+                    />
+                    <span>Active</span>
                   </label>
-                  <span className="text-[11px] text-on-surface-variant font-mono">
-                    Lat: {formData.lat || '—'}, Lng: {formData.lng || '—'}
-                  </span>
-                </div>
-
-                {/* Real Interactive Map Component for Market Geolocation */}
-                <MarketLocationPicker
-                  latitude={formData.lat}
-                  longitude={formData.lng}
-                  marketName={formData.name}
-                  address={formData.address}
-                  onLocationChange={({ lat, lng }) => {
-                    setFormData((prev) => ({ ...prev, lat, lng }));
-                  }}
-                  onAddressChange={(newAddr) => {
-                    setFormData((prev) => ({ ...prev, address: newAddr }));
-                  }}
-                  showToast={showToast}
-                />
-
-                {/* Latitude & Longitude Input Fields */}
-                <div className="grid grid-cols-2 gap-space-md mt-1">
-                  <div className="flex flex-col gap-1">
-                    <label className="text-[11px] font-bold text-on-surface-variant flex items-center justify-between">
-                      <span>Latitude</span>
-                      <span className="text-[10px] text-primary font-mono font-normal">Synced with Pin</span>
-                    </label>
+                  <label className="flex items-center gap-1.5 cursor-pointer font-bold text-slate-700">
                     <input
-                      type="text"
-                      value={formData.lat}
-                      onChange={(e) => setFormData({ ...formData, lat: e.target.value })}
-                      placeholder="e.g. 45.5152"
-                      className="p-2.5 bg-surface-container-low rounded-xl font-mono text-xs border border-outline-variant/40 focus:ring-2 focus:ring-primary focus:outline-none"
+                      type="radio"
+                      name="status"
+                      checked={formData.status === 'Inactive'}
+                      onChange={() => setFormData({ ...formData, status: 'Inactive' })}
+                      className="text-primary focus:ring-primary"
                     />
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <label className="text-[11px] font-bold text-on-surface-variant flex items-center justify-between">
-                      <span>Longitude</span>
-                      <span className="text-[10px] text-primary font-mono font-normal">Synced with Pin</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.lng}
-                      onChange={(e) => setFormData({ ...formData, lng: e.target.value })}
-                      placeholder="e.g. -122.6784"
-                      className="p-2.5 bg-surface-container-low rounded-xl font-mono text-xs border border-outline-variant/40 focus:ring-2 focus:ring-primary focus:outline-none"
-                    />
-                  </div>
+                    <span>Inactive (Seasonal / Maintenance)</span>
+                  </label>
                 </div>
               </div>
 
-              {/* Status Radio */}
-              <div className="flex items-center gap-4 pt-1">
-                <span className="font-bold text-on-surface">Publish Status:</span>
-                <label className="flex items-center gap-1.5 cursor-pointer font-bold">
-                  <input
-                    type="radio"
-                    name="status"
-                    checked={formData.status === 'Active'}
-                    onChange={() => setFormData({ ...formData, status: 'Active' })}
-                    className="text-primary focus:ring-primary"
-                  />
-                  <span>Active</span>
-                </label>
-                <label className="flex items-center gap-1.5 cursor-pointer font-bold">
-                  <input
-                    type="radio"
-                    name="status"
-                    checked={formData.status === 'Inactive'}
-                    onChange={() => setFormData({ ...formData, status: 'Inactive' })}
-                    className="text-primary focus:ring-primary"
-                  />
-                  <span>Inactive (Seasonal / Maintenance)</span>
-                </label>
-              </div>
-
-              {/* Form Actions */}
-              <div className="flex items-center justify-end gap-space-sm pt-space-sm border-t border-outline-variant/20 mt-space-sm">
+              {/* Fixed Modal Footer */}
+              <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-200 shrink-0 bg-slate-50">
                 <button
                   type="button"
                   onClick={handleCloseFormModal}
-                  className="px-space-md py-2.5 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface font-bold transition-colors cursor-pointer"
+                  className="px-4 py-2.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 font-bold transition-colors cursor-pointer text-xs"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-space-lg py-2.5 rounded-xl bg-primary text-on-primary font-bold hover:bg-primary-container transition-colors shadow-md cursor-pointer"
+                  className="px-6 py-2.5 rounded-xl bg-primary text-white font-bold hover:bg-[#1b4d27] transition-all shadow-md active:scale-95 cursor-pointer text-xs flex items-center gap-2"
                 >
-                  {editingMarket ? 'Save Changes' : 'Create Market Location'}
+                  <span className="material-symbols-outlined text-[18px]">
+                    {editingMarket ? 'check' : 'add'}
+                  </span>
+                  <span>{editingMarket ? 'Save Changes' : 'Create Market Location'}</span>
                 </button>
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* ======================================================== */}
       {/* MODAL: DELETE CONFIRMATION                              */}
       {/* ======================================================== */}
-      {deleteModalMarket && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-surface-container-lowest rounded-2xl max-w-md w-full p-space-lg shadow-2xl flex flex-col gap-space-md border border-outline-variant/40">
+      {deleteModalMarket && typeof document !== 'undefined' && createPortal(
+        <div
+          className="fixed inset-0 bg-black/80 backdrop-blur-md z-[99999] flex items-center justify-center p-4 animate-fade-in"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setDeleteModalMarket(null);
+          }}
+        >
+          <div
+            className="bg-white rounded-2xl max-w-md w-full p-6 shadow-[0_25px_70px_rgba(0,0,0,0.5)] flex flex-col gap-4 border border-slate-200 animate-bounce-in"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center gap-3 text-error">
               <div className="w-12 h-12 rounded-full bg-error-container/40 flex items-center justify-center shrink-0">
                 <span className="material-symbols-outlined text-[28px] text-error">warning</span>
               </div>
               <div>
-                <h3 className="font-headline-sm text-on-surface font-bold text-base">
+                <h3 className="font-headline-sm text-slate-900 font-bold text-base">
                   Delete Market Location?
                 </h3>
-                <span className="font-body-sm text-on-surface-variant text-xs">
+                <span className="font-body-sm text-slate-500 text-xs">
                   Irreversible platform action
                 </span>
               </div>
             </div>
 
-            <p className="font-body-sm text-on-surface-variant text-xs leading-relaxed">
+            <p className="font-body-sm text-slate-600 text-xs leading-relaxed">
               Are you sure you want to delete{' '}
-              <strong className="text-on-surface font-bold">{deleteModalMarket.name}</strong>?
+              <strong className="text-slate-900 font-bold">{deleteModalMarket.name}</strong>?
               This cannot be undone. All linked pre-order stall reservations and geolocation pointers will be detached.
             </p>
 
-            <div className="flex items-center justify-end gap-space-sm pt-2 border-t border-outline-variant/20 text-xs">
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-200 text-xs">
               <button
                 type="button"
                 onClick={() => setDeleteModalMarket(null)}
-                className="px-space-md py-2 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface font-bold transition-colors cursor-pointer"
+                className="px-4 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 font-bold transition-colors cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={handleConfirmDelete}
-                className="px-space-lg py-2 rounded-xl bg-error text-on-error font-bold hover:opacity-90 transition-opacity shadow-md cursor-pointer"
+                className="px-5 py-2 rounded-xl bg-error text-white font-bold hover:opacity-90 transition-opacity shadow-md cursor-pointer"
               >
                 Delete Market
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
     </div>

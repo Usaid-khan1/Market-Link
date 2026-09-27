@@ -92,6 +92,10 @@ export default function FarmerProfile({ farmerId = 2, onNavigate, onReserveProdu
     const isLow = isAvail && p.stock_quantity !== undefined && p.stock_quantity <= 4;
     return {
       id: p.id,
+      farmer_id: liveFarmer?.id || p.farmer_id,
+      farmerId: liveFarmer?.id || p.farmer_id,
+      market_id: p.market_id,
+      marketId: p.market_id,
       category: (p.category?.name || p.category || 'all').toLowerCase(),
       categoryName: p.category?.name || p.category || 'Produce',
       name: p.name,

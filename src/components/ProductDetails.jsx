@@ -80,6 +80,10 @@ export default function ProductDetails({ productId = 1, onNavigate, onReservePro
   const handleReserveClick = () => {
     onReserveProduct({
       id: liveProduct?.id || productId,
+      farmer_id: liveProduct?.farmer_id || liveProduct?.farmer?.id,
+      farmerId: liveProduct?.farmer_id || liveProduct?.farmer?.id,
+      market_id: liveProduct?.market_id,
+      marketId: liveProduct?.market_id,
       name: productName,
       price: pricePerUnit,
       unit,

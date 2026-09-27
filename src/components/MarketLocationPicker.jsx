@@ -225,7 +225,27 @@ export default function MarketLocationPicker({
       map.resize();
     });
 
+    const resizeTimer = setTimeout(() => {
+      if (mapRef.current) {
+        mapRef.current.resize();
+      }
+    }, 250);
+
+    let resizeObserver = null;
+    if (typeof ResizeObserver !== 'undefined' && mapContainerRef.current) {
+      resizeObserver = new ResizeObserver(() => {
+        if (mapRef.current) {
+          mapRef.current.resize();
+        }
+      });
+      resizeObserver.observe(mapContainerRef.current);
+    }
+
     return () => {
+      clearTimeout(resizeTimer);
+      if (resizeObserver) {
+        resizeObserver.disconnect();
+      }
       if (markerRef.current) {
         markerRef.current.remove();
         markerRef.current = null;
@@ -402,7 +422,7 @@ export default function MarketLocationPicker({
       </div>
 
       {/* Map Container Viewport */}
-      <div className="relative w-full h-56 sm:h-64 rounded-2xl overflow-hidden border-2 border-outline-variant/40 shadow-sm bg-[#e8eee8]">
+      <div className="relative w-full h-48 sm:h-52 rounded-2xl overflow-hidden border-2 border-outline-variant/40 shadow-sm bg-[#e8eee8]">
         <div ref={mapContainerRef} className="w-full h-full" />
 
         {/* Floating Top Hint Pill */}

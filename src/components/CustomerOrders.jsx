@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import customerApi from '../api/customer';
 import PageLoader from './PageLoader';
 
@@ -12,6 +13,29 @@ export default function CustomerOrders({ onNavigate, showToast, onAddToCart }) {
   const [cancelModalOrder, setCancelModalOrder] = useState(null);
   const [reviewModalOrder, setReviewModalOrder] = useState(null);
   const [reviewForm, setReviewForm] = useState({ rating: 5, comment: '' });
+
+  // Lock body scroll and handle Escape key when modals are open
+  useEffect(() => {
+    if (viewOrderDetail || cancelModalOrder || reviewModalOrder) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        if (viewOrderDetail) setViewOrderDetail(null);
+        if (cancelModalOrder) setCancelModalOrder(null);
+        if (reviewModalOrder) setReviewModalOrder(null);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.body.style.overflow = '';
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [viewOrderDetail, cancelModalOrder, reviewModalOrder]);
 
   // Customer Orders Dataset
   const [orders, setOrders] = useState([]);
@@ -531,240 +555,283 @@ export default function CustomerOrders({ onNavigate, showToast, onAddToCart }) {
       {/* ======================================================== */}
       {/* MODAL: ORDER DETAILS & PICKUP MAP                       */}
       {/* ======================================================== */}
-      {viewOrderDetail && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto animate-fade-in">
-          <div className="bg-surface-container-lowest rounded-2xl max-w-lg w-full p-space-lg shadow-2xl flex flex-col gap-space-md border border-outline-variant/40 my-8 text-xs">
-            
-            {/* Header */}
-            <div className="flex items-start justify-between border-b border-outline-variant/20 pb-space-sm">
-              <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="font-headline-sm text-on-surface font-bold text-lg">
-                    Voucher Slip {viewOrderDetail.id}
-                  </h3>
-                  {renderStatusBadge(viewOrderDetail.status)}
+      {viewOrderDetail && typeof document !== 'undefined' && createPortal(
+        <div
+          className="fixed inset-0 bg-black/80 backdrop-blur-md z-[99999] flex items-center justify-center p-3 sm:p-6 overflow-hidden animate-fade-in"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setViewOrderDetail(null);
+          }}
+        >
+          <div
+            className="bg-white rounded-2xl max-w-lg w-full max-h-[88vh] shadow-[0_25px_70px_rgba(0,0,0,0.5)] flex flex-col border border-slate-200 overflow-hidden animate-bounce-in relative text-xs"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header (Fixed at top) */}
+            <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4 shrink-0 bg-slate-50">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shadow-xs">
+                  <span className="material-symbols-outlined text-[22px]">receipt_long</span>
                 </div>
-                <span className="text-[11px] text-on-surface-variant">
-                  {viewOrderDetail.pickupDate} • {viewOrderDetail.pickupSlot}
-                </span>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-headline-sm text-slate-900 font-bold text-base sm:text-lg">
+                      Voucher Slip {viewOrderDetail.id}
+                    </h3>
+                    {renderStatusBadge(viewOrderDetail.status)}
+                  </div>
+                  <p className="text-[11px] text-slate-500 font-medium">
+                    {viewOrderDetail.pickupDate} • {viewOrderDetail.pickupSlot}
+                  </p>
+                </div>
               </div>
               <button
                 type="button"
                 onClick={() => setViewOrderDetail(null)}
-                className="p-1 text-on-surface-variant hover:text-on-surface rounded-lg cursor-pointer"
+                className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-slate-800 hover:bg-slate-200/60 rounded-lg cursor-pointer transition-colors"
+                title="Close"
               >
                 <span className="material-symbols-outlined text-[20px]">close</span>
               </button>
             </div>
 
-            {/* Farmer Contact Info */}
-            <div className="p-3 bg-surface-container-low rounded-xl flex flex-col gap-1 border border-outline-variant/20">
-              <span className="text-[10px] uppercase font-bold text-on-surface-variant">Grower Stand</span>
-              <div className="flex justify-between font-bold">
-                <span className="text-on-surface">{viewOrderDetail.farmer}</span>
-                <span className="text-primary">{viewOrderDetail.farmerPhone}</span>
+            {/* Scrollable Body */}
+            <div className="overflow-y-auto px-6 py-5 space-y-4 text-xs flex-1 bg-white">
+              {/* Farmer Contact Info */}
+              <div className="p-3.5 bg-slate-50 rounded-xl flex flex-col gap-1.5 border border-slate-200">
+                <span className="text-[10px] uppercase font-bold text-slate-500">Grower Stand</span>
+                <div className="flex justify-between items-center font-bold">
+                  <span className="text-slate-900 text-sm">{viewOrderDetail.farmer}</span>
+                  <span className="text-primary font-mono text-xs">{viewOrderDetail.farmerPhone}</span>
+                </div>
+                <span className="text-slate-600 text-xs">{viewOrderDetail.market} ({viewOrderDetail.stallLocation})</span>
               </div>
-              <span className="text-on-surface-variant">{viewOrderDetail.market} ({viewOrderDetail.stallLocation})</span>
-            </div>
 
-            {/* Items List */}
-            <div className="flex flex-col gap-1.5">
-              <span className="text-[10px] uppercase font-bold text-on-surface-variant">Items Reserved</span>
-              <div className="border border-outline-variant/30 rounded-xl overflow-hidden divide-y divide-surface-container-high/60">
-                {viewOrderDetail.itemsList.map((it, idx) => (
-                  <div key={idx} className="p-2.5 flex items-center justify-between">
-                    <div>
-                      <span className="font-bold text-on-surface">{it.name}</span>
-                      <span className="text-on-surface-variant text-[11px] block">
-                        {it.qty} @ {it.unitPrice}
-                      </span>
+              {/* Items List */}
+              <div className="flex flex-col gap-1.5">
+                <span className="text-[10px] uppercase font-bold text-slate-500">Items Reserved</span>
+                <div className="border border-slate-200 rounded-xl overflow-hidden divide-y divide-slate-100 shadow-2xs">
+                  {viewOrderDetail.itemsList.map((it, idx) => (
+                    <div key={idx} className="p-3 flex items-center justify-between bg-white hover:bg-slate-50/50 transition-colors">
+                      <div>
+                        <span className="font-bold text-slate-900">{it.name}</span>
+                        <span className="text-slate-500 text-[11px] block mt-0.5">
+                          {it.qty} @ {it.unitPrice}
+                        </span>
+                      </div>
+                      <span className="font-mono font-bold text-primary text-sm">{it.total}</span>
                     </div>
-                    <span className="font-mono font-bold text-primary">{it.total}</span>
+                  ))}
+                  <div className="p-3 bg-slate-50 flex items-center justify-between font-bold border-t border-slate-200">
+                    <span className="text-slate-800">Estimated Total Due at Stall</span>
+                    <span className="font-mono text-base text-primary font-black">{viewOrderDetail.totalAmount}</span>
                   </div>
-                ))}
-                <div className="p-2.5 bg-surface-container/40 flex items-center justify-between font-bold">
-                  <span>Estimated Total Due at Stall</span>
-                  <span className="font-mono text-base text-primary">{viewOrderDetail.totalAmount}</span>
+                </div>
+              </div>
+
+              {/* In-Person Payment Reminder */}
+              <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200/80 flex items-center gap-2.5">
+                <span className="material-symbols-outlined text-primary text-[20px] shrink-0">payments</span>
+                <span className="font-semibold text-emerald-900 text-[11px] leading-relaxed">
+                  Pay in person at pickup (Cash, Card, and SNAP matching tokens accepted).
+                </span>
+              </div>
+
+              {/* Pickup Location Map Placeholder */}
+              <div className="flex flex-col gap-1.5">
+                <span className="text-[10px] uppercase font-bold text-slate-500">Pickup Location Map</span>
+                <div className="relative w-full h-32 rounded-xl bg-slate-100 border border-slate-200 overflow-hidden flex flex-col items-center justify-center p-3">
+                  <div
+                    className="absolute inset-0 opacity-15 pointer-events-none"
+                    style={{
+                      backgroundImage: 'radial-gradient(circle, #2E6B3A 1px, transparent 1px)',
+                      backgroundSize: '16px 16px'
+                    }}
+                  ></div>
+                  <div className="relative z-10 flex flex-col items-center animate-bounce">
+                    <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center shadow-md">
+                      <span className="material-symbols-outlined text-[18px]">place</span>
+                    </div>
+                  </div>
+                  <span className="relative z-10 mt-1 font-bold text-slate-900 text-xs">
+                    {viewOrderDetail.stallLocation}
+                  </span>
+                  <span className="relative z-10 text-[11px] text-slate-500">
+                    {viewOrderDetail.market}
+                  </span>
+                </div>
+              </div>
+
+              {/* Audit Timeline */}
+              <div className="flex flex-col gap-1.5">
+                <span className="text-[10px] uppercase font-bold text-slate-500">Order Timeline</span>
+                <div className="flex flex-col gap-2 pl-3 border-l-2 border-primary/40 ml-1">
+                  {viewOrderDetail.timeline.map((ev, idx) => (
+                    <div key={idx} className="flex flex-col text-[11px]">
+                      <span className="font-bold text-slate-800">{ev.title} <span className="font-normal text-slate-500">({ev.time})</span></span>
+                      <span className="text-slate-500 text-[10px]">{ev.desc}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
 
-            {/* In-Person Payment Reminder */}
-            <div className="p-2.5 rounded-xl bg-primary-fixed/40 border border-primary/20 flex items-center gap-2">
-              <span className="material-symbols-outlined text-primary text-[20px]">payments</span>
-              <span className="font-bold text-on-primary-fixed text-[11px]">
-                Pay in person at pickup (Cash, Card, and SNAP matching tokens accepted).
-              </span>
-            </div>
-
-            {/* Pickup Location Map Placeholder */}
-            <div className="flex flex-col gap-1">
-              <span className="text-[10px] uppercase font-bold text-on-surface-variant">Pickup Location Map</span>
-              <div className="relative w-full h-32 rounded-xl bg-surface-container-high border border-outline-variant/40 overflow-hidden flex flex-col items-center justify-center p-3">
-                <div
-                  className="absolute inset-0 opacity-15 pointer-events-none"
-                  style={{
-                    backgroundImage: 'radial-gradient(circle, #2E6B3A 1px, transparent 1px)',
-                    backgroundSize: '16px 16px'
-                  }}
-                ></div>
-                <div className="relative z-10 flex flex-col items-center animate-bounce">
-                  <div className="w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center shadow-md">
-                    <span className="material-symbols-outlined text-[18px]">place</span>
-                  </div>
-                </div>
-                <span className="relative z-10 mt-1 font-bold text-on-surface text-[11px]">
-                  {viewOrderDetail.stallLocation}
-                </span>
-                <span className="relative z-10 text-[10px] text-on-surface-variant">
-                  {viewOrderDetail.market}
-                </span>
-              </div>
-            </div>
-
-            {/* Audit Timeline */}
-            <div className="flex flex-col gap-1.5">
-              <span className="text-[10px] uppercase font-bold text-on-surface-variant">Order Timeline</span>
-              <div className="flex flex-col gap-1.5 pl-2 border-l-2 border-primary/30">
-                {viewOrderDetail.timeline.map((ev, idx) => (
-                  <div key={idx} className="flex flex-col text-[11px]">
-                    <span className="font-bold text-on-surface">{ev.title} ({ev.time})</span>
-                    <span className="text-on-surface-variant">{ev.desc}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Modal Actions */}
-            <div className="flex justify-end pt-2 border-t border-outline-variant/20">
+            {/* Modal Actions Footer */}
+            <div className="flex justify-end px-6 py-3.5 border-t border-slate-200 shrink-0 bg-slate-50">
               <button
                 type="button"
                 onClick={() => setViewOrderDetail(null)}
-                className="px-space-md py-2 rounded-xl bg-primary text-on-primary font-bold cursor-pointer"
+                className="px-5 py-2.5 rounded-xl bg-primary text-white font-bold hover:bg-[#1b4d27] transition-all shadow-md active:scale-95 cursor-pointer text-xs"
               >
-                Close
+                Close Slip
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* ======================================================== */}
       {/* MODAL: CANCEL ORDER CONFIRMATION                        */}
       {/* ======================================================== */}
-      {cancelModalOrder && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-surface-container-lowest rounded-2xl max-w-sm w-full p-space-lg shadow-2xl flex flex-col gap-space-md border border-outline-variant/40 text-xs">
-            <div className="flex items-center gap-2.5 text-error">
-              <span className="material-symbols-outlined text-[24px]">cancel</span>
-              <h3 className="font-headline-sm text-on-surface font-bold text-base">
-                Cancel Pre-Order?
-              </h3>
+      {cancelModalOrder && typeof document !== 'undefined' && createPortal(
+        <div
+          className="fixed inset-0 bg-black/80 backdrop-blur-md z-[99999] flex items-center justify-center p-4 animate-fade-in"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setCancelModalOrder(null);
+          }}
+        >
+          <div
+            className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-[0_25px_70px_rgba(0,0,0,0.5)] flex flex-col gap-4 border border-slate-200 animate-bounce-in text-xs"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-3 text-error">
+              <div className="w-10 h-10 rounded-full bg-error-container/40 flex items-center justify-center shrink-0">
+                <span className="material-symbols-outlined text-[24px] text-error">cancel</span>
+              </div>
+              <div>
+                <h3 className="font-headline-sm text-slate-900 font-bold text-base">
+                  Cancel Pre-Order?
+                </h3>
+                <span className="text-[11px] text-slate-500">Order {cancelModalOrder.id}</span>
+              </div>
             </div>
-            <p className="text-on-surface-variant leading-relaxed">
-              Are you sure you want to cancel Order <strong className="text-on-surface font-bold">{cancelModalOrder.id}</strong> with <strong className="text-on-surface font-bold">{cancelModalOrder.farmer}</strong>? This reservation will be released back to the farmer.
+            <p className="text-slate-600 leading-relaxed">
+              Are you sure you want to cancel Order <strong className="text-slate-900 font-bold">{cancelModalOrder.id}</strong> with <strong className="text-slate-900 font-bold">{cancelModalOrder.farmer}</strong>? This reservation will be released back to the farmer.
             </p>
-            <div className="flex justify-end gap-2 pt-2 border-t border-outline-variant/20">
+            <div className="flex justify-end gap-2.5 pt-3 border-t border-slate-200">
               <button
                 type="button"
                 onClick={() => setCancelModalOrder(null)}
-                className="px-3.5 py-1.5 rounded-lg bg-surface-container font-bold cursor-pointer"
+                className="px-4 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 font-bold transition-colors cursor-pointer text-xs"
               >
                 Keep Order
               </button>
               <button
                 type="button"
                 onClick={handleConfirmCancel}
-                className="px-4 py-1.5 rounded-lg bg-error text-on-error font-bold cursor-pointer"
+                className="px-5 py-2 rounded-xl bg-error text-white font-bold hover:opacity-90 transition-opacity shadow-md cursor-pointer text-xs"
               >
                 Cancel Order
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* ======================================================== */}
       {/* MODAL: LEAVE A REVIEW                                   */}
       {/* ======================================================== */}
-      {reviewModalOrder && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-surface-container-lowest rounded-2xl max-w-md w-full p-space-lg shadow-2xl flex flex-col gap-space-md border border-outline-variant/40 text-xs">
-            <div className="flex items-center justify-between border-b border-outline-variant/20 pb-space-sm">
-              <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-[#F28C28] text-[20px]">star</span>
-                <h3 className="font-headline-sm text-on-surface font-bold text-base">
+      {reviewModalOrder && typeof document !== 'undefined' && createPortal(
+        <div
+          className="fixed inset-0 bg-black/80 backdrop-blur-md z-[99999] flex items-center justify-center p-3 sm:p-6 overflow-hidden animate-fade-in"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setReviewModalOrder(null);
+          }}
+        >
+          <div
+            className="bg-white rounded-2xl max-w-md w-full max-h-[88vh] shadow-[0_25px_70px_rgba(0,0,0,0.5)] flex flex-col border border-slate-200 overflow-hidden animate-bounce-in text-xs"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4 shrink-0 bg-slate-50">
+              <div className="flex items-center gap-2.5">
+                <span className="material-symbols-outlined text-[#F28C28] text-[22px]">star</span>
+                <h3 className="font-headline-sm text-slate-900 font-bold text-base">
                   Leave a Review
                 </h3>
               </div>
               <button
                 type="button"
                 onClick={() => setReviewModalOrder(null)}
-                className="p-1 text-on-surface-variant hover:text-on-surface rounded-lg cursor-pointer"
+                className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-slate-800 hover:bg-slate-200/60 rounded-lg cursor-pointer transition-colors"
+                title="Close"
               >
-                ✕
+                <span className="material-symbols-outlined text-[20px]">close</span>
               </button>
             </div>
 
-            <form onSubmit={handleSubmitReview} className="flex flex-col gap-space-md">
-              <div className="flex flex-col gap-1">
-                <span className="font-bold text-on-surface">Grower: {reviewModalOrder.farmer}</span>
-                <span className="text-[11px] text-on-surface-variant">{reviewModalOrder.itemsSummary}</span>
-              </div>
+            <form onSubmit={handleSubmitReview} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+              <div className="overflow-y-auto px-6 py-5 space-y-4 text-xs flex-1 bg-white">
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex flex-col gap-1">
+                  <span className="font-bold text-slate-900">Grower: {reviewModalOrder.farmer}</span>
+                  <span className="text-[11px] text-slate-500">{reviewModalOrder.itemsSummary}</span>
+                </div>
 
-              {/* Star Rating Select */}
-              <div className="flex flex-col gap-1">
-                <label className="font-bold text-on-surface">Your Rating:</label>
-                <div className="flex items-center gap-1 text-[#F28C28]">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <button
-                      key={star}
-                      type="button"
-                      onClick={() => setReviewForm({ ...reviewForm, rating: star })}
-                      className="cursor-pointer transition-transform hover:scale-125"
-                    >
-                      <span className={`material-symbols-outlined text-[24px] ${
-                        star <= reviewForm.rating ? 'text-[#F28C28]' : 'text-outline-variant'
-                      }`}>
-                        star
-                      </span>
-                    </button>
-                  ))}
-                  <span className="ml-2 font-bold text-on-surface text-xs">{reviewForm.rating} of 5 Stars</span>
+                {/* Star Rating Select */}
+                <div className="flex flex-col gap-1.5">
+                  <label className="font-bold text-slate-800">Your Rating:</label>
+                  <div className="flex items-center gap-1.5 text-[#F28C28]">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        type="button"
+                        onClick={() => setReviewForm({ ...reviewForm, rating: star })}
+                        className="cursor-pointer transition-transform hover:scale-125 p-0.5"
+                      >
+                        <span className={`material-symbols-outlined text-[26px] ${
+                          star <= reviewForm.rating ? 'text-[#F28C28] fill' : 'text-slate-300'
+                        }`}>
+                          star
+                        </span>
+                      </button>
+                    ))}
+                    <span className="ml-2 font-bold text-slate-800 text-xs">{reviewForm.rating} of 5 Stars</span>
+                  </div>
+                </div>
+
+                {/* Comment */}
+                <div className="flex flex-col gap-1.5">
+                  <label className="font-bold text-slate-800">Your Feedback *</label>
+                  <textarea
+                    rows={4}
+                    required
+                    value={reviewForm.comment}
+                    onChange={(e) => setReviewForm({ ...reviewForm, comment: e.target.value })}
+                    placeholder="Tell other market shoppers about the taste, freshness, and stall pickup experience..."
+                    className="p-3 bg-slate-50 rounded-xl border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-primary focus:border-primary focus:outline-none resize-none transition-all"
+                  ></textarea>
                 </div>
               </div>
 
-              {/* Comment */}
-              <div className="flex flex-col gap-1">
-                <label className="font-bold text-on-surface">Your Feedback *</label>
-                <textarea
-                  rows={4}
-                  required
-                  value={reviewForm.comment}
-                  onChange={(e) => setReviewForm({ ...reviewForm, comment: e.target.value })}
-                  placeholder="Tell other market shoppers about the taste, freshness, and stall pickup experience..."
-                  className="p-2.5 bg-surface-container-low rounded-xl border border-outline-variant/40 focus:ring-2 focus:ring-primary focus:outline-none resize-none"
-                ></textarea>
-              </div>
-
-              <div className="flex justify-end gap-2 pt-2 border-t border-outline-variant/20">
+              <div className="flex items-center justify-end gap-2.5 px-6 py-3.5 border-t border-slate-200 shrink-0 bg-slate-50">
                 <button
                   type="button"
                   onClick={() => setReviewModalOrder(null)}
-                  className="px-space-md py-2 rounded-xl bg-surface-container text-on-surface font-bold cursor-pointer"
+                  className="px-4 py-2.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 font-bold transition-colors cursor-pointer text-xs"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-space-lg py-2 rounded-xl bg-primary text-on-primary font-bold shadow-sm cursor-pointer"
+                  className="px-6 py-2.5 rounded-xl bg-primary text-white font-bold hover:bg-[#1b4d27] transition-all shadow-md active:scale-95 cursor-pointer text-xs"
                 >
                   Post Review
                 </button>
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
     </div>

@@ -124,13 +124,21 @@ export default function MarketDetails({ marketId = 1, onNavigate, onReserveProdu
         const numPrice = Number(p.price) || 0;
         const isSoldOut = p.status === 'sold_out' || p.stock_quantity <= 0;
         const isLowStock = p.stock_quantity > 0 && p.stock_quantity <= 5;
+        const resolvedFarmerId = p.farmer_id || p.farmer?.id || p.user_id;
+        const resolvedMarketId = p.market_id || liveMarket?.id || (marketId ? Number(marketId) : 1);
         return {
           id: p.id,
+          farmer_id: resolvedFarmerId,
+          farmerId: resolvedFarmerId,
+          market_id: resolvedMarketId,
+          marketId: resolvedMarketId,
           name: p.name,
           price: numPrice,
           unit: p.unit || 'lb',
           stall: p.stall_name || (p.farmer_name ? `${p.farmer_name}'s Stand` : 'Farm Stand'),
           farm: p.farmer_name || 'Regional Grower',
+          farmer_name: p.farmer_name,
+          stall_name: p.stall_name,
           market: p.market_name || liveMarket?.market_name || 'Downtown Historic Market',
           status: isSoldOut ? 'SOLD_OUT' : (isLowStock ? 'LOW_STOCK' : 'IN_STOCK'),
           badge: isSoldOut ? 'SOLD OUT THIS WEEK' : (isLowStock ? `LOW STOCK • ${p.stock_quantity} LEFT` : 'IN STOCK'),
@@ -149,13 +157,21 @@ export default function MarketDetails({ marketId = 1, onNavigate, onReserveProdu
           const numPrice = Number(p.price) || 0;
           const isSoldOut = p.status === 'sold_out' || p.stock_quantity <= 0;
           const isLowStock = p.stock_quantity > 0 && p.stock_quantity <= 5;
+          const resolvedFarmerId = f.id || p.farmer_id;
+          const resolvedMarketId = liveMarket?.id || p.market_id || (marketId ? Number(marketId) : 1);
           farmerProducts.push({
             id: p.id,
+            farmer_id: resolvedFarmerId,
+            farmerId: resolvedFarmerId,
+            market_id: resolvedMarketId,
+            marketId: resolvedMarketId,
             name: p.name,
             price: numPrice,
             unit: p.unit || 'lb',
             stall: f.farmer_profile?.stall_name || `${f.name}'s Stand`,
             farm: f.name || 'Regional Grower',
+            farmer_name: f.name,
+            stall_name: f.farmer_profile?.stall_name,
             market: liveMarket?.market_name || 'Downtown Historic Market',
             status: isSoldOut ? 'SOLD_OUT' : (isLowStock ? 'LOW_STOCK' : 'IN_STOCK'),
             badge: isSoldOut ? 'SOLD OUT THIS WEEK' : (isLowStock ? `LOW STOCK • ${p.stock_quantity} LEFT` : 'IN STOCK'),
@@ -167,7 +183,7 @@ export default function MarketDetails({ marketId = 1, onNavigate, onReserveProdu
       }
     });
     return farmerProducts;
-  }, [marketProducts, liveMarket]);
+  }, [marketProducts, liveMarket, marketId]);
 
   // Interactive OpenStreetMap for Market Plaza & Farmer Stalls
   useEffect(() => {
