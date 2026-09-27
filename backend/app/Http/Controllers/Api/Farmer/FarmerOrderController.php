@@ -64,6 +64,28 @@ class FarmerOrderController extends Controller
         }
         $order->save();
 
+        $statusDisplay = match ($validated['status']) {
+            'accepted' => 'Accepted',
+            'ready' => 'Ready for Pickup',
+            'completed' => 'Completed',
+            'declined' => 'Declined',
+            'cancelled' => 'Cancelled',
+            default => ucfirst($validated['status']),
+        };
+
+        // Send real-time notification to customer
+        \App\Models\Notification::create([
+            'user_id' => $order->customer_id,
+            'type' => 'order_' . $validated['status'],
+            'title' => "Order #{$order->id} {$statusDisplay}",
+            'message' => "Your produce reservation #{$order->id} has been {$statusDisplay} by {$request->user()->name}.",
+            'data' => [
+                'order_id' => $order->id,
+                'status' => $validated['status'],
+                'farmer_name' => $request->user()->name,
+            ],
+        ]);
+
         $order->load(['customer', 'market', 'items.product']);
 
         return $this->success(new OrderResource($order), "Order status updated to {$validated['status']}");

@@ -318,8 +318,20 @@ function AppContent() {
     }
 
     loadPublicData();
+
+    const handleProductAdded = () => {
+      browseApi.getProducts().then((res) => {
+        if (res?.data && isMounted) {
+          setLiveProducts(res.data);
+        }
+      }).catch(() => {});
+    };
+
+    window.addEventListener('marketlink:product-added', handleProductAdded);
+
     return () => {
       isMounted = false;
+      window.removeEventListener('marketlink:product-added', handleProductAdded);
     };
   }, []);
 
@@ -408,6 +420,33 @@ function AppContent() {
     setTimeout(() => {
       setToastMessage(null);
     }, 4500);
+  };
+
+  // Top-Right Corner Toast Alert for Frontend
+  const renderAppToast = () => {
+    if (!toastMessage) return null;
+    return (
+      <div
+        className="fixed top-20 right-4 sm:top-24 sm:right-8 z-[9999] flex items-center gap-3 px-5 py-3.5 rounded-2xl text-sm font-bold animate-bounce-in max-w-sm sm:max-w-md border border-white/20 shadow-2xl"
+        style={{
+          background: 'linear-gradient(135deg, #125224, #2e6b3a)',
+          color: 'white',
+          boxShadow: '0 16px 48px rgba(18,82,36,0.4), 0 4px 14px rgba(0,0,0,0.2)',
+          backdropFilter: 'blur(16px)',
+        }}
+      >
+        <div className="w-7 h-7 rounded-xl bg-secondary-fixed/20 border border-secondary-fixed/30 flex items-center justify-center flex-shrink-0">
+          <span className="material-symbols-outlined text-secondary-fixed text-[16px]">verified</span>
+        </div>
+        <span className="flex-1 leading-snug">{toastMessage}</span>
+        <button
+          onClick={() => setToastMessage(null)}
+          className="w-6 h-6 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center flex-shrink-0 cursor-pointer transition-all"
+        >
+          <span className="material-symbols-outlined text-[14px]">close</span>
+        </button>
+      </div>
+    );
   };
 
   // Navigation Handler
@@ -517,6 +556,7 @@ function AppContent() {
     if (!isAuthenticated && !isLoading) {
       return (
         <div className="min-h-screen flex flex-col bg-surface">
+          {renderAppToast()}
           <Navbar currentView={currentView} onNavigate={handleNavigate} onOpenAuth={() => setAuthMode('login')} onFocusSearch={() => {}} />
           <DashboardAccessGateway
             targetRole="admin"
@@ -534,6 +574,7 @@ function AppContent() {
     if (isAuthenticated && role !== 'admin') {
       return (
         <div className="min-h-screen flex flex-col bg-surface">
+          {renderAppToast()}
           <Navbar currentView={currentView} onNavigate={handleNavigate} onOpenAuth={() => setAuthMode('login')} onFocusSearch={() => {}} />
           <DashboardAccessGateway
             targetRole="admin"
@@ -585,6 +626,7 @@ function AppContent() {
     if (!isAuthenticated && !isLoading) {
       return (
         <div className="min-h-screen flex flex-col bg-surface">
+          {renderAppToast()}
           <Navbar currentView={currentView} onNavigate={handleNavigate} onOpenAuth={() => setAuthMode('farmer')} onFocusSearch={() => {}} />
           <DashboardAccessGateway
             targetRole="farmer"
@@ -602,6 +644,7 @@ function AppContent() {
     if (isAuthenticated && role !== 'farmer' && role !== 'admin') {
       return (
         <div className="min-h-screen flex flex-col bg-surface">
+          {renderAppToast()}
           <Navbar currentView={currentView} onNavigate={handleNavigate} onOpenAuth={() => setAuthMode('farmer')} onFocusSearch={() => {}} />
           <DashboardAccessGateway
             targetRole="farmer"
@@ -656,6 +699,7 @@ function AppContent() {
     if (!isAuthenticated && !isLoading) {
       return (
         <div className="min-h-screen flex flex-col bg-surface">
+          {renderAppToast()}
           <Navbar currentView={currentView} onNavigate={handleNavigate} onOpenAuth={() => setAuthMode('login')} onFocusSearch={() => {}} />
           <DashboardAccessGateway
             targetRole="customer"
@@ -691,29 +735,8 @@ function AppContent() {
      ========================================================================== */
   return (
     <div className="w-full min-h-screen bg-surface font-body-md text-on-surface antialiased flex flex-col">
-      {/* Toast Alert */}
-      {toastMessage && (
-        <div
-          className="fixed top-24 left-1/2 -translate-x-1/2 z-[60] flex items-center gap-3 px-5 py-3 rounded-2xl text-sm font-bold animate-bounce-in max-w-[90vw] border border-white/20"
-          style={{
-            background: 'linear-gradient(135deg, #125224, #2e6b3a)',
-            color: 'white',
-            boxShadow: '0 12px 40px rgba(18,82,36,0.4), 0 4px 12px rgba(0,0,0,0.15)',
-            backdropFilter: 'blur(12px)',
-          }}
-        >
-          <div className="w-7 h-7 rounded-xl bg-secondary-fixed/20 border border-secondary-fixed/30 flex items-center justify-center flex-shrink-0">
-            <span className="material-symbols-outlined text-secondary-fixed text-[16px]">verified</span>
-          </div>
-          <span className="flex-1">{toastMessage}</span>
-          <button
-            onClick={() => setToastMessage(null)}
-            className="w-6 h-6 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center flex-shrink-0 cursor-pointer transition-all"
-          >
-            <span className="material-symbols-outlined text-[14px]">close</span>
-          </button>
-        </div>
-      )}
+      {/* Toast Alert (Top-Right Corner) */}
+      {renderAppToast()}
 
       {/* Navbar Header */}
       <Navbar
@@ -905,6 +928,8 @@ function AppContent() {
           product={reserveProduct}
           onClose={() => setReserveProduct(null)}
           onConfirmReservation={handleConfirmReservation}
+          onOpenAuth={(role) => setAuthMode(role || 'customer')}
+          onOpenRegister={() => handleNavigate('register')}
         />
       )}
 

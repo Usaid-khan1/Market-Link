@@ -87,7 +87,11 @@ class CustomerBrowseController extends Controller
      */
     public function products(Request $request): JsonResponse
     {
-        $query = Product::whereHas('farmer.farmerProfile', fn ($q) => $q->where('status', 'approved'))
+        $query = Product::whereHas('farmer', fn ($q) => $q->where('status', '!=', 'suspended'))
+            ->where(function ($q) {
+                $q->whereDoesntHave('farmer.farmerProfile')
+                  ->orWhereHas('farmer.farmerProfile', fn ($fp) => $fp->where('status', '!=', 'rejected'));
+            })
             ->with(['farmer.farmerProfile', 'category', 'market'])
             ->withAvg('reviews', 'rating')
             ->withCount('reviews');

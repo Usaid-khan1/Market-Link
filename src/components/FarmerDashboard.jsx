@@ -15,7 +15,7 @@ export default function FarmerDashboard({ onNavigate, initialTab = 'dashboard' }
   const [insights, setInsights] = useState(null);
   const [profile, setProfile] = useState(null);
 
-  useEffect(() => {
+  const fetchFarmerData = () => {
     farmerApi.getInsights()
       .then((res) => {
         if (res?.data) {
@@ -31,6 +31,22 @@ export default function FarmerDashboard({ onNavigate, initialTab = 'dashboard' }
         }
       })
       .catch((err) => console.warn('Could not load farmer profile:', err));
+  };
+
+  useEffect(() => {
+    fetchFarmerData();
+
+    const handleOrderCreated = (e) => {
+      const order = e?.detail;
+      const orderId = order?.order_number || (order?.id ? `#ML-${order.id}` : 'New Reservation');
+      showToast(`📦 New pre-order ${orderId} received! Check Pre-Orders queue.`);
+      fetchFarmerData();
+    };
+
+    window.addEventListener('marketlink:order-created', handleOrderCreated);
+    return () => {
+      window.removeEventListener('marketlink:order-created', handleOrderCreated);
+    };
   }, []);
 
   // Quick Toast Notification helper
@@ -98,6 +114,15 @@ export default function FarmerDashboard({ onNavigate, initialTab = 'dashboard' }
     }
   };
 
+  const farmerNotifications = (insights?.recent_orders || []).slice(0, 5).map((o) => ({
+    id: o.id,
+    title: `Reservation ${o.order_number || `#ML-${o.id}`}`,
+    desc: `${o.customer?.name || 'Customer'} reserved produce for ${o.pickup_date || (o.pickup_time ? new Date(o.pickup_time).toLocaleDateString() : 'pickup')}`,
+    time: o.created_at ? new Date(o.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Recently',
+    icon: 'shopping_basket',
+    color: o.order_status === 'placed' ? 'text-amber-600' : 'text-primary'
+  }));
+
   return (
     <div className="w-full min-h-screen bg-surface font-body-md text-on-surface antialiased flex">
       
@@ -152,54 +177,45 @@ export default function FarmerDashboard({ onNavigate, initialTab = 'dashboard' }
             : activeTab === 'reviews' ? 'Customer Feedback'
             : 'Stall Settings'
           ]}
+          notifications={farmerNotifications}
           headerRight={
-            <>
+            <div className="relative">
               <button
                 type="button"
-                onClick={() => showToast('🔔 2 new reservations waiting for weekend packing.')}
-                className="relative w-9 h-9 rounded-xl bg-surface-container flex items-center justify-center text-on-surface-variant hover:bg-primary/8 hover:text-primary transition-all cursor-pointer"
+                onClick={() => setUserDropdownOpen(!userDropdownOpen)}
+                className="flex items-center gap-2 pl-1 border-l border-outline-variant/30 cursor-pointer"
               >
-                <span className="material-symbols-outlined text-[20px]">notifications</span>
-                <span className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-tertiary text-white text-[9px] font-black flex items-center justify-center">2</span>
-              </button>
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                  className="flex items-center gap-2 pl-1 border-l border-outline-variant/30 cursor-pointer"
+                <div className="hidden sm:flex flex-col text-right">
+                  <span className="font-bold text-on-surface text-xs">{stallInfo.name}</span>
+                  <span className="text-secondary font-bold text-[10px]">{stallInfo.owner} • {stallInfo.rating}</span>
+                </div>
+                <div
+                  className="w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs shadow-sm"
+                  style={{ background: 'linear-gradient(135deg, #3e6a00, #125224)', color: 'white' }}
                 >
-                  <div className="hidden sm:flex flex-col text-right">
-                    <span className="font-bold text-on-surface text-xs">{stallInfo.name}</span>
-                    <span className="text-secondary font-bold text-[10px]">{stallInfo.owner} • {stallInfo.rating}</span>
+                  {stallInfo.initials}
+                </div>
+                <span className="material-symbols-outlined text-on-surface-variant text-[18px]">expand_more</span>
+              </button>
+              {userDropdownOpen && (
+                <div className="absolute right-0 mt-2 w-52 bg-white rounded-2xl shadow-[0_16px_40px_rgba(18,82,36,0.15)] border border-outline-variant/20 py-2 z-50 animate-bounce-in">
+                  <div className="px-4 py-2 border-b border-outline-variant/15">
+                    <p className="text-xs font-bold text-on-surface">{stallInfo.name}</p>
+                    <p className="text-[10px] text-on-surface-variant">{stallInfo.owner}</p>
                   </div>
-                  <div
-                    className="w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs shadow-sm"
-                    style={{ background: 'linear-gradient(135deg, #3e6a00, #125224)', color: 'white' }}
-                  >
-                    {stallInfo.initials}
-                  </div>
-                  <span className="material-symbols-outlined text-on-surface-variant text-[18px]">expand_more</span>
-                </button>
-                {userDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-52 bg-white rounded-2xl shadow-[0_16px_40px_rgba(18,82,36,0.15)] border border-outline-variant/20 py-2 z-50 animate-bounce-in">
-                    <div className="px-4 py-2 border-b border-outline-variant/15">
-                      <p className="text-xs font-bold text-on-surface">{stallInfo.name}</p>
-                      <p className="text-[10px] text-on-surface-variant">{stallInfo.owner}</p>
-                    </div>
-                    <button type="button" onClick={() => { setActiveTab('settings'); setUserDropdownOpen(false); }} className="w-full text-left px-4 py-2 hover:bg-surface-container text-on-surface flex items-center gap-2 cursor-pointer font-bold text-xs">
-                      <span className="material-symbols-outlined text-[16px] text-primary">person</span><span>Stall Profile</span>
-                    </button>
-                    <button type="button" onClick={() => { onNavigate('farmer-profile'); setUserDropdownOpen(false); }} className="w-full text-left px-4 py-2 hover:bg-surface-container text-on-surface flex items-center gap-2 cursor-pointer text-xs">
-                      <span className="material-symbols-outlined text-[16px] text-secondary">storefront</span><span>Public Storefront</span>
-                    </button>
-                    <div className="my-1 border-t border-outline-variant/20" />
-                    <button type="button" onClick={() => { onNavigate('home'); setUserDropdownOpen(false); }} className="w-full text-left px-4 py-2 hover:bg-error-container/30 text-error flex items-center gap-2 cursor-pointer font-bold text-xs">
-                      <span className="material-symbols-outlined text-[16px]">logout</span><span>Logout</span>
-                    </button>
-                  </div>
-                )}
-              </div>
-            </>
+                  <button type="button" onClick={() => { setActiveTab('settings'); setUserDropdownOpen(false); }} className="w-full text-left px-4 py-2 hover:bg-surface-container text-on-surface flex items-center gap-2 cursor-pointer font-bold text-xs">
+                    <span className="material-symbols-outlined text-[16px] text-primary">person</span><span>Stall Profile</span>
+                  </button>
+                  <button type="button" onClick={() => { onNavigate('farmer-profile'); setUserDropdownOpen(false); }} className="w-full text-left px-4 py-2 hover:bg-surface-container text-on-surface flex items-center gap-2 cursor-pointer text-xs">
+                    <span className="material-symbols-outlined text-[16px] text-secondary">storefront</span><span>Public Storefront</span>
+                  </button>
+                  <div className="my-1 border-t border-outline-variant/20" />
+                  <button type="button" onClick={() => { onNavigate('home'); setUserDropdownOpen(false); }} className="w-full text-left px-4 py-2 hover:bg-error-container/30 text-error flex items-center gap-2 cursor-pointer font-bold text-xs">
+                    <span className="material-symbols-outlined text-[16px]">logout</span><span>Logout</span>
+                  </button>
+                </div>
+              )}
+            </div>
           }
         />
 

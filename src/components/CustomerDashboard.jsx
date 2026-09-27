@@ -27,6 +27,7 @@ export default function CustomerDashboard({ onNavigate, initialTab = 'dashboard'
   // Dashboard summary data from backend
   const [dashboardSummary, setDashboardSummary] = useState(null);
   const [activeOrdersMini, setActiveOrdersMini] = useState([]);
+  const [customerNotifications, setCustomerNotifications] = useState([]);
 
   // Quick Toast Notification helper
   const showToast = (msg) => {
@@ -34,6 +35,25 @@ export default function CustomerDashboard({ onNavigate, initialTab = 'dashboard'
     setTimeout(() => {
       setToastMessage(null);
     }, 4500);
+  };
+
+  // Fetch real notifications for authenticated customer
+  const fetchCustomerNotifications = () => {
+    customerApi.getNotifications()
+      .then((res) => {
+        if (res?.data && Array.isArray(res.data)) {
+          const mapped = res.data.map((n) => ({
+            id: n.id,
+            title: n.title,
+            desc: n.message,
+            time: n.created_at ? new Date(n.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Recently',
+            icon: n.title?.toLowerCase().includes('accepted') ? 'verified' : (n.title?.toLowerCase().includes('order') ? 'receipt_long' : 'notifications'),
+            color: n.title?.toLowerCase().includes('accepted') ? 'text-amber-600' : 'text-primary'
+          }));
+          setCustomerNotifications(mapped);
+        }
+      })
+      .catch((err) => console.warn('Could not load notifications:', err));
   };
 
   // Customer Profile Info
@@ -56,21 +76,7 @@ export default function CustomerDashboard({ onNavigate, initialTab = 'dashboard'
     { id: 'settings', label: 'Profile & Settings', icon: 'settings' }
   ];
 
-  // Load stalls from backend API
-  useEffect(() => {
-    browseApi.getStalls()
-      .then((res) => {
-        if (res?.data && Array.isArray(res.data)) {
-          setStalls(res.data);
-        } else {
-          setStalls([]);
-        }
-      })
-      .catch((err) => {
-        console.warn('Could not load stalls directory:', err);
-        setStalls([]);
-      });
-
+  const fetchDashboardData = () => {
     customerApi.getDashboardSummary()
       .then((res) => {
         if (res?.data) {
@@ -99,7 +105,50 @@ export default function CustomerDashboard({ onNavigate, initialTab = 'dashboard'
         }
       })
       .catch((err) => console.warn('Could not load dashboard summary:', err));
+  };
+
+  // Load stalls & summary from backend API
+  useEffect(() => {
+    browseApi.getStalls()
+      .then((res) => {
+        if (res?.data && Array.isArray(res.data)) {
+          setStalls(res.data);
+        } else {
+          setStalls([]);
+        }
+      })
+      .catch((err) => {
+        console.warn('Could not load stalls directory:', err);
+        setStalls([]);
+      });
+
+    fetchDashboardData();
+    fetchCustomerNotifications();
+
+    const handleOrderUpdated = (e) => {
+      const detail = e?.detail;
+      const orderNum = detail?.orderNumber || (detail?.orderId ? `#ML-${detail.orderId}` : 'Your order');
+      const status = detail?.status || 'Accepted';
+      showToast(`🔔 Update: ${orderNum} has been marked as ${status} by the farmer!`);
+      fetchCustomerNotifications();
+      fetchDashboardData();
+    };
+
+    window.addEventListener('marketlink:order-updated', handleOrderUpdated);
+    return () => {
+      window.removeEventListener('marketlink:order-updated', handleOrderUpdated);
+    };
   }, []);
+
+  const handleMarkAllRead = async () => {
+    try {
+      await customerApi.markAllNotificationsRead();
+      setCustomerNotifications([]);
+      showToast('All notifications marked as read.');
+    } catch (err) {
+      console.warn('Could not mark all notifications as read:', err);
+    }
+  };
 
   // Recommended Products for Dashboard Home (Dynamic)
   const recommendedProducts = dashboardSummary?.recommended_products || [];
@@ -257,22 +306,15 @@ export default function CustomerDashboard({ onNavigate, initialTab = 'dashboard'
             : activeTab === 'reviews' ? 'My Reviews'
             : 'Profile & Settings'
           ]}
+          notifications={customerNotifications}
+          onMarkAllRead={handleMarkAllRead}
           headerRight={
-            <>
+            <div className="relative">
               <button
                 type="button"
-                onClick={() => showToast('🔔 1 order is Ready for Pickup this Saturday at Pier 4!')}
-                className="relative w-9 h-9 rounded-xl bg-surface-container flex items-center justify-center text-on-surface-variant hover:bg-primary/8 hover:text-primary transition-all cursor-pointer"
+                onClick={() => setUserDropdownOpen(!userDropdownOpen)}
+                className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-surface-container transition-colors cursor-pointer"
               >
-                <span className="material-symbols-outlined text-[20px]">notifications</span>
-                <span className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-tertiary text-white text-[9px] font-black flex items-center justify-center">1</span>
-              </button>
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                  className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-surface-container transition-colors cursor-pointer"
-                >
                   <div
                     className="w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs shadow-sm"
                     style={{ background: 'linear-gradient(135deg, #125224, #3e6a00)', color: 'white' }}
@@ -304,7 +346,6 @@ export default function CustomerDashboard({ onNavigate, initialTab = 'dashboard'
                   </div>
                 )}
               </div>
-            </>
           }
         />
 

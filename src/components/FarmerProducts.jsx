@@ -211,6 +211,7 @@ export default function FarmerProducts({ showToast }) {
     setProducts((prev) =>
       prev.map((p) => (p.id === prod.id ? { ...p, status: nextStatus, quantity: nextQty } : p))
     );
+    window.dispatchEvent(new CustomEvent('marketlink:product-added', { detail: { id: prod.id, status: nextStatus } }));
     showToast?.(`"${prod.name}" marked as ${nextStatus}.`);
   };
 
@@ -286,6 +287,7 @@ export default function FarmerProducts({ showToast }) {
             : p
         )
       );
+      window.dispatchEvent(new CustomEvent('marketlink:product-added', { detail: { id: editingProduct.id, ...payload } }));
       showToast?.(`Product "${formData.name}" updated successfully.`);
     } else {
       let createdId = `p-${Date.now()}`;
@@ -308,6 +310,7 @@ export default function FarmerProducts({ showToast }) {
         image: finalImageUrl
       };
       setProducts([newProd, ...products]);
+      window.dispatchEvent(new CustomEvent('marketlink:product-added', { detail: newProd }));
       showToast?.(`"${formData.name}" listed to your stall catalog!`);
     }
 
@@ -323,6 +326,7 @@ export default function FarmerProducts({ showToast }) {
       console.warn('API deleteProduct error:', err);
     }
     setProducts((prev) => prev.filter((p) => p.id !== deleteModalProduct.id));
+    window.dispatchEvent(new CustomEvent('marketlink:product-added', { detail: { id: deleteModalProduct.id, deleted: true } }));
     showToast?.(`Product "${deleteModalProduct.name}" removed from stall.`);
     setDeleteModalProduct(null);
   };

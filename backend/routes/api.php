@@ -183,6 +183,6 @@ Route::middleware('auth:sanctum')->group(function () {
         // 4. In-App Notifications
         Route::get('/notifications', [CustomerNotificationController::class, 'index']);
         Route::patch('/notifications/{id}/read', [CustomerNotificationController::class, 'markAsRead']);
-        Route::patch('/notifications/read-all', [CustomerNotificationController::class, 'markAllAsRead']);
+        Route::match(['post', 'patch'], '/notifications/read-all', [CustomerNotificationController::class, 'markAllAsRead']);
     });
 });

@@ -83,7 +83,7 @@ export default function CustomerOrders({ onNavigate, showToast, onAddToCart }) {
   };
 
   // Load customer orders from backend
-  useEffect(() => {
+  const fetchCustomerOrders = () => {
     customerApi.getOrders()
       .then((res) => {
         if (res?.data && Array.isArray(res.data)) {
@@ -135,6 +135,22 @@ export default function CustomerOrders({ onNavigate, showToast, onAddToCart }) {
         console.warn('Could not load customer orders:', err);
         setOrders([]);
       });
+  };
+
+  useEffect(() => {
+    fetchCustomerOrders();
+
+    const handleOrdersSync = () => {
+      fetchCustomerOrders();
+    };
+
+    window.addEventListener('marketlink:order-created', handleOrdersSync);
+    window.addEventListener('marketlink:order-updated', handleOrdersSync);
+
+    return () => {
+      window.removeEventListener('marketlink:order-created', handleOrdersSync);
+      window.removeEventListener('marketlink:order-updated', handleOrdersSync);
+    };
   }, []);
 
   // Cancel Order Handler

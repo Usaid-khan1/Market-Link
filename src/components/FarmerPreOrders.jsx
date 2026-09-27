@@ -93,7 +93,7 @@ export default function FarmerPreOrders({ showToast }) {
   };
 
   // Load orders from backend
-  useEffect(() => {
+  const fetchFarmerOrders = () => {
     farmerApi.getOrders()
       .then((res) => {
         if (res?.data && Array.isArray(res.data)) {
@@ -141,6 +141,15 @@ export default function FarmerPreOrders({ showToast }) {
         console.warn('Could not load farmer orders:', err);
         setOrders([]);
       });
+  };
+
+  useEffect(() => {
+    fetchFarmerOrders();
+    const handleOrderCreated = () => fetchFarmerOrders();
+    window.addEventListener('marketlink:order-created', handleOrderCreated);
+    return () => {
+      window.removeEventListener('marketlink:order-created', handleOrderCreated);
+    };
   }, []);
 
   // Status Transition Trigger
@@ -175,7 +184,7 @@ export default function FarmerPreOrders({ showToast }) {
         if (o.id === order.id) {
           const newTimelineEntry = {
             time: 'Just now',
-            text: `Status updated to ${newStatus} by Green Pastures stall`
+            text: `Status updated to ${newStatus} by stall`
           };
           return {
             ...o,
@@ -186,6 +195,15 @@ export default function FarmerPreOrders({ showToast }) {
         return o;
       })
     );
+
+    window.dispatchEvent(new CustomEvent('marketlink:order-updated', {
+      detail: {
+        orderId: orderIdToUpdate,
+        status: newStatus,
+        apiStatus: apiStatus,
+        orderNumber: order.id
+      }
+    }));
 
     showToast?.(`Order ${order.id} marked as ${newStatus}!`);
     setActionConfirm(null);

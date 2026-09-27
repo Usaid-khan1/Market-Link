@@ -212,6 +212,7 @@ export function DashboardHeader({
   headerRight,
   activeMarketName = 'Regional Farmers Market',
   notifications = [],
+  onMarkAllRead,
 }) {
   const [notificationOpen, setNotificationOpen] = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);
@@ -298,8 +299,16 @@ export function DashboardHeader({
             >
               <div className="px-4 py-2.5 border-b border-outline-variant/15 flex items-center justify-between">
                 <span className="text-xs font-black text-on-surface uppercase tracking-wider">Harvest Notifications</span>
-                {notifications.length > 0 && (
-                  <span className="text-[10px] text-primary font-bold">Mark all read</span>
+                {notifications.length > 0 && onMarkAllRead && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onMarkAllRead();
+                    }}
+                    className="text-[10px] text-primary font-bold hover:underline cursor-pointer"
+                  >
+                    Mark all read
+                  </button>
                 )}
               </div>
               <div className="divide-y divide-outline-variant/10 max-h-72 overflow-y-auto">
@@ -417,7 +426,7 @@ export function DashboardToast({ message, onClose }) {
   if (!message) return null;
   return (
     <div
-      className="fixed bottom-6 right-6 z-[70] flex items-center gap-3 px-5 py-3.5 rounded-2xl font-bold text-sm animate-bounce-in max-w-sm border border-white/20"
+      className="fixed top-20 right-4 sm:top-20 sm:right-8 z-[9999] flex items-center gap-3 px-5 py-3.5 rounded-2xl font-bold text-sm animate-bounce-in max-w-sm sm:max-w-md border border-white/20 shadow-2xl"
       style={{
         background: 'linear-gradient(135deg, #092813, #125224)',
         color: 'white',

@@ -16,19 +16,26 @@ export default function ProductsCatalog({ onNavigate, onReserveProduct, onNotify
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
   const [liveProducts, setLiveProducts] = useState([]);
 
-  useEffect(() => {
-    let mounted = true;
+  const fetchLiveProducts = () => {
     browseApi.getProducts().then((res) => {
-      if (mounted && res.data && res.data.length > 0) {
+      if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
         setLiveProducts(res.data);
       }
     }).catch(() => {});
-    return () => { mounted = false; };
+  };
+
+  useEffect(() => {
+    fetchLiveProducts();
+    const handleProductAdded = () => fetchLiveProducts();
+    window.addEventListener('marketlink:product-added', handleProductAdded);
+    return () => {
+      window.removeEventListener('marketlink:product-added', handleProductAdded);
+    };
   }, []);
 
-  // Category selections
+  // Category selections (default all unselected = show all items)
   const [selectedCategories, setSelectedCategories] = useState({
-    veg: true,
+    veg: false,
     fruit: false,
     dairy: false,
     bread: false,
@@ -249,12 +256,65 @@ export default function ProductsCatalog({ onNavigate, onReserveProduct, onNotify
     }
   ];
 
+  // Combined Catalog products (Dynamic Backend Products + Catalog Seed)
+  const combinedCatalogProducts = useMemo(() => {
+    if (!liveProducts || liveProducts.length === 0) {
+      return allCatalogProducts;
+    }
+
+    const liveMapped = liveProducts.map((p) => {
+      const catName = p.category_name || (typeof p.category === 'object' ? p.category?.name : '') || 'Fresh Vegetables';
+      let catCode = 'veg';
+      const lowerCat = catName.toLowerCase();
+      if (lowerCat.includes('fruit') || lowerCat.includes('berry') || lowerCat.includes('apple') || lowerCat.includes('orchard')) catCode = 'fruit';
+      else if (lowerCat.includes('dairy') || lowerCat.includes('cheese') || lowerCat.includes('milk')) catCode = 'dairy';
+      else if (lowerCat.includes('bread') || lowerCat.includes('bakery') || lowerCat.includes('pastry') || lowerCat.includes('loaf')) catCode = 'bread';
+      else if (lowerCat.includes('herb') || lowerCat.includes('microgreen')) catCode = 'herbs';
+      else if (lowerCat.includes('honey') || lowerCat.includes('preserve') || lowerCat.includes('pantry') || lowerCat.includes('jam')) catCode = 'honey';
+      else if (lowerCat.includes('egg')) catCode = 'eggs';
+
+      return {
+        id: p.id,
+        numericId: p.id,
+        farmer_id: p.farmer_id,
+        farmerId: p.farmer_id,
+        market_id: p.market_id,
+        marketId: p.market_id,
+        name: p.name,
+        farm: p.stall_name || p.farmer_name || 'Regional Grower Stand',
+        farmer_name: p.farmer_name,
+        stall_name: p.stall_name,
+        stall: p.stall_name ? p.stall_name : `Stall #${((p.farmer_id || 1) * 3) % 20 + 1}`,
+        farmKey: `farmer-${p.farmer_id}`,
+        market: p.market_name || 'Downtown Historic Farmers Market (Sat)',
+        marketKey: 'all',
+        day: 'saturday',
+        category: catCode,
+        categoryLabel: catName,
+        price: Number(p.price) || 0,
+        unit: p.unit || 'lb',
+        stock_quantity: p.stock_quantity,
+        status: p.status === 'sold_out' || p.stock_quantity <= 0 ? 'SOLD_OUT' : 'IN_STOCK',
+        badge: p.status === 'sold_out' || p.stock_quantity <= 0 ? 'SOLD OUT' : 'IN STOCK',
+        harvestTime: 'Harvested: Fresh Field Batch',
+        desc: p.description || 'Fresh harvest direct from regional grower.',
+        image: p.image || 'https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=400&q=80',
+        alt: p.name
+      };
+    });
+
+    const liveNames = new Set(liveMapped.map((m) => m.name.toLowerCase()));
+    const remainingSeed = allCatalogProducts.filter((s) => !liveNames.has(s.name.toLowerCase()));
+
+    return [...liveMapped, ...remainingSeed];
+  }, [liveProducts]);
+
   // Filtering Logic
   const filteredProducts = useMemo(() => {
     // Check if any category is checked
     const anyCatSelected = Object.values(selectedCategories).some(Boolean);
 
-    let list = allCatalogProducts.filter((item) => {
+    let list = combinedCatalogProducts.filter((item) => {
       // In Stock filter
       if (inStockOnly && item.status === 'SOLD_OUT') return false;
 
@@ -295,14 +355,15 @@ export default function ProductsCatalog({ onNavigate, onReserveProduct, onNotify
 
     return list;
   }, [
+    combinedCatalogProducts,
     searchQuery,
     sortBy,
     inStockOnly,
+    maxPrice,
+    minPrice,
     selectedCategories,
     selectedLocation,
-    selectedDay,
-    maxPrice,
-    minPrice
+    selectedDay
   ]);
 
   const handleClearAllFilters = () => {

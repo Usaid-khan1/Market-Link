@@ -29,9 +29,9 @@ class CustomerOrderController extends Controller
         if ($request->filled('status')) {
             $status = $request->query('status');
             if ($status === 'active') {
-                $query->whereIn('order_status', ['placed', 'accepted', 'ready_for_pickup']);
+                $query->whereIn('order_status', ['placed', 'accepted', 'ready', 'ready_for_pickup']);
             } elseif ($status === 'past') {
-                $query->whereIn('order_status', ['completed', 'cancelled']);
+                $query->whereIn('order_status', ['completed', 'cancelled', 'declined']);
             } else {
                 $query->where('order_status', $status);
             }
@@ -47,7 +47,15 @@ class CustomerOrderController extends Controller
      */
     public function store(OrderCreateRequest $request): JsonResponse
     {
-        $farmer = User::where('id', $request->farmer_id)
+        $farmerId = $request->farmer_id;
+        if (! empty($request->items[0]['product_id'])) {
+            $firstProduct = Product::find($request->items[0]['product_id']);
+            if ($firstProduct && $firstProduct->farmer_id) {
+                $farmerId = $firstProduct->farmer_id;
+            }
+        }
+
+        $farmer = User::where('id', $farmerId)
             ->where('role', 'farmer')
             ->first();
 
@@ -55,7 +63,7 @@ class CustomerOrderController extends Controller
             return $this->error('Selected farmer not found.', null, 404);
         }
 
-        if ($farmer->farmerProfile?->status !== 'approved') {
+        if ($farmer->status === 'suspended' || $farmer->farmerProfile?->status === 'rejected') {
             return $this->error('This farmer is not currently accepting orders.', null, 422);
         }
 
@@ -63,17 +71,26 @@ class CustomerOrderController extends Controller
             $order = DB::transaction(function () use ($request, $farmer) {
                 $totalAmount = 0;
                 $validatedItems = [];
+                $resolvedMarketId = $request->market_id;
 
                 // 1. Verify stock and calculate total
                 foreach ($request->items as $itemData) {
                     /** @var Product|null $product */
                     $product = Product::where('id', $itemData['product_id'])
-                        ->where('farmer_id', $farmer->id)
                         ->lockForUpdate()
                         ->first();
 
                     if (! $product) {
-                        throw new \Exception("Product #{$itemData['product_id']} not found or does not belong to this farmer.");
+                        throw new \Exception("Product #{$itemData['product_id']} not found.");
+                    }
+
+                    if ($product->farmer_id !== $farmer->id) {
+                        // Ensure product matches farmer
+                        $farmer = User::find($product->farmer_id) ?? $farmer;
+                    }
+
+                    if (! $resolvedMarketId && $product->market_id) {
+                        $resolvedMarketId = $product->market_id;
                     }
 
                     if ($product->status !== 'available') {
@@ -100,7 +117,7 @@ class CustomerOrderController extends Controller
                 $order = Order::create([
                     'customer_id' => $request->user()->id,
                     'farmer_id' => $farmer->id,
-                    'market_id' => $request->market_id,
+                    'market_id' => $resolvedMarketId,
                     'total_amount' => $totalAmount,
                     'order_status' => 'placed',
                     'pickup_date' => $request->pickup_date,
