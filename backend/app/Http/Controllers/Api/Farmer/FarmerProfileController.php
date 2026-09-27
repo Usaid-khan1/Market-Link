@@ -50,6 +50,7 @@ class FarmerProfileController extends Controller
             // Update or create farmer profile
             $profileData = array_filter([
                 'stall_name' => $validated['stall_name'] ?? null,
+                'stall_number' => $validated['stall_number'] ?? null,
                 'contact_person' => $validated['contact_person'] ?? null,
                 'operating_days' => $validated['operating_days'] ?? null,
                 'market_ids' => $validated['market_ids'] ?? null,
@@ -65,8 +66,8 @@ class FarmerProfileController extends Controller
 
             $profile = FarmerProfile::firstOrNew(['user_id' => $user->id]);
             $profile->fill($profileData);
-            if (! $profile->exists) {
-                $profile->status = 'pending';
+            if (! $profile->exists || empty($profile->status) || $profile->status === 'pending') {
+                $profile->status = 'approved';
             }
             $profile->save();
         });

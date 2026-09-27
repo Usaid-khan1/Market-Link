@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import customerApi from '../api/customer';
+import PageLoader from './PageLoader';
 
 export default function CustomerFavorites({ onNavigate, showToast, onAddToCart }) {
   const [activeTab, setActiveTab] = useState('farmers'); // 'farmers' | 'products'
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   // Farmers Dataset
   const [favoriteFarmers, setFavoriteFarmers] = useState([]);
@@ -14,6 +15,7 @@ export default function CustomerFavorites({ onNavigate, showToast, onAddToCart }
   // Load live favorites from backend API
   useEffect(() => {
     let isMounted = true;
+    setLoading(true);
     customerApi.getFavorites()
       .then((res) => {
         if (!isMounted) return;
@@ -72,6 +74,9 @@ export default function CustomerFavorites({ onNavigate, showToast, onAddToCart }
           setFavoriteFarmers([]);
           setFavoriteProducts([]);
         }
+      })
+      .finally(() => {
+        if (isMounted) setLoading(false);
       });
 
     return () => { isMounted = false; };
@@ -116,6 +121,16 @@ export default function CustomerFavorites({ onNavigate, showToast, onAddToCart }
     }
   };
 
+  if (loading) {
+    return (
+      <PageLoader
+        title="Loading Your Saved Favorites..."
+        subtitle="Retrieving preferred local farms and starred seasonal produce..."
+        minHeight="min-h-[70vh]"
+      />
+    );
+  }
+
   return (
     <div className="w-full space-y-6 animate-fade-in pb-12">
       {/* Header & Tabs */}
@@ -130,29 +145,29 @@ export default function CustomerFavorites({ onNavigate, showToast, onAddToCart }
         </div>
 
         {/* Segmented Control Tabs */}
-        <div className="flex items-center bg-surface-container-low p-1 rounded-xl border border-outline-variant/40 self-start sm:self-auto">
+        <div className="flex flex-wrap sm:flex-nowrap items-center bg-surface-container-low p-1 rounded-xl border border-outline-variant/40 w-full sm:w-auto gap-1">
           <button
             type="button"
             onClick={() => setActiveTab('farmers')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+            className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
               activeTab === 'farmers'
                 ? 'bg-primary text-on-primary shadow-sm'
                 : 'text-on-surface-variant hover:text-on-surface'
             }`}
           >
-            <span className="material-symbols-outlined text-[18px]">agriculture</span>
+            <span className="material-symbols-outlined text-[17px] sm:text-[18px]">agriculture</span>
             <span>Favorite Farmers ({favoriteFarmers.length})</span>
           </button>
           <button
             type="button"
             onClick={() => setActiveTab('products')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+            className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
               activeTab === 'products'
                 ? 'bg-primary text-on-primary shadow-sm'
                 : 'text-on-surface-variant hover:text-on-surface'
             }`}
           >
-            <span className="material-symbols-outlined text-[18px]">nutrition</span>
+            <span className="material-symbols-outlined text-[17px] sm:text-[18px]">nutrition</span>
             <span>Saved Products ({favoriteProducts.length})</span>
           </button>
         </div>

@@ -13,6 +13,7 @@ class FarmerProfile extends Model
     protected $fillable = [
         'user_id',
         'stall_name',
+        'stall_number',
         'contact_person',
         'operating_days',
         'market_ids',

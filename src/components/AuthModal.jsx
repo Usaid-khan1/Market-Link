@@ -89,7 +89,7 @@ export default function AuthModal({ initialMode = 'login', onClose, onLoginSucce
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div
-        className="relative bg-white rounded-3xl w-full max-w-[440px] overflow-hidden shadow-[0_32px_80px_rgba(0,0,0,0.25)] animate-bounce-in"
+        className="relative bg-white rounded-3xl w-full max-w-[440px] max-h-[90vh] overflow-y-auto shadow-[0_32px_80px_rgba(0,0,0,0.25)] animate-bounce-in"
         style={{ border: '1px solid rgba(192,201,189,0.2)' }}
       >
         {/* Top gradient accent */}

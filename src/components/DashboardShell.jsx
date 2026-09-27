@@ -219,7 +219,7 @@ export function DashboardHeader({
 
   return (
     <header
-      className="fixed top-0 left-0 lg:left-64 right-0 h-16 z-40 flex items-center justify-between px-4 sm:px-8"
+      className="fixed top-0 left-0 lg:left-64 right-0 h-16 z-40 flex items-center justify-between px-3 sm:px-8"
       style={{
         background: 'rgba(252,249,248,0.92)',
         backdropFilter: 'blur(24px) saturate(180%)',
@@ -229,7 +229,7 @@ export function DashboardHeader({
       }}
     >
       {/* Left: hamburger + breadcrumb + active market pill */}
-      <div className="flex items-center gap-3 min-w-0">
+      <div className="flex items-center gap-2 sm:gap-3 min-w-0 max-w-[65%] sm:max-w-none">
         <button
           type="button"
           onClick={onOpenMobileSidebar}
@@ -239,17 +239,17 @@ export function DashboardHeader({
           <span className="material-symbols-outlined text-[20px]">menu</span>
         </button>
 
-        <nav className="flex items-center gap-1.5 text-xs truncate">
+        <nav className="flex items-center gap-1 sm:gap-1.5 text-xs truncate">
           {breadcrumb.map((crumb, i) => (
             <React.Fragment key={i}>
               {i > 0 && (
-                <span className="material-symbols-outlined text-on-surface-variant/40 text-[14px]">chevron_right</span>
+                <span className="material-symbols-outlined text-on-surface-variant/40 text-[13px] sm:text-[14px]">chevron_right</span>
               )}
               <span
-                className={`truncate ${
+                className={`truncate max-w-[130px] sm:max-w-none ${
                   i === breadcrumb.length - 1
                     ? 'text-primary font-bold bg-primary/8 px-2 py-0.5 rounded-lg border border-primary/10'
-                    : 'text-on-surface-variant font-medium hidden sm:inline'
+                    : 'text-on-surface-variant font-medium hidden md:inline'
                 }`}
               >
                 {crumb}
@@ -267,7 +267,7 @@ export function DashboardHeader({
       </div>
 
       {/* Right controls */}
-      <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+      <div className="flex items-center gap-1.5 sm:gap-3 flex-shrink-0">
         {/* Quick Search Shortcut Pill */}
         <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-surface-container-low border border-outline-variant/30 text-xs text-on-surface-variant shadow-2xs">
           <span className="material-symbols-outlined text-[17px] text-primary">search</span>
@@ -295,7 +295,7 @@ export function DashboardHeader({
 
           {notificationOpen && (
             <div
-              className="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-[0_16px_48px_rgba(18,82,36,0.16)] border border-outline-variant/25 py-2 z-50 animate-bounce-in"
+              className="absolute -right-2 sm:right-0 mt-2 w-[calc(100vw-1.5rem)] max-w-sm sm:w-80 bg-white rounded-2xl shadow-[0_16px_48px_rgba(18,82,36,0.16)] border border-outline-variant/25 py-2 z-50 animate-bounce-in"
             >
               <div className="px-4 py-2.5 border-b border-outline-variant/15 flex items-center justify-between">
                 <span className="text-xs font-black text-on-surface uppercase tracking-wider">Harvest Notifications</span>
@@ -426,7 +426,7 @@ export function DashboardToast({ message, onClose }) {
   if (!message) return null;
   return (
     <div
-      className="fixed top-20 right-4 sm:top-20 sm:right-8 z-[9999] flex items-center gap-3 px-5 py-3.5 rounded-2xl font-bold text-sm animate-bounce-in max-w-sm sm:max-w-md border border-white/20 shadow-2xl"
+      className="fixed top-18 right-3 left-3 sm:left-auto sm:right-8 sm:top-20 z-[9999] flex items-center gap-3 px-4 sm:px-5 py-3.5 rounded-2xl font-bold text-xs sm:text-sm animate-bounce-in max-w-full sm:max-w-md border border-white/20 shadow-2xl"
       style={{
         background: 'linear-gradient(135deg, #092813, #125224)',
         color: 'white',

@@ -1,8 +1,10 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import farmerApi from '../api/farmer';
+import PageLoader from './PageLoader';
 
 export default function FarmerPreOrders({ showToast }) {
+  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -94,6 +96,7 @@ export default function FarmerPreOrders({ showToast }) {
 
   // Load orders from backend
   const fetchFarmerOrders = () => {
+    setLoading(true);
     farmerApi.getOrders()
       .then((res) => {
         if (res?.data && Array.isArray(res.data)) {
@@ -140,6 +143,9 @@ export default function FarmerPreOrders({ showToast }) {
       .catch((err) => {
         console.warn('Could not load farmer orders:', err);
         setOrders([]);
+      })
+      .finally(() => {
+        setLoading(false);
       });
   };
 
@@ -230,8 +236,18 @@ export default function FarmerPreOrders({ showToast }) {
     setPickupSlots(pickupSlots.filter((s) => s !== slotToRemove));
   };
 
+  if (loading) {
+    return (
+      <PageLoader
+        title="Loading Customer Pre-Orders..."
+        subtitle="Retrieving reservations, harvest queues, and fulfillment timelines..."
+        minHeight="min-h-[70vh]"
+      />
+    );
+  }
+
   return (
-    <div className="px-gutter py-space-lg max-w-7xl mx-auto w-full flex flex-col gap-space-lg animate-fade-in">
+    <div className="px-3 sm:px-6 lg:px-gutter py-4 sm:py-space-lg max-w-7xl mx-auto w-full flex flex-col gap-5 sm:gap-space-lg animate-fade-in">
       
       {/* 1. Header Section */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-space-md">
@@ -253,7 +269,7 @@ export default function FarmerPreOrders({ showToast }) {
           <button
             type="button"
             onClick={() => showToast?.('Packing list generated for printer!')}
-            className="inline-flex items-center gap-2 px-space-md py-2.5 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-xs font-bold transition-colors cursor-pointer border border-outline-variant/30"
+            className="inline-flex items-center gap-2 px-space-md py-2.5 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-xs font-bold transition-colors cursor-pointer border border-outline-variant/30 self-start sm:self-auto"
           >
             <span className="material-symbols-outlined text-[18px]">print</span>
             <span>Print Packing Slips</span>
@@ -269,13 +285,13 @@ export default function FarmerPreOrders({ showToast }) {
           <div className="w-10 h-10 rounded-xl bg-tertiary-fixed flex items-center justify-center text-tertiary shrink-0">
             <span className="material-symbols-outlined text-[22px]">timer</span>
           </div>
-          <div className="flex flex-col">
+          <div className="flex flex-col w-full sm:w-auto">
             <span className="font-bold text-on-surface">Order Cut-off Time:</span>
             <input
               type="text"
               value={cutOffTime}
               onChange={(e) => setCutOffTime(e.target.value)}
-              className="mt-0.5 p-1.5 bg-surface-container-low rounded-lg border border-outline-variant/30 font-bold text-xs text-primary focus:outline-none focus:ring-1 focus:ring-primary w-64"
+              className="mt-0.5 p-1.5 bg-surface-container-low rounded-lg border border-outline-variant/30 font-bold text-xs text-primary focus:outline-none focus:ring-1 focus:ring-primary w-full sm:w-64"
             />
           </div>
         </div>

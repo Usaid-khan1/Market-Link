@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import customerApi from '../api/customer';
+import PageLoader from './PageLoader';
 
 export default function CustomerReviews({ onNavigate, showToast }) {
+  const [loading, setLoading] = useState(true);
   // Customer Reviews
   const [reviews, setReviews] = useState([]);
 
@@ -36,6 +38,9 @@ export default function CustomerReviews({ onNavigate, showToast }) {
       .catch((err) => {
         console.warn('Could not load live customer reviews:', err);
         if (isMounted) setReviews([]);
+      })
+      .finally(() => {
+        if (isMounted) setLoading(false);
       });
 
     return () => { isMounted = false; };
@@ -103,6 +108,16 @@ export default function CustomerReviews({ onNavigate, showToast }) {
       </div>
     );
   };
+
+  if (loading) {
+    return (
+      <PageLoader
+        title="Loading Your Feedback & Reviews..."
+        subtitle="Retrieving verified stall ratings and farmer replies..."
+        minHeight="min-h-[70vh]"
+      />
+    );
+  }
 
   return (
     <div className="w-full space-y-6 animate-fade-in pb-12">

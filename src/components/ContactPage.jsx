@@ -61,7 +61,7 @@ export default function ContactPage({ onNavigate }) {
         <div className="absolute top-80 -right-20 w-96 h-96 bg-tertiary-fixed/30 rounded-full blur-3xl pointer-events-none -z-10"></div>
 
         {/* 1. Breadcrumb Navigation */}
-        <nav aria-label="Breadcrumb" className="max-w-7xl mx-auto px-gutter pt-space-lg pb-space-xs w-full">
+        <nav aria-label="Breadcrumb" className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-gutter pt-space-lg pb-space-xs w-full">
           <ol className="flex items-center gap-space-xs font-body-sm text-on-surface-variant text-xs">
             <li>
               <button
@@ -85,7 +85,7 @@ export default function ContactPage({ onNavigate }) {
         </nav>
 
         {/* 2. Page Header & Hero Section */}
-        <section className="max-w-7xl mx-auto px-gutter pt-space-sm pb-space-lg w-full">
+        <section className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-gutter pt-space-sm pb-space-lg w-full">
           <div className="flex flex-col items-start gap-space-sm max-w-4xl">
             {/* Eyebrow Badge */}
             <div className="inline-flex items-center gap-space-xs px-space-md py-1 rounded-full bg-secondary-container text-on-secondary-fixed-variant font-label-sm shadow-sm text-xs font-bold border border-secondary-fixed/40">
@@ -134,7 +134,7 @@ export default function ContactPage({ onNavigate }) {
         </section>
 
         {/* 3. Two-Column Main Content Section */}
-        <section className="max-w-7xl mx-auto px-gutter py-space-md w-full">
+        <section className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-gutter py-space-md w-full">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-space-xl items-start">
 
             {/* LEFT COLUMN: Static Contact Details & Support Channels */}
@@ -505,7 +505,7 @@ export default function ContactPage({ onNavigate }) {
         </section>
 
         {/* 4. Map & Plaza Directions Section */}
-        <section className="max-w-7xl mx-auto px-gutter py-space-xl w-full">
+        <section className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-gutter py-space-xl w-full">
           <div className="rounded-xl overflow-hidden bg-surface-container-lowest shadow-md flex flex-col border border-outline-variant/30">
             {/* Header Strip */}
             <div className="p-space-lg md:p-space-xl bg-surface-container-low flex flex-col md:flex-row md:items-center justify-between gap-space-md border-b border-outline-variant/20">
@@ -703,7 +703,7 @@ export default function ContactPage({ onNavigate }) {
         </section>
 
         {/* 5. Quick FAQ Section for Contact */}
-        <section className="max-w-7xl mx-auto px-gutter py-space-xl w-full">
+        <section className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-gutter py-space-xl w-full">
           <div className="flex flex-col items-center text-center gap-1 mb-space-lg">
             <span className="font-label-sm text-label-sm text-primary uppercase tracking-wider text-xs font-bold">
               Fast Answers

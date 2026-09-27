@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import adminApi from '../api/admin';
+import PageLoader from './PageLoader';
 
 export default function SystemConfiguration({ onNavigate, showToast }) {
+  const [loading, setLoading] = useState(true);
+
   // Categories State
   const [categories, setCategories] = useState([]);
 
@@ -27,7 +30,8 @@ export default function SystemConfiguration({ onNavigate, showToast }) {
 
   // Load live categories and announcements from backend
   useEffect(() => {
-    adminApi.getCategories()
+    setLoading(true);
+    const p1 = adminApi.getCategories()
       .then((res) => {
         if (res?.data && Array.isArray(res.data)) {
           const mapped = res.data.map((c) => ({
@@ -44,7 +48,7 @@ export default function SystemConfiguration({ onNavigate, showToast }) {
       })
       .catch((err) => console.warn('Could not load categories:', err));
 
-    adminApi.getAnnouncements()
+    const p2 = adminApi.getAnnouncements()
       .then((res) => {
         if (res?.data && Array.isArray(res.data)) {
           const mapped = res.data.map((a) => ({
@@ -61,6 +65,8 @@ export default function SystemConfiguration({ onNavigate, showToast }) {
         }
       })
       .catch((err) => console.warn('Could not load announcements:', err));
+
+    Promise.allSettled([p1, p2]).finally(() => setLoading(false));
   }, []);
 
   // ----------------------------------------------------
@@ -243,8 +249,18 @@ export default function SystemConfiguration({ onNavigate, showToast }) {
     setDeleteAnnouncementItem(null);
   };
 
+  if (loading) {
+    return (
+      <PageLoader
+        title="Loading System Configuration..."
+        subtitle="Synchronizing product taxonomy categories and platform notices..."
+        minHeight="min-h-[70vh]"
+      />
+    );
+  }
+
   return (
-    <div className="px-gutter py-space-lg max-w-7xl mx-auto w-full flex flex-col gap-space-xl animate-fade-in">
+    <div className="px-3 sm:px-6 lg:px-gutter py-4 sm:py-space-lg max-w-7xl mx-auto w-full flex flex-col gap-5 sm:gap-space-xl animate-fade-in">
       
       {/* 1. Header Section */}
       <div className="flex flex-col gap-1">

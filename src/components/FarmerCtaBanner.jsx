@@ -49,9 +49,9 @@ export default function FarmerCtaBanner({ onOpenPartnerModal, onDownloadGuide })
         }}
       />
 
-      <div className="max-w-7xl mx-auto px-gutter relative z-10">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-gutter relative z-10">
         <div
-          className={`rounded-3xl p-8 sm:p-12 flex flex-col lg:flex-row items-center justify-between gap-10 border border-white/10 transition-all duration-700 ${
+          className={`rounded-3xl p-5 sm:p-8 md:p-12 flex flex-col lg:flex-row items-center justify-between gap-10 border border-white/10 transition-all duration-700 ${
             visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
           }`}
           style={{

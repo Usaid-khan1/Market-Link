@@ -1,7 +1,9 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import adminApi from '../api/admin';
+import PageLoader from './PageLoader';
 
 export default function ManageFarmers({ onNavigate, showToast }) {
+  const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('all'); // 'all' | 'pending' | 'approved' | 'suspended'
   const [marketFilter, setMarketFilter] = useState('all');
   const [sortBy, setSortBy] = useState('newest');
@@ -82,6 +84,7 @@ export default function ManageFarmers({ onNavigate, showToast }) {
 
   // Load live farmers from backend
   useEffect(() => {
+    setLoading(true);
     adminApi.getFarmers()
       .then((res) => {
         if (res?.data && Array.isArray(res.data)) {
@@ -106,7 +109,8 @@ export default function ManageFarmers({ onNavigate, showToast }) {
           setFarmers([]);
         }
       })
-      .catch((err) => console.warn('Could not load live farmers:', err));
+      .catch((err) => console.warn('Could not load live farmers:', err))
+      .finally(() => setLoading(false));
   }, []);
 
   // Actions
@@ -211,8 +215,18 @@ export default function ManageFarmers({ onNavigate, showToast }) {
     setSortBy('newest');
   };
 
+  if (loading) {
+    return (
+      <PageLoader
+        title="Loading Producer Registry..."
+        subtitle="Retrieving verified growers, pending permits, and stall compliance records..."
+        minHeight="min-h-[70vh]"
+      />
+    );
+  }
+
   return (
-    <div className="px-gutter py-space-lg max-w-7xl mx-auto w-full flex flex-col gap-space-lg animate-fade-in">
+    <div className="px-3 sm:px-6 lg:px-gutter py-4 sm:py-space-lg max-w-7xl mx-auto w-full flex flex-col gap-5 sm:gap-space-lg animate-fade-in">
       {/* 1. Header Section */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-space-md">
         <div className="flex flex-col gap-1">

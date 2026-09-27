@@ -1,19 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import adminApi from '../api/admin';
+import PageLoader from './PageLoader';
 
 export default function ReportsAnalytics({ onNavigate, showToast }) {
+  const [loading, setLoading] = useState(true);
   const [dateRange, setDateRange] = useState('This Month');
   const [activeChartPoint, setActiveChartPoint] = useState(null);
   const [reportsData, setReportsData] = useState(null);
 
   useEffect(() => {
+    setLoading(true);
     adminApi.getReports()
       .then((res) => {
         if (res?.data) {
           setReportsData(res.data);
         }
       })
-      .catch((err) => console.warn('Could not load reports:', err));
+      .catch((err) => console.warn('Could not load reports:', err))
+      .finally(() => setLoading(false));
   }, []);
 
   // Farmers ranking data from live API
@@ -63,8 +67,18 @@ export default function ReportsAnalytics({ onNavigate, showToast }) {
     ? (marketRevenueBars.reduce((sum, m) => sum + (Number(m.amount) || 0), 0) / marketRevenueBars.length).toFixed(2)
     : '0.00';
 
+  if (loading) {
+    return (
+      <PageLoader
+        title="Generating Platform Analytics..."
+        subtitle="Computing marketplace GMV, vendor sales distributions, order frequency, and volume trends..."
+        minHeight="min-h-[70vh]"
+      />
+    );
+  }
+
   return (
-    <div className="px-gutter py-space-lg max-w-7xl mx-auto w-full flex flex-col gap-space-lg animate-fade-in">
+    <div className="px-3 sm:px-6 lg:px-gutter py-4 sm:py-space-lg max-w-7xl mx-auto w-full flex flex-col gap-5 sm:gap-space-lg animate-fade-in">
       
       {/* 1. Header Section with Date Range Filter & Export Button */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-space-md">

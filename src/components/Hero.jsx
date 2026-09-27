@@ -132,7 +132,7 @@ export default function Hero({
           </div>
 
           {/* Main Hero Heading */}
-          <h1 className="font-sans text-5xl sm:text-6xl md:text-7xl lg:text-[76px] font-black leading-[0.98] tracking-[-1.5px] sm:tracking-[-2.5px] mb-4">
+          <h1 className="font-sans text-3xl min-[360px]:text-4xl sm:text-6xl md:text-7xl lg:text-[76px] font-black leading-[0.98] tracking-[-1px] sm:tracking-[-2.5px] mb-4">
             <span className="text-white block">Farm Fresh</span>
             <span className="text-[#54d62c] block mt-1">Just a Click Away</span>
           </h1>
@@ -280,7 +280,7 @@ export default function Hero({
 
           {/* Benefits Strip (Directly floating below filter panel) */}
           <div
-            className="inline-flex flex-wrap items-center gap-3 sm:gap-6 px-5 sm:px-6 py-2.5 rounded-full border border-white/15 shadow-md"
+            className="inline-flex flex-wrap items-center gap-3 sm:gap-6 px-4 sm:px-6 py-2.5 rounded-2xl sm:rounded-full border border-white/15 shadow-md"
             style={{
               background: 'rgba(7, 35, 18, 0.52)',
               backdropFilter: 'blur(12px)',

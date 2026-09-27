@@ -55,7 +55,7 @@ export default function HowItWorks() {
         }}
       />
 
-      <div className="max-w-7xl mx-auto px-gutter relative z-10">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-gutter relative z-10">
         {/* Section Header */}
         <div
           className={`text-center max-w-2xl mx-auto mb-14 transition-all duration-700 ${

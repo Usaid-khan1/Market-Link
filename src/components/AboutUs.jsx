@@ -5,7 +5,7 @@ export default function AboutUs({ onNavigate, onOpenRegister, onOpenFarmerPortal
     <div className="flex flex-col w-full">
       {/* Hero & Narrative Header Section */}
       <section className="relative overflow-hidden bg-surface-container-low py-space-xl">
-        <div className="max-w-7xl mx-auto px-gutter relative z-10">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-gutter relative z-10">
           {/* Breadcrumb & Badge */}
           <div className="flex flex-wrap items-center gap-space-sm mb-space-md">
             <nav aria-label="Breadcrumbs" className="flex items-center gap-space-xs font-body-sm text-on-surface-variant text-xs">
@@ -29,7 +29,7 @@ export default function AboutUs({ onNavigate, onOpenRegister, onOpenFarmerPortal
           {/* Hero Titles */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-space-lg items-end mb-space-xl">
             <div className="lg:col-span-8 flex flex-col gap-space-sm">
-              <h1 className="font-display-lg text-display-lg text-primary tracking-tight font-headline-lg leading-tight font-bold">
+              <h1 className="font-display-lg text-3xl sm:text-4xl lg:text-display-lg text-primary tracking-tight font-headline-lg leading-tight font-bold">
                 Reconnecting Neighbors with the Hands That Feed Us
               </h1>
               <p className="font-body-lg text-body-lg text-on-surface-variant max-w-3xl leading-relaxed text-sm">
@@ -92,7 +92,7 @@ export default function AboutUs({ onNavigate, onOpenRegister, onOpenFarmerPortal
 
       {/* Narrative Origin Story (Editorial Split Layout) */}
       <section className="w-full py-space-xl bg-surface">
-        <div className="max-w-7xl mx-auto px-gutter">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-gutter">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-space-xl items-center">
             {/* Left Editorial Column */}
             <div className="lg:col-span-6 flex flex-col gap-space-md">
@@ -154,7 +154,7 @@ export default function AboutUs({ onNavigate, onOpenRegister, onOpenFarmerPortal
 
       {/* Problem & Solution Comparison Matrix */}
       <section className="w-full py-space-xl bg-surface-container-low border-y border-outline-variant/30">
-        <div className="max-w-7xl mx-auto px-gutter">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-gutter">
           <div className="text-center max-w-3xl mx-auto mb-space-xl">
             <span className="font-label-sm text-label-sm uppercase tracking-widest text-secondary font-bold text-xs">Value Architecture</span>
             <h2 className="font-headline-lg text-headline-lg text-primary mt-space-xs font-semibold">
@@ -284,7 +284,7 @@ export default function AboutUs({ onNavigate, onOpenRegister, onOpenFarmerPortal
 
       {/* Core Pillars & Values */}
       <section className="w-full py-space-xl bg-surface">
-        <div className="max-w-7xl mx-auto px-gutter">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-gutter">
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-space-xl gap-space-md">
             <div>
               <span className="font-label-sm text-label-sm uppercase tracking-widest text-primary font-bold text-xs">Uncompromising Standards</span>
@@ -351,7 +351,7 @@ export default function AboutUs({ onNavigate, onOpenRegister, onOpenFarmerPortal
 
       {/* Meet the Stewards & Team */}
       <section className="w-full py-space-xl bg-surface-container-low border-t border-outline-variant/30">
-        <div className="max-w-7xl mx-auto px-gutter">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-gutter">
           <div className="max-w-3xl mb-space-xl">
             <span className="font-label-sm text-label-sm uppercase tracking-widest text-primary font-bold text-xs">The Caretakers</span>
             <h2 className="font-headline-lg text-headline-lg text-primary mt-space-xs font-semibold">
@@ -494,7 +494,7 @@ export default function AboutUs({ onNavigate, onOpenRegister, onOpenFarmerPortal
 
       {/* Trust & Transparency FAQ Grid */}
       <section className="w-full py-space-xl bg-surface">
-        <div className="max-w-7xl mx-auto px-gutter">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-gutter">
           <div className="text-center max-w-2xl mx-auto mb-space-xl">
             <span className="font-label-sm text-label-sm uppercase tracking-widest text-tertiary font-bold text-xs">Frequently Asked</span>
             <h2 className="font-headline-lg text-headline-lg text-primary mt-space-xs font-semibold">
@@ -558,7 +558,7 @@ export default function AboutUs({ onNavigate, onOpenRegister, onOpenFarmerPortal
         <div className="absolute -right-24 -top-24 w-96 h-96 rounded-full bg-primary-container opacity-40 blur-3xl pointer-events-none"></div>
         <div className="absolute -left-24 -bottom-24 w-96 h-96 rounded-full bg-secondary opacity-20 blur-3xl pointer-events-none"></div>
 
-        <div className="max-w-7xl mx-auto px-gutter relative z-10">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-gutter relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-space-xl items-center">
             {/* Shopper CTA Block */}
             <div className="bg-surface-container-lowest text-on-surface p-space-lg sm:p-space-xl rounded-xl shadow-xl flex flex-col justify-between">

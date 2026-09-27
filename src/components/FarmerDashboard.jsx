@@ -3,34 +3,39 @@ import FarmerProducts from './FarmerProducts';
 import FarmerStockTemplate from './FarmerStockTemplate';
 import FarmerPreOrders from './FarmerPreOrders';
 import FarmerReviews from './FarmerReviews';
+import FarmerStall from './FarmerStall';
 import FarmerSettings from './FarmerSettings';
 import farmerApi from '../api/farmer';
+import { useAuth } from '../context/AuthContext';
 import { DashboardSidebar, DashboardHeader, DashboardToast, StatCard, StatusBadge, DashboardTickerBanner } from './DashboardShell';
+import PageLoader from './PageLoader';
 
 export default function FarmerDashboard({ onNavigate, initialTab = 'dashboard' }) {
+  const { logout } = useAuth();
   const [activeTab, setActiveTab] = useState(initialTab);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
   const [insights, setInsights] = useState(null);
   const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   const fetchFarmerData = () => {
-    farmerApi.getInsights()
-      .then((res) => {
+    setLoading(true);
+    Promise.allSettled([
+      farmerApi.getInsights().then((res) => {
         if (res?.data) {
           setInsights(res.data);
         }
-      })
-      .catch((err) => console.warn('Could not load farmer insights:', err));
-
-    farmerApi.getProfile()
-      .then((res) => {
+      }),
+      farmerApi.getProfile().then((res) => {
         if (res?.data) {
           setProfile(res.data);
         }
       })
-      .catch((err) => console.warn('Could not load farmer profile:', err));
+    ]).finally(() => {
+      setLoading(false);
+    });
   };
 
   useEffect(() => {
@@ -73,7 +78,8 @@ export default function FarmerDashboard({ onNavigate, initialTab = 'dashboard' }
     { id: 'stock-template', label: 'Weekly Stock', icon: 'event_repeat' },
     { id: 'pre-orders', label: 'Pre-Orders', icon: 'receipt_long' },
     { id: 'reviews', label: 'Reviews', icon: 'rate_review' },
-    { id: 'settings', label: 'Profile & Stall Settings', icon: 'storefront' }
+    { id: 'stall', label: 'My Stall & Location', icon: 'storefront' },
+    { id: 'settings', label: 'Account Settings', icon: 'settings' }
   ];
 
   // Dynamic Mini Dashboard Home Data
@@ -156,7 +162,7 @@ export default function FarmerDashboard({ onNavigate, initialTab = 'dashboard' }
         }}
         footerActions={[
           { icon: 'visibility', label: 'View Public Stall Profile', onClick: () => onNavigate('farmer-profile') },
-          { icon: 'logout', label: 'Exit / Logout', onClick: () => onNavigate('home'), danger: true },
+          { icon: 'logout', label: 'Exit / Logout', onClick: async () => { await logout(); onNavigate('home'); }, danger: true },
         ]}
       />
 
@@ -175,7 +181,8 @@ export default function FarmerDashboard({ onNavigate, initialTab = 'dashboard' }
             : activeTab === 'stock-template' ? 'Weekly Stock Template'
             : activeTab === 'pre-orders' ? 'Pre-Orders Queue'
             : activeTab === 'reviews' ? 'Customer Feedback'
-            : 'Stall Settings'
+            : activeTab === 'stall' ? 'Stall Registration & Location'
+            : 'Account & Security Settings'
           ]}
           notifications={farmerNotifications}
           headerRight={
@@ -210,7 +217,7 @@ export default function FarmerDashboard({ onNavigate, initialTab = 'dashboard' }
                     <span className="material-symbols-outlined text-[16px] text-secondary">storefront</span><span>Public Storefront</span>
                   </button>
                   <div className="my-1 border-t border-outline-variant/20" />
-                  <button type="button" onClick={() => { onNavigate('home'); setUserDropdownOpen(false); }} className="w-full text-left px-4 py-2 hover:bg-error-container/30 text-error flex items-center gap-2 cursor-pointer font-bold text-xs">
+                  <button type="button" onClick={async () => { await logout(); onNavigate('home'); setUserDropdownOpen(false); }} className="w-full text-left px-4 py-2 hover:bg-error-container/30 text-error flex items-center gap-2 cursor-pointer font-bold text-xs">
                     <span className="material-symbols-outlined text-[16px]">logout</span><span>Logout</span>
                   </button>
                 </div>
@@ -226,7 +233,14 @@ export default function FarmerDashboard({ onNavigate, initialTab = 'dashboard' }
           
           {/* TAB 1: DASHBOARD HOME */}
           {activeTab === 'dashboard' && (
-            <div className="px-gutter py-space-lg max-w-7xl mx-auto w-full flex flex-col gap-space-lg animate-fade-in">
+            loading ? (
+              <PageLoader
+                title="Loading Farm Operations..."
+                subtitle="Syncing live pre-orders, inventory alerts, and stall metrics..."
+                minHeight="min-h-[70vh]"
+              />
+            ) : (
+            <div className="px-3 sm:px-6 lg:px-gutter py-4 sm:py-space-lg max-w-7xl mx-auto w-full flex flex-col gap-5 sm:gap-space-lg animate-fade-in">
               
               {/* Live Harvest Ticker */}
               <DashboardTickerBanner
@@ -605,6 +619,7 @@ export default function FarmerDashboard({ onNavigate, initialTab = 'dashboard' }
               </div>
 
             </div>
+            )
           )}
 
           {/* TAB 2: MY PRODUCTS */}
@@ -627,7 +642,12 @@ export default function FarmerDashboard({ onNavigate, initialTab = 'dashboard' }
             <FarmerReviews showToast={showToast} />
           )}
 
-          {/* TAB 6: PROFILE & STALL SETTINGS */}
+          {/* TAB 6: MY STALL & GEOLOCATION (Registration / Location) */}
+          {activeTab === 'stall' && (
+            <FarmerStall showToast={showToast} onNavigate={onNavigate} />
+          )}
+
+          {/* TAB 7: ACCOUNT PROFILE & PASSWORD SECURITY */}
           {activeTab === 'settings' && (
             <FarmerSettings showToast={showToast} />
           )}

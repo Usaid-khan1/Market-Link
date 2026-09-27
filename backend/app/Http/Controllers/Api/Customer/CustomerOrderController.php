@@ -113,6 +113,17 @@ class CustomerOrderController extends Controller
                     ];
                 }
 
+                // Ensure a valid market_id
+                if (! $resolvedMarketId) {
+                    $profile = $farmer->farmerProfile;
+                    if ($profile && ! empty($profile->market_ids) && is_array($profile->market_ids) && count($profile->market_ids) > 0) {
+                        $resolvedMarketId = (int) $profile->market_ids[0];
+                    }
+                }
+                if (! $resolvedMarketId) {
+                    $resolvedMarketId = \App\Models\Market::first()?->id;
+                }
+
                 // 2. Create Order
                 $order = Order::create([
                     'customer_id' => $request->user()->id,

@@ -65,6 +65,18 @@ class FarmerProductController extends Controller
             $validated['image'] = asset('uploads/products/' . $filename);
         }
 
+        if (empty($validated['market_id'])) {
+            $profile = $request->user()->farmerProfile;
+            if ($profile && !empty($profile->market_ids) && is_array($profile->market_ids) && count($profile->market_ids) > 0) {
+                $validated['market_id'] = (int) $profile->market_ids[0];
+            } else {
+                $firstMarket = \App\Models\Market::first();
+                if ($firstMarket) {
+                    $validated['market_id'] = $firstMarket->id;
+                }
+            }
+        }
+
         $product = Product::create($validated);
         $product->load(['category', 'market']);
 

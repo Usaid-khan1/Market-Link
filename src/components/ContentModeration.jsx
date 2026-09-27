@@ -1,7 +1,9 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import adminApi from '../api/admin';
+import PageLoader from './PageLoader';
 
 export default function ContentModeration({ onNavigate, showToast }) {
+  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('products'); // 'products' | 'reviews'
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -50,7 +52,8 @@ export default function ContentModeration({ onNavigate, showToast }) {
 
   // Load moderation data from backend
   useEffect(() => {
-    adminApi.getModerationProducts()
+    setLoading(true);
+    const p1 = adminApi.getModerationProducts()
       .then((res) => {
         if (res?.data && Array.isArray(res.data)) {
           const mapped = res.data.map((p) => ({
@@ -76,7 +79,7 @@ export default function ContentModeration({ onNavigate, showToast }) {
       })
       .catch((err) => console.warn('Could not load moderation products:', err));
 
-    adminApi.getModerationReviews()
+    const p2 = adminApi.getModerationReviews()
       .then((res) => {
         if (res?.data && Array.isArray(res.data)) {
           const mapped = res.data.map((r) => ({
@@ -99,6 +102,8 @@ export default function ContentModeration({ onNavigate, showToast }) {
         }
       })
       .catch((err) => console.warn('Could not load moderation reviews:', err));
+
+    Promise.allSettled([p1, p2]).finally(() => setLoading(false));
   }, []);
 
   // Dismiss Actions
@@ -152,8 +157,18 @@ export default function ContentModeration({ onNavigate, showToast }) {
     setViewReviewModal(null);
   };
 
+  if (loading) {
+    return (
+      <PageLoader
+        title="Loading Moderation Queue..."
+        subtitle="Auditing product listings, buyer reviews, and catalog compliance reports..."
+        minHeight="min-h-[70vh]"
+      />
+    );
+  }
+
   return (
-    <div className="px-gutter py-space-lg max-w-7xl mx-auto w-full flex flex-col gap-space-lg animate-fade-in">
+    <div className="px-3 sm:px-6 lg:px-gutter py-4 sm:py-space-lg max-w-7xl mx-auto w-full flex flex-col gap-5 sm:gap-space-lg animate-fade-in">
       
       {/* 1. Header Section */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-space-md">

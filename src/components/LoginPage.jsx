@@ -37,7 +37,7 @@ export default function LoginPage({ onNavigate, onLoginSuccess, onOpenRegister }
   return (
     <div className="flex flex-col w-full">
       {/* Breadcrumb */}
-      <div className="w-full max-w-7xl mx-auto px-gutter py-4">
+      <div className="w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-gutter py-4">
         <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-xs text-on-surface-variant">
           <button
             type="button"
@@ -53,13 +53,13 @@ export default function LoginPage({ onNavigate, onLoginSuccess, onOpenRegister }
       </div>
 
       {/* Main Login Section */}
-      <section className="w-full max-w-7xl mx-auto px-gutter pb-16">
+      <section className="w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-gutter pb-16">
         <div
           className="w-full rounded-3xl overflow-hidden grid grid-cols-1 lg:grid-cols-12 min-h-[700px] border border-outline-variant/20"
           style={{ boxShadow: '0 24px 64px rgba(18,82,36,0.10), 0 8px 24px rgba(0,0,0,0.05)' }}
         >
           {/* Left Column: Form */}
-          <div className="lg:col-span-7 p-8 sm:p-12 flex flex-col justify-between bg-white">
+          <div className="lg:col-span-7 p-4 sm:p-8 md:p-12 flex flex-col justify-between bg-white">
             <div>
               {/* Brand */}
               <div className="flex items-center justify-between mb-8">

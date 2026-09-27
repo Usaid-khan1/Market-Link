@@ -126,7 +126,7 @@ export default function RegisterPage({ onNavigate, onRegisterSuccess, initialRol
   return (
     <div className="flex flex-col w-full min-h-[calc(100vh-280px)]">
       {/* Top Breadcrumb & Indicator Bar */}
-      <div className="w-full bg-surface-container-low py-space-sm px-gutter border-b border-outline-variant/30">
+      <div className="w-full bg-surface-container-low py-space-sm px-3 sm:px-6 lg:px-gutter border-b border-outline-variant/30">
         <div className="max-w-7xl mx-auto flex items-center justify-between text-on-surface-variant font-label-sm">
           <nav aria-label="Breadcrumb" className="flex items-center gap-space-xs text-body-sm text-xs">
             <button
@@ -152,14 +152,14 @@ export default function RegisterPage({ onNavigate, onRegisterSuccess, initialRol
       </div>
 
       {/* Main Container */}
-      <div className="w-full max-w-7xl mx-auto px-gutter py-space-lg lg:py-space-xl">
+      <div className="w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-gutter py-space-md sm:py-space-lg lg:py-space-xl">
         {/* 2-Column Split Card Wrapper */}
         <div
           className="w-full rounded-3xl overflow-hidden grid grid-cols-1 lg:grid-cols-12 min-h-[700px] border border-outline-variant/20"
           style={{ boxShadow: '0 24px 64px rgba(18,82,36,0.10), 0 8px 24px rgba(0,0,0,0.05)' }}
         >
           {/* Left Column: Registration Form */}
-          <div className="lg:col-span-7 xl:col-span-8 p-8 sm:p-12 flex flex-col justify-between bg-white">
+          <div className="lg:col-span-7 xl:col-span-8 p-4 sm:p-8 md:p-12 flex flex-col justify-between bg-white">
             <div className="w-full max-w-2xl mx-auto">
               {/* Header Branding */}
               <div className="flex items-center justify-between mb-8">
@@ -626,7 +626,7 @@ export default function RegisterPage({ onNavigate, onRegisterSuccess, initialRol
 
       {/* Interactive Terms & Trust Guidelines Modal */}
       {showTermsModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-gutter bg-black/60 backdrop-blur-sm animate-fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/60 backdrop-blur-sm animate-fade-in">
           <div className="bg-surface-container-lowest rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl border border-outline-variant/40 flex flex-col max-h-[85vh]">
             <div className="bg-primary px-space-lg py-space-md text-on-primary flex items-center justify-between">
               <div className="flex items-center gap-space-xs">

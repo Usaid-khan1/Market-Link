@@ -6,7 +6,9 @@ import ContentModeration from './ContentModeration';
 import ReportsAnalytics from './ReportsAnalytics';
 import SystemConfiguration from './SystemConfiguration';
 import adminApi from '../api/admin';
+import { useAuth } from '../context/AuthContext';
 import { DashboardSidebar, DashboardHeader, DashboardToast, StatCard, StatusBadge, DashboardTickerBanner } from './DashboardShell';
+import PageLoader from './PageLoader';
 
 const CHART_CONFIGS = {
   'Last 7 Days': {
@@ -91,6 +93,7 @@ const CHART_CONFIGS = {
 };
 
 export default function AdminDashboard({ onNavigate, initialTab = 'dashboard' }) {
+  const { logout } = useAuth();
   const [activeTab, setActiveTab] = useState(initialTab);
   const [searchQuery, setSearchQuery] = useState('');
   const [orderFilter, setOrderFilter] = useState('');
@@ -122,104 +125,110 @@ export default function AdminDashboard({ onNavigate, initialTab = 'dashboard' })
 
   // Pre-orders state
   const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   // Load summary metrics, announcements, pending farmers & live orders from backend
   useEffect(() => {
-    adminApi.getSummary()
-      .then((res) => {
-        if (res?.data) {
-          setSummaryData(res.data);
-        }
-      })
-      .catch((err) => console.warn('Could not load admin summary:', err));
+    setLoading(true);
+    Promise.allSettled([
+      adminApi.getSummary()
+        .then((res) => {
+          if (res?.data) {
+            setSummaryData(res.data);
+          }
+        })
+        .catch((err) => console.warn('Could not load admin summary:', err)),
 
-    adminApi.getAnnouncements()
-      .then((res) => {
-        if (res?.data && Array.isArray(res.data)) {
-          const mapped = res.data.map((a) => ({
-            id: a.id,
-            type: a.type || 'Platform Notice',
-            icon: 'campaign',
-            color: 'text-primary',
-            time: a.created_at ? new Date(a.created_at).toLocaleDateString() : 'Recent',
-            title: a.title,
-            desc: a.content || a.message || '',
-            author: 'Central Admin',
-            audience: a.audience || 'All Community'
-          }));
-          setAnnouncements(mapped);
-        } else {
-          setAnnouncements([]);
-        }
-      })
-      .catch((err) => console.warn('Could not load announcements:', err));
+      adminApi.getAnnouncements()
+        .then((res) => {
+          if (res?.data && Array.isArray(res.data)) {
+            const mapped = res.data.map((a) => ({
+              id: a.id,
+              type: a.type || 'Platform Notice',
+              icon: 'campaign',
+              color: 'text-primary',
+              time: a.created_at ? new Date(a.created_at).toLocaleDateString() : 'Recent',
+              title: a.title,
+              desc: a.content || a.message || '',
+              author: 'Central Admin',
+              audience: a.audience || 'All Community'
+            }));
+            setAnnouncements(mapped);
+          } else {
+            setAnnouncements([]);
+          }
+        })
+        .catch((err) => console.warn('Could not load announcements:', err)),
 
-    adminApi.getFarmers({ status: 'pending' })
-      .then((res) => {
-        if (res?.data && Array.isArray(res.data)) {
-          const mapped = res.data.map((f) => ({
-            id: f.id,
-            initials: (f.farmer_profile?.farm_name || f.business_name || f.name || 'Vendor')
-              .split(' ')
-              .map((n) => n[0])
-              .join('')
-              .substring(0, 2)
-              .toUpperCase(),
-            name: f.farmer_profile?.farm_name || f.business_name || f.name,
-            shortName: f.farmer_profile?.farm_name || f.business_name || f.name,
-            market: f.markets?.[0]?.name || 'Regional Market Pavilion',
-            dateTag: `${f.markets?.[0]?.name || 'Regional'} • ${f.created_at ? new Date(f.created_at).toLocaleDateString() : 'Recent'}`,
-            products: f.farmer_profile?.farm_description || f.bio || 'Local farm produce',
-            owner: f.name,
-            permit: f.farmer_profile?.permit_number || `PERM-2025-${String(f.id).padStart(3, '0')}`,
-            colorClass: 'bg-primary-fixed/50 text-primary'
-          }));
-          setPendingFarmers(mapped);
-        } else {
-          setPendingFarmers([]);
-        }
-      })
-      .catch((err) => console.warn('Could not load pending farmers:', err));
+      adminApi.getFarmers({ status: 'pending' })
+        .then((res) => {
+          if (res?.data && Array.isArray(res.data)) {
+            const mapped = res.data.map((f) => ({
+              id: f.id,
+              initials: (f.farmer_profile?.farm_name || f.business_name || f.name || 'Vendor')
+                .split(' ')
+                .map((n) => n[0])
+                .join('')
+                .substring(0, 2)
+                .toUpperCase(),
+              name: f.farmer_profile?.farm_name || f.business_name || f.name,
+              shortName: f.farmer_profile?.farm_name || f.business_name || f.name,
+              market: f.markets?.[0]?.name || 'Regional Market Pavilion',
+              dateTag: `${f.markets?.[0]?.name || 'Regional'} • ${f.created_at ? new Date(f.created_at).toLocaleDateString() : 'Recent'}`,
+              products: f.farmer_profile?.farm_description || f.bio || 'Local farm produce',
+              owner: f.name,
+              permit: f.farmer_profile?.permit_number || `PERM-2025-${String(f.id).padStart(3, '0')}`,
+              colorClass: 'bg-primary-fixed/50 text-primary'
+            }));
+            setPendingFarmers(mapped);
+          } else {
+            setPendingFarmers([]);
+          }
+        })
+        .catch((err) => console.warn('Could not load pending farmers:', err)),
 
-    adminApi.getOrders()
-      .then((res) => {
-        if (res?.data && Array.isArray(res.data)) {
-          const mapped = res.data.map((o) => {
-            let uiStatus = 'Pending Stall Pack';
-            let sColor = 'bg-tertiary-fixed text-on-tertiary-fixed';
-            let dColor = 'bg-tertiary';
+      adminApi.getOrders()
+        .then((res) => {
+          if (res?.data && Array.isArray(res.data)) {
+            const mapped = res.data.map((o) => {
+              let uiStatus = 'Pending Stall Pack';
+              let sColor = 'bg-tertiary-fixed text-on-tertiary-fixed';
+              let dColor = 'bg-tertiary';
 
-            if (o.status === 'ready' || o.order_status === 'ready') {
-              uiStatus = 'Ready for Pickup';
-              sColor = 'bg-primary-fixed text-on-primary-fixed';
-              dColor = 'bg-primary';
-            } else if (o.status === 'completed' || o.order_status === 'completed') {
-              uiStatus = 'Collected / Paid';
-              sColor = 'bg-surface-container-high text-on-surface';
-              dColor = 'bg-on-surface-variant';
-            }
+              if (o.status === 'ready' || o.order_status === 'ready') {
+                uiStatus = 'Ready for Pickup';
+                sColor = 'bg-primary-fixed text-on-primary-fixed';
+                dColor = 'bg-primary';
+              } else if (o.status === 'completed' || o.order_status === 'completed') {
+                uiStatus = 'Collected / Paid';
+                sColor = 'bg-surface-container-high text-on-surface';
+                dColor = 'bg-on-surface-variant';
+              }
 
-            return {
-              id: `#ML-${o.order_number || o.id}`,
-              numericId: o.id,
-              customer: o.customer?.name || o.user?.name || 'Customer',
-              neighborhood: o.customer?.address || o.user?.address || 'Portland Metro',
-              farm: o.farmer?.farmer_profile?.stall_name || o.farmer?.business_name || o.farmer?.name || 'Local Farm',
-              market: o.market?.name || o.market?.market_name || 'Market Pavilion',
-              itemsCount: (o.items || o.order_items || []).length || 1,
-              amount: `$${Number(o.total_amount || 0).toFixed(2)}`,
-              status: uiStatus,
-              statusColor: sColor,
-              dotColor: dColor,
-              pickupTime: o.pickup_window || (o.pickup_date ? new Date(o.pickup_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Today')
-            };
-          });
-          setOrders(mapped);
-        } else {
-          setOrders([]);
-        }
-      })
-      .catch((err) => console.warn('Could not load admin orders:', err));
+              return {
+                id: `#ML-${o.order_number || o.id}`,
+                numericId: o.id,
+                customer: o.customer?.name || o.user?.name || 'Customer',
+                neighborhood: o.customer?.address || o.user?.address || 'Portland Metro',
+                farm: o.farmer?.farmer_profile?.stall_name || o.farmer?.business_name || o.farmer?.name || 'Local Farm',
+                market: o.market?.name || o.market?.market_name || 'Market Pavilion',
+                itemsCount: (o.items || o.order_items || []).length || 1,
+                amount: `$${Number(o.total_amount || 0).toFixed(2)}`,
+                status: uiStatus,
+                statusColor: sColor,
+                dotColor: dColor,
+                pickupTime: o.pickup_window || (o.pickup_date ? new Date(o.pickup_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Today')
+              };
+            });
+            setOrders(mapped);
+          } else {
+            setOrders([]);
+          }
+        })
+        .catch((err) => console.warn('Could not load admin orders:', err))
+    ]).finally(() => {
+      setLoading(false);
+    });
   }, []);
 
   const showToast = (msg) => {
@@ -368,7 +377,7 @@ export default function AdminDashboard({ onNavigate, initialTab = 'dashboard' })
         profileCard={{ initials: 'HV', name: 'Hannah Vance', subtitle: 'Super Administrator' }}
         footerActions={[
           { icon: 'help_outline', label: 'Admin Help & Docs', onClick: () => onNavigate('contact-us') },
-          { icon: 'logout', label: 'Exit to Storefront', onClick: () => onNavigate('home'), danger: true },
+          { icon: 'logout', label: 'Exit / Logout', onClick: async () => { await logout(); onNavigate('home'); }, danger: true },
         ]}
       />
 
@@ -458,9 +467,16 @@ export default function AdminDashboard({ onNavigate, initialTab = 'dashboard' })
           )}
 
           {(activeTab === 'dashboard' || activeTab === 'overview' || (!['farmers', 'customers', 'markets', 'moderation', 'reports', 'settings'].includes(activeTab))) && (
+            loading ? (
+              <PageLoader
+                title="Loading Central Operations Intelligence..."
+                subtitle="Retrieving market governance, pending grower permits, and transaction telemetry..."
+                minHeight="min-h-[70vh]"
+              />
+            ) : (
             <div className="flex flex-col w-full">
             {/* Top Ambient Banner & Header Action Bar */}
-            <div className="px-gutter py-space-lg flex flex-col gap-space-lg">
+            <div className="px-3 sm:px-6 lg:px-gutter py-4 sm:py-space-lg flex flex-col gap-5 sm:gap-space-lg">
               
               {/* Regional Broadcast Health Ticker */}
               <DashboardTickerBanner
@@ -480,7 +496,7 @@ export default function AdminDashboard({ onNavigate, initialTab = 'dashboard' })
                   <div className="flex items-center gap-3 flex-wrap">
                     <h1 className="text-xl sm:text-2xl lg:text-[26px] text-on-surface font-extrabold tracking-tight flex items-center gap-2">
                       <span>Welcome back, Admin</span>
-                      <span className="inline-block hover:rotate-12 transition-transform duration-200 cursor-default">👋</span>
+                      {/* <span className="inline-block hover:rotate-12 transition-transform duration-200 cursor-default">👋</span> */}
                     </h1>
 
                     <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200/80 text-xs font-bold shadow-xs">
@@ -684,13 +700,13 @@ export default function AdminDashboard({ onNavigate, initialTab = 'dashboard' })
                     </div>
 
                     {/* Time Filters */}
-                    <div className="inline-flex p-1 bg-surface-container rounded-lg font-label-sm text-xs self-start sm:self-auto border border-outline-variant/20">
+                    <div className="flex flex-wrap sm:inline-flex p-1 bg-surface-container rounded-lg font-label-sm text-xs w-full sm:w-auto border border-outline-variant/20 gap-1">
                       {['Last 7 Days', 'This Month', 'Last 30 Days', 'Year-to-Date'].map((period) => (
                         <button
                           key={period}
                           type="button"
                           onClick={() => setChartTimeframe(period)}
-                          className={`px-3 py-1 rounded transition-colors cursor-pointer font-bold ${
+                          className={`flex-1 sm:flex-initial text-center px-2.5 sm:px-3 py-1 rounded transition-colors cursor-pointer font-bold whitespace-nowrap text-[11px] sm:text-xs ${
                             chartTimeframe === period
                               ? 'bg-surface-container-lowest text-primary shadow-sm'
                               : 'text-on-surface-variant hover:text-on-surface'
@@ -1092,7 +1108,8 @@ export default function AdminDashboard({ onNavigate, initialTab = 'dashboard' })
                 </div>
               </div>
             </div>
-          </div>
+            </div>
+            )
           )}
         </main>
       </div>

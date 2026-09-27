@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import PageLoader from './PageLoader';
 import browseApi from '../api/browse';
 import customerApi from '../api/customer';
 import { useAuth } from '../context/AuthContext';
@@ -6,49 +7,64 @@ import { useAuth } from '../context/AuthContext';
 export default function ProductDetails({ productId = 1, onNavigate, onReserveProduct, onNotifyProduct }) {
   const { isAuthenticated } = useAuth();
   const [activeThumb, setActiveThumb] = useState(0);
-  const [quantity, setQuantity] = useState(2);
+  const [quantity, setQuantity] = useState(1);
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [wishlistCount, setWishlistCount] = useState(142);
   const [liveProduct, setLiveProduct] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let mounted = true;
-    browseApi.getProduct(productId || 1).then((res) => {
-      if (mounted && res.data) {
-        setLiveProduct(res.data);
-      }
-    }).catch(() => {});
+    setLoading(true);
+    browseApi.getProduct(productId || 1)
+      .then((res) => {
+        if (mounted && res?.data) {
+          setLiveProduct(res.data);
+        } else if (mounted) {
+          setLiveProduct(null);
+        }
+      })
+      .catch((err) => {
+        console.warn('Could not fetch product details:', err);
+        if (mounted) setLiveProduct(null);
+      })
+      .finally(() => {
+        if (mounted) setLoading(false);
+      });
     return () => { mounted = false; };
   }, [productId]);
 
-  const pricePerUnit = liveProduct ? Number(liveProduct.price) : 4.50;
+  const productName = liveProduct?.name || 'Fresh Seasonal Harvest';
+  const pricePerUnit = liveProduct ? Number(liveProduct.price) : 0;
+  const unit = liveProduct?.unit || 'lb';
   const totalPrice = (quantity * pricePerUnit).toFixed(2);
+  const farmName = liveProduct?.stall_name || liveProduct?.farmer_name || liveProduct?.farmer?.name || 'Regional Grower Stand';
+  const marketName = liveProduct?.market_name || 'Downtown Historic Farmers Market';
+  const stallNumber = liveProduct?.stall_number || 'Stall #4';
+  const categoryName = liveProduct?.category_name || (typeof liveProduct?.category === 'object' ? liveProduct?.category?.name : '') || 'Fresh Vegetables';
+  const stockQuantity = liveProduct?.stock_quantity ?? 15;
+  const isAvailable = liveProduct?.status !== 'sold_out' && stockQuantity > 0;
+  const mainImage = liveProduct?.image || 'https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=800&q=80';
 
   const galleryImages = [
     {
-      thumb: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAy0oOImtEenckS30qqZVa14L8P1wzLAcoYKh84ovouxXVdrd_frsBWvnB52CjgPYKxPddA-v9g-VPpSFFbmUo9fcnQ5xJLHYp7DiYdUD148OIe5DFvQjsYpNQ9perZKWj7xvvOp6XsKIyBzIUrNZ9wD0jDIrTzmpBGq6FFbKR-c6FmnvI7ej4fFaFNg6hx_80d5I7QQMWgrshVWpXbCpaIOx_Cq0kJvJfXtVKG4ak',
-      label: 'Crate View',
-      main: 'https://lh3.googleusercontent.com/aida-public/AB6AXuC4efEixYoP9jG6xfxQZOo_-P_S0K_VxcMnht6G_qqJBGM76mTvCMK3dc4kQuNk3jTqZYI9bwjsolzCQVCYbP_A8KMs3R3bkZVB13VWy42k0sHeY4_KNN6do9anj-sIDysynB9OZS9rq1khFJ06ED_FTYJfKLnVmuOuYZ0eCwZYmD6jnW5oMyr0BjOr6T3vAksRnOisWWWft2nQqxijKzQDz_KYgX8vW-e5SrXpIzk',
-      alt: 'Close-up high-resolution photograph of freshly harvested Heirloom Brandywine tomatoes in a rustic natural cedar wood crate'
+      thumb: mainImage,
+      label: 'Harvest View',
+      main: mainImage,
+      alt: productName,
     },
     {
-      thumb: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAiAignb0klkUYYNy1HhBUy4e7IdUDtFM8hG5gjPhjhlX5tTiJKHVJMyoWL31Bqrp9RC8XR8tmkQN5btLkbLp2PM2JLviCOK3HfUrqrdsBAK5t9uO32TJPcSZRYEhA1ds8z4WfuBGntfo7CTqwTUrE8Y3_QRod8E-EzZ6zQvPOfKMMOh862wMTnfKO229vqy-MPnvGjKp7pSu5E4xedmmVMhIwYvCQLIRGjuz0gQGY',
-      label: 'Sliced Flesh',
-      main: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAiAignb0klkUYYNy1HhBUy4e7IdUDtFM8hG5gjPhjhlX5tTiJKHVJMyoWL31Bqrp9RC8XR8tmkQN5btLkbLp2PM2JLviCOK3HfUrqrdsBAK5t9uO32TJPcSZRYEhA1ds8z4WfuBGntfo7CTqwTUrE8Y3_QRod8E-EzZ6zQvPOfKMMOh862wMTnfKO229vqy-MPnvGjKp7pSu5E4xedmmVMhIwYvCQLIRGjuz0gQGY',
-      alt: 'Artisanal sliced Heirloom Brandywine beefsteak tomato resting on a dark slate board showing thick, juicy, deep rose-red interior'
+      thumb: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?auto=format&fit=crop&w=400&q=80',
+      label: 'Field View',
+      main: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?auto=format&fit=crop&w=800&q=80',
+      alt: `${productName} in the field`,
     },
     {
-      thumb: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCSTYRF2Ko8Oqy7AP5smzwUk4QuGsmu5jCQLPoYV3i-2cZ_N7HSDhXXQ2efS7tNhQXZpcLxkqlv2dmDqyFLjljZv2LDmh5HqIG9DoP7IvpaOu2kO5D1BcT6l0IMtaqmoSnJHrJz4cNWRJw61HCuaPGN08aZ0L3l4XCnFh_44ATxptwUgsXQTd88YwJDUM1UjvIFOWVzORtgWzBeevi_EigXjRfARkknJS9WWzvsing',
-      label: 'On The Vine',
-      main: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCSTYRF2Ko8Oqy7AP5smzwUk4QuGsmu5jCQLPoYV3i-2cZ_N7HSDhXXQ2efS7tNhQXZpcLxkqlv2dmDqyFLjljZv2LDmh5HqIG9DoP7IvpaOu2kO5D1BcT6l0IMtaqmoSnJHrJz4cNWRJw61HCuaPGN08aZ0L3l4XCnFh_44ATxptwUgsXQTd88YwJDUM1UjvIFOWVzORtgWzBeevi_EigXjRfARkknJS9WWzvsing',
-      alt: 'Healthy organic tomato vines laden with heavy, blushing Heirloom Brandywine tomatoes hanging in rich fertile garden soil'
+      thumb: 'https://images.unsplash.com/photo-1488459716781-31db52582fe9?auto=format&fit=crop&w=400&q=80',
+      label: 'Market Stall',
+      main: 'https://images.unsplash.com/photo-1488459716781-31db52582fe9?auto=format&fit=crop&w=800&q=80',
+      alt: `${productName} at market stall`,
     },
-    {
-      thumb: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCQ3rPWwA3Te2cO3K-U5TdDBz-LbrMXFAKJvAdX0cC3ASsQw3HtP0JYhZGu4ACu3tRwPKSaUaDHxXeCajKboHUdXQhVcZnvQg9ivfsl1ARcoQdZn-PURB6NZInEGZ9YNzt7VotDMHg1eeKcCmFbYDwbPj5uwFq5i5pIW2RbTVeHNeX3gdT82dcaQsBjAMYeBkkizSBlspW27LbnWihQ63yIxE5WahhQuPiSjuHUCz0',
-      label: 'Stall Crate',
-      main: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCQ3rPWwA3Te2cO3K-U5TdDBz-LbrMXFAKJvAdX0cC3ASsQw3HtP0JYhZGu4ACu3tRwPKSaUaDHxXeCajKboHUdXQhVcZnvQg9ivfsl1ARcoQdZn-PURB6NZInEGZ9YNzt7VotDMHg1eeKcCmFbYDwbPj5uwFq5i5pIW2RbTVeHNeX3gdT82dcaQsBjAMYeBkkizSBlspW27LbnWihQ63yIxE5WahhQuPiSjuHUCz0',
-      alt: 'Packed biodegradable market pickup crate with aerated pulp basket holding 3 ripe Brandywine tomatoes'
-    }
   ];
 
   const handleToggleWishlist = () => {
@@ -63,22 +79,52 @@ export default function ProductDetails({ productId = 1, onNavigate, onReservePro
 
   const handleReserveClick = () => {
     onReserveProduct({
-      id: 'prod-heirloom-brandywine',
-      name: 'Heirloom Brandywine Tomatoes',
+      id: liveProduct?.id || productId,
+      name: productName,
       price: pricePerUnit,
-      unit: 'lb',
+      unit,
       quantity,
-      farm: 'Green Pastures Organic',
-      market: 'Downtown Historic Farmers Market (Stall #4)',
-      image: galleryImages[activeThumb].main,
-      status: 'IN_STOCK'
+      farm: farmName,
+      market: marketName,
+      image: mainImage,
+      status: isAvailable ? 'IN_STOCK' : 'SOLD_OUT',
     });
   };
+
+  if (loading) {
+    return (
+      <PageLoader
+        title="Loading Produce Details..."
+        subtitle="Retrieving harvest origin, farm stall coordinates, and field freshness data..."
+        minHeight="min-h-[85vh]"
+      />
+    );
+  }
+
+  if (!liveProduct) {
+    return (
+      <div className="w-full min-h-[70vh] flex flex-col items-center justify-center p-8 bg-surface">
+        <div className="max-w-md w-full p-8 rounded-2xl bg-white border border-outline-variant/30 text-center shadow-lg">
+          <span className="material-symbols-outlined text-[54px] text-primary mb-3">search_off</span>
+          <h2 className="text-xl font-bold text-on-surface mb-2">Produce Item Not Found</h2>
+          <p className="text-sm text-on-surface-variant mb-6">
+            The seasonal produce item you requested could not be located in the current catalog.
+          </p>
+          <button
+            onClick={() => onNavigate('products')}
+            className="w-full py-3 px-4 rounded-xl bg-primary text-white font-bold text-sm cursor-pointer hover:bg-primary/90 transition-all"
+          >
+            Browse All Fresh Harvests
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col w-full">
       {/* Top Notice & Breadcrumb Navigation */}
-      <section className="max-w-7xl mx-auto px-gutter w-full pt-space-lg pb-space-xs">
+      <section className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-gutter w-full pt-space-lg pb-space-xs">
         <nav aria-label="Breadcrumbs" className="flex items-center flex-wrap gap-space-xs font-body-sm text-on-surface-variant text-xs">
           <button onClick={() => onNavigate('home')} className="hover:text-primary transition-colors flex items-center gap-1 cursor-pointer">
             <span className="material-symbols-outlined text-[16px] text-primary">roofing</span>
@@ -89,16 +135,12 @@ export default function ProductDetails({ productId = 1, onNavigate, onReservePro
             Products
           </button>
           <span className="text-outline-variant">/</span>
-          <button onClick={() => onNavigate('products')} className="hover:text-primary transition-colors cursor-pointer">
-            Fresh Vegetables
-          </button>
-          <span className="text-outline-variant">/</span>
-          <span className="text-on-surface font-semibold truncate">Heirloom Brandywine Tomatoes</span>
+          <span className="text-on-surface font-semibold truncate">{productName}</span>
         </nav>
       </section>
 
       {/* Hero Product Detail Grid (2-Column Asymmetric Layout) */}
-      <section className="max-w-7xl mx-auto px-gutter w-full py-space-md">
+      <section className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-gutter w-full py-space-md">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-space-xl items-start">
           {/* LEFT COLUMN: Image Gallery & Freshness Stamps (7 Cols) */}
           <div className="lg:col-span-7 flex flex-col gap-space-md">
@@ -112,14 +154,14 @@ export default function ProductDetails({ productId = 1, onNavigate, onReservePro
               />
 
               {/* Overlaid Freshness Badges */}
-              <div className="absolute top-4 left-4 flex flex-col gap-2 pointer-events-none">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full font-label-sm bg-surface/95 text-primary shadow-sm backdrop-blur-md text-xs font-bold">
-                  <span className="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
-                  IN STOCK (18 lbs for Saturday pickup)
+              <div className="absolute top-3 sm:top-4 left-3 sm:left-4 max-w-[calc(100%-1.5rem)] flex flex-col gap-1.5 sm:gap-2 pointer-events-none">
+                <span className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full font-label-sm bg-surface/95 text-primary shadow-sm backdrop-blur-md text-[11px] sm:text-xs font-bold truncate">
+                  <span className="w-2 h-2 rounded-full bg-secondary animate-pulse shrink-0"></span>
+                  <span className="truncate">IN STOCK (18 lbs for Saturday pickup)</span>
                 </span>
-                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full font-label-sm bg-primary text-on-primary shadow-sm backdrop-blur-md text-xs">
-                  <span className="material-symbols-outlined text-[15px]">wb_twilight</span>
-                  Fresh Harvest: Picked Friday Dawn (6:30 AM)
+                <span className="inline-flex items-center gap-1 px-2.5 sm:px-3 py-1 rounded-full font-label-sm bg-primary text-on-primary shadow-sm backdrop-blur-md text-[11px] sm:text-xs truncate">
+                  <span className="material-symbols-outlined text-[14px] sm:text-[15px] shrink-0">wb_twilight</span>
+                  <span className="truncate">Fresh Harvest: Picked Friday Dawn (6:30 AM)</span>
                 </span>
               </div>
 
@@ -193,23 +235,29 @@ export default function ProductDetails({ productId = 1, onNavigate, onReservePro
             {/* Provenance Badge */}
             <button
               type="button"
-              onClick={() => onNavigate('farmer-profile')}
+              onClick={() => {
+                if (liveProduct?.farmer_id) {
+                  onNavigate('farmer-profile', liveProduct.farmer_id);
+                } else {
+                  onNavigate('farmer-profile');
+                }
+              }}
               className="group inline-flex items-center justify-between p-space-sm rounded-xl bg-surface-container-low hover:bg-surface-container transition-colors text-left border border-outline-variant/30 cursor-pointer"
             >
               <div className="flex items-center gap-space-sm">
                 <div className="w-10 h-10 rounded-full overflow-hidden bg-surface-container-high flex-shrink-0 border border-outline-variant/30">
                   <img
-                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuBMjOSKr4JWPasC4kad96ULfaNXM6nuhu8GW64F8Z4HhxT08zp9TQSvUlonDqV_k9x2cfG_lr59Zp-e-OUkwH4UWhRLju12adMGlac07tgaIax54229AYg7ka1WcgO_cb-oPZInU5XGc4WpKZfaE5uMVTFzp2L6HB8dn_gVlJ16UxOZ9IPwxSNrPTNRAxmLKfk4KaAXPCLRHpwDwdWSJGX-HBzAnkuTUJ0eZ8uEAvc"
-                    alt="Martha and Joe Miller"
+                    src="https://images.unsplash.com/photo-1595273670150-bd0c3c392e46?auto=format&fit=crop&w=150&q=80"
+                    alt={farmName}
                     className="w-full h-full object-cover"
                   />
                 </div>
                 <div className="flex flex-col">
                   <span className="font-label-md text-primary group-hover:underline flex items-center gap-1 text-sm font-bold">
-                    Green Pastures Organic
+                    {farmName}
                     <span className="material-symbols-outlined text-[16px]">verified</span>
                   </span>
-                  <span className="font-body-sm text-xs text-on-surface-variant">Stall #4, Aisle B • Downtown Historic Market</span>
+                  <span className="font-body-sm text-xs text-on-surface-variant">{stallNumber} • {marketName}</span>
                 </div>
               </div>
               <span className="material-symbols-outlined text-on-surface-variant group-hover:text-primary group-hover:translate-x-0.5 transition-all text-[20px]">
@@ -220,39 +268,35 @@ export default function ProductDetails({ productId = 1, onNavigate, onReservePro
             {/* Title & Rating Line */}
             <div className="flex flex-col gap-space-xs">
               <div className="flex items-center gap-2 text-xs">
-                <span className="font-label-sm uppercase tracking-wider text-secondary font-bold">Solanaceae Heirloom Strain</span>
+                <span className="font-label-sm uppercase tracking-wider text-secondary font-bold">{categoryName}</span>
                 <span className="text-outline-variant">•</span>
                 <span className="font-label-sm text-tertiary bg-tertiary-fixed/30 px-2 py-0.5 rounded-full font-bold">
-                  Top Seasonal Pick
+                  {isAvailable ? 'Fresh Harvest' : 'Allocated'}
                 </span>
               </div>
               <h1 className="font-headline-lg text-on-surface leading-tight font-bold">
-                Heirloom Brandywine Tomatoes
+                {productName}
               </h1>
               <div className="flex items-center flex-wrap gap-space-sm text-on-surface-variant text-xs">
                 <div className="flex items-center text-tertiary">
-                  {[...Array(4)].map((_, i) => (
+                  {[...Array(5)].map((_, i) => (
                     <span key={i} className="material-symbols-outlined text-[18px] fill">star</span>
                   ))}
-                  <span className="material-symbols-outlined text-[18px]">star_half</span>
                 </div>
-                <span className="font-label-md text-on-surface font-bold">4.96</span>
-                <a className="font-body-sm text-on-surface-variant underline hover:text-primary transition-colors" href="#customer-reviews">
-                  (38 verified harvest reviews)
-                </a>
+                <span className="font-label-md text-on-surface font-bold">5.0</span>
                 <span className="text-outline-variant">•</span>
-                <span className="font-body-sm text-on-surface-variant">Pine Creek Valley, OR</span>
+                <span className="font-body-sm text-on-surface-variant">{stockQuantity} {unit}s available this week</span>
               </div>
             </div>
 
             {/* Pricing Block */}
             <div className="p-space-md rounded-2xl bg-surface-container-low flex flex-col gap-1 border border-outline-variant/30">
               <div className="flex items-baseline gap-2">
-                <span className="font-display-lg text-primary font-bold leading-none">$4.50</span>
-                <span className="font-body-lg text-on-surface-variant font-semibold text-sm">/ lb</span>
+                <span className="font-display-lg text-primary font-bold leading-none">${pricePerUnit.toFixed(2)}</span>
+                <span className="font-body-lg text-on-surface-variant font-semibold text-sm">/ {unit}</span>
               </div>
               <p className="font-body-sm text-on-surface-variant text-xs">
-                Sold in 1 lb increments (approx. 2 to 3 tender medium beefsteak heirlooms).
+                Reserve ahead online for 100% free weekend stall collection.
               </p>
             </div>
 
@@ -264,9 +308,9 @@ export default function ProductDetails({ productId = 1, onNavigate, onReservePro
                 </div>
                 <div className="flex flex-col">
                   <span className="font-label-sm text-on-surface-variant uppercase tracking-wider text-[11px]">Pickup Location</span>
-                  <p className="font-label-md text-on-surface text-sm font-bold">Downtown Historic Farmers Market</p>
+                  <p className="font-label-md text-on-surface text-sm font-bold">{marketName}</p>
                   <p className="font-body-sm text-xs text-on-surface-variant">
-                    Pioneer Pavilion, 450 Market St • Stall #4 (North Arch under Clocktower)
+                    {marketName} • {stallNumber}
                   </p>
                 </div>
               </div>

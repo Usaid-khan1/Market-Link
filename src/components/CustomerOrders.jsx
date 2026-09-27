@@ -1,7 +1,9 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import customerApi from '../api/customer';
+import PageLoader from './PageLoader';
 
 export default function CustomerOrders({ onNavigate, showToast, onAddToCart }) {
+  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -84,6 +86,7 @@ export default function CustomerOrders({ onNavigate, showToast, onAddToCart }) {
 
   // Load customer orders from backend
   const fetchCustomerOrders = () => {
+    setLoading(true);
     customerApi.getOrders()
       .then((res) => {
         if (res?.data && Array.isArray(res.data)) {
@@ -134,6 +137,9 @@ export default function CustomerOrders({ onNavigate, showToast, onAddToCart }) {
       .catch((err) => {
         console.warn('Could not load customer orders:', err);
         setOrders([]);
+      })
+      .finally(() => {
+        setLoading(false);
       });
   };
 
@@ -231,8 +237,18 @@ export default function CustomerOrders({ onNavigate, showToast, onAddToCart }) {
     setReviewForm({ rating: 5, comment: '' });
   };
 
+  if (loading) {
+    return (
+      <PageLoader
+        title="Loading Your Orders & Reservations..."
+        subtitle="Retrieving active harvest orders, pickup dates, and digital vouchers..."
+        minHeight="min-h-[70vh]"
+      />
+    );
+  }
+
   return (
-    <div className="px-gutter py-space-lg max-w-7xl mx-auto w-full flex flex-col gap-space-lg animate-fade-in">
+    <div className="px-3 sm:px-6 lg:px-gutter py-4 sm:py-space-lg max-w-7xl mx-auto w-full flex flex-col gap-space-lg animate-fade-in">
       
       {/* 1. Header Section */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-space-md">

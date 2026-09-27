@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import PageLoader from './PageLoader';
 
 export default function CustomerSettings({ onNavigate, showToast }) {
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
 
   // Basic Info Form State
   const [basicInfo, setBasicInfo] = useState({
@@ -88,6 +89,16 @@ export default function CustomerSettings({ onNavigate, showToast }) {
       showToast(`Removed ${name} from shared account pickup.`);
     }
   };
+
+  if (isLoading) {
+    return (
+      <PageLoader
+        title="Loading Profile Settings..."
+        subtitle="Retrieving account preferences and security credentials..."
+        minHeight="min-h-[60vh]"
+      />
+    );
+  }
 
   return (
     <div className="w-full space-y-6 animate-fade-in pb-24">

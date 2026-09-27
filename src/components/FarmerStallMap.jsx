@@ -516,7 +516,7 @@ export default function FarmerStallMap({
 
         {/* Floating Route Info HUD Card */}
         {routeInfo && (
-          <div className="absolute top-4 left-4 z-10 max-w-[340px] bg-white/95 backdrop-blur-md border border-[#125224]/30 rounded-2xl p-4 shadow-xl animate-fade-in">
+          <div className="absolute top-4 left-4 right-4 sm:right-auto sm:max-w-[340px] z-10 bg-white/95 backdrop-blur-md border border-[#125224]/30 rounded-2xl p-4 shadow-xl animate-fade-in">
             <div className="flex items-start justify-between gap-2 pb-2 border-b border-outline-variant/20">
               <div>
                 <span className="px-2 py-0.5 rounded-full bg-primary text-white text-[9px] font-black uppercase tracking-wider">

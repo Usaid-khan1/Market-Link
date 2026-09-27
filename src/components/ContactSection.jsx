@@ -30,7 +30,7 @@ export default function ContactSection() {
     <section ref={ref} id="contact-us" className="w-full py-20 bg-surface relative overflow-hidden">
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-2/3 h-px bg-gradient-to-r from-transparent via-outline-variant/40 to-transparent" />
 
-      <div className="max-w-7xl mx-auto px-gutter">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-gutter">
         {/* Section Header */}
         <div className={`text-center max-w-2xl mx-auto mb-14 transition-all duration-700 ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}>
           <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/8 border border-primary/15 font-black text-primary uppercase tracking-widest text-[10px] mb-3">

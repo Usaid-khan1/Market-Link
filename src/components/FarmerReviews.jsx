@@ -1,7 +1,9 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import farmerApi from '../api/farmer';
+import PageLoader from './PageLoader';
 
 export default function FarmerReviews({ showToast }) {
+  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('All'); // 'All' | 'Unreplied' | 'Replied'
   const [replyingToId, setReplyingToId] = useState(null);
   const [replyText, setReplyText] = useState('');
@@ -35,6 +37,7 @@ export default function FarmerReviews({ showToast }) {
 
   // Load reviews from backend
   useEffect(() => {
+    setLoading(true);
     farmerApi.getReviews()
       .then((res) => {
         if (res?.data && Array.isArray(res.data)) {
@@ -58,6 +61,9 @@ export default function FarmerReviews({ showToast }) {
       .catch((err) => {
         console.warn('Could not load farmer reviews:', err);
         setReviews([]);
+      })
+      .finally(() => {
+        setLoading(false);
       });
   }, []);
 
@@ -94,8 +100,18 @@ export default function FarmerReviews({ showToast }) {
     setReplyText('');
   };
 
+  if (loading) {
+    return (
+      <PageLoader
+        title="Loading Customer Feedback & Reviews..."
+        subtitle="Retrieving verified stall ratings and customer compliments..."
+        minHeight="min-h-[70vh]"
+      />
+    );
+  }
+
   return (
-    <div className="px-gutter py-space-lg max-w-7xl mx-auto w-full flex flex-col gap-space-lg animate-fade-in">
+    <div className="px-3 sm:px-6 lg:px-gutter py-4 sm:py-space-lg max-w-7xl mx-auto w-full flex flex-col gap-space-lg animate-fade-in">
       
       {/* 1. Header Section */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-space-md">
@@ -105,7 +121,7 @@ export default function FarmerReviews({ showToast }) {
             <span className="material-symbols-outlined text-[14px]">chevron_right</span>
             <span className="text-primary font-bold">REPUTATION &amp; FEEDBACK</span>
           </div>
-          <h1 className="font-headline-lg text-headline-lg sm:text-3xl text-on-surface tracking-tight font-bold">
+          <h1 className="font-headline-lg text-2xl sm:text-3xl text-on-surface tracking-tight font-bold">
             Customer Reviews
           </h1>
           <p className="font-body-md text-body-md text-on-surface-variant text-xs sm:text-sm">
@@ -173,7 +189,7 @@ export default function FarmerReviews({ showToast }) {
 
       {/* 3. Filter Buttons */}
       <div className="bg-surface-container-lowest p-space-sm rounded-2xl shadow-sm border border-outline-variant/30 flex items-center justify-between">
-        <div className="flex items-center gap-1 p-1 bg-surface-container rounded-xl text-xs font-bold">
+        <div className="flex flex-wrap sm:flex-nowrap items-center gap-1 p-1 bg-surface-container rounded-xl text-xs font-bold">
           <button
             type="button"
             onClick={() => setFilter('All')}

@@ -43,6 +43,7 @@ Route::prefix('browse')->group(function () {
     Route::get('/markets/{id}', [CustomerBrowseController::class, 'marketShow']);
     Route::get('/products', [CustomerBrowseController::class, 'products']);
     Route::get('/products/{id}', [CustomerBrowseController::class, 'productShow']);
+    Route::get('/farmers', [CustomerBrowseController::class, 'farmers']);
     Route::get('/farmers/{id}', [CustomerBrowseController::class, 'farmerShow']);
     Route::get('/stalls', [CustomerBrowseController::class, 'stalls']);
 });

@@ -58,12 +58,11 @@ export default function ReservationModal({
         ? product.id
         : (parseInt(String(product.id).replace(/\D/g, ''), 10) || 1);
 
-      const farmerId = product.farmer_id || product.farmerId || 1;
-      const marketId = product.market_id || product.marketId || 1;
+      const farmerId = product.farmer_id || product.farmerId;
+      const marketId = product.market_id || product.marketId || product.market?.id || null;
 
-      const res = await customerApi.createOrder({
+      const orderPayload = {
         farmer_id: farmerId,
-        market_id: marketId,
         pickup_date: pickupDate.toISOString().split('T')[0],
         pickup_time: 'This Weekend (Opening Hours)',
         notes: notes ? `${notes} (Contact: ${customerPhone})` : `Storefront hold (Contact: ${customerPhone})`,
@@ -73,7 +72,12 @@ export default function ReservationModal({
             quantity: quantity,
           }
         ]
-      });
+      };
+      if (marketId) {
+        orderPayload.market_id = marketId;
+      }
+
+      const res = await customerApi.createOrder(orderPayload);
 
       const orderData = res?.data || {};
       const voucherCode = orderData.order_number || (orderData.id ? `ML-${orderData.id}` : `ML-${Math.floor(1000 + Math.random() * 9000)}`);

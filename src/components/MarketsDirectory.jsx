@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { DIRECTORY_MARKETS } from '../data/mockData';
+import PageLoader from './PageLoader';
 import browseApi from '../api/browse';
 
 export default function MarketsDirectory({ onNavigate, onReserveForMarket }) {
@@ -15,55 +15,72 @@ export default function MarketsDirectory({ onNavigate, onReserveForMarket }) {
   const [mapZoom, setMapZoom] = useState(1);
   const [mapMode, setMapMode] = useState('osm'); // 'osm' | 'stylized'
   const [liveMarkets, setLiveMarkets] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let mounted = true;
-    browseApi.getMarkets().then((res) => {
-      if (mounted && res.data && res.data.length > 0) {
-        setLiveMarkets(res.data);
-      }
-    }).catch(() => {});
+    setLoading(true);
+    browseApi.getMarkets()
+      .then((res) => {
+        if (mounted && res?.data && Array.isArray(res.data)) {
+          setLiveMarkets(res.data);
+          if (res.data.length > 0) {
+            setSelectedMarketId(res.data[0].id);
+          }
+        } else if (mounted) {
+          setLiveMarkets([]);
+        }
+      })
+      .catch((err) => {
+        console.warn('Could not load markets:', err);
+        if (mounted) setLiveMarkets([]);
+      })
+      .finally(() => {
+        if (mounted) setLoading(false);
+      });
     return () => { mounted = false; };
   }, []);
 
-  // Merged markets dataset (live from backend with rich mock fallback data)
+  // Live markets dataset from backend (no dummy data fallback)
   const allMarkets = useMemo(() => {
-    if (liveMarkets.length === 0) return DIRECTORY_MARKETS;
+    if (!liveMarkets || liveMarkets.length === 0) return [];
     return liveMarkets.map((m, idx) => {
-      const fb = DIRECTORY_MARKETS[idx % DIRECTORY_MARKETS.length] || DIRECTORY_MARKETS[0];
       const operatingDays = Array.isArray(m.operating_days)
         ? m.operating_days.join(' & ')
-        : (m.operating_days || fb.dayText || 'Every Saturday');
-      const timings = m.timings || fb.timeText || '8:00 AM – 1:00 PM';
-      const farmersCount = m.farmers_count || m.farmers?.length || 24;
+        : (m.operating_days || 'Every Saturday');
+      const timings = m.timings || (m.opening_time && m.closing_time ? `${m.opening_time} – ${m.closing_time}` : '8:00 AM – 1:30 PM');
+      const liveFarmers = Array.isArray(m.farmers) ? m.farmers : [];
+      const farmersCount = typeof m.farmers_count === 'number' && m.farmers_count > 0
+        ? m.farmers_count
+        : liveFarmers.length;
 
       return {
         id: m.id,
-        title: m.market_name || m.title || fb.title,
-        address: m.address || fb.address,
-        latitude: m.latitude || fb.latitude || 37.7833,
-        longitude: m.longitude || fb.longitude || -122.4166,
-        region: fb.region || 'downtown',
+        title: m.market_name || m.title || 'Regional Farmers Market',
+        address: m.address || 'Market Plaza',
+        latitude: Number(m.latitude) || 45.5152,
+        longitude: Number(m.longitude) || -122.6784,
+        region: 'all',
         schedule: `${operatingDays} • ${timings}`,
         hours: timings,
-        day: (Array.isArray(m.operating_days) ? m.operating_days[0] : (m.operating_days || fb.day || 'saturday')).toLowerCase(),
+        day: (Array.isArray(m.operating_days) ? m.operating_days[0] : (m.operating_days || 'saturday')).toLowerCase(),
         dayText: operatingDays.startsWith('Every') ? operatingDays : `Every ${operatingDays}`,
         timeText: timings,
-        openStatus: fb.openStatus || 'Weekend Market Hub',
-        openStatusType: fb.openStatusType || 'pulse',
-        growers: `${farmersCount}+ Certified Local Growers`,
-        vendorCountText: `${farmersCount} Local Farm Stands & Food Producers`,
+        openStatus: 'Active Farmers Market',
+        openStatusType: 'pulse',
+        growers: `${farmersCount} Certified Local Grower${farmersCount === 1 ? '' : 's'}`,
+        vendorCountText: `${farmersCount} Local Farm Stand${farmersCount === 1 ? '' : 's'} & Food Producer${farmersCount === 1 ? '' : 's'}`,
         distance: `${(0.8 + idx * 1.4).toFixed(1)} miles away`,
         numBadge: idx + 1,
         numBadgeClass: idx === 0 ? 'bg-primary text-on-primary' : 'bg-surface-container text-on-surface',
-        tags: fb.tags || ['Certified Local', 'EBT/SNAP', 'Family Friendly', 'Heirloom Produce'],
-        features: fb.features || ['ebt', 'dog-friendly', 'live-music'],
-        policyText: fb.policyText || 'Free produce reservation. Settle directly with grower via cash, card, or market tokens upon collection.',
-        policyBadge: fb.policyBadge || 'Zero Online Fees',
-        policyIcon: fb.policyIcon || 'payments',
-        visualStalls: fb.visualStalls && fb.visualStalls.length > 0 ? fb.visualStalls : [
+        tags: ['Certified Local', 'EBT/SNAP', 'Family Friendly', 'Seasonal Harvest'],
+        features: ['ebt', 'dog-friendly', 'fresh-produce'],
+        policyText: 'Free produce reservation. Settle directly with grower via cash, card, or market tokens upon collection.',
+        policyBadge: 'Zero Online Fees',
+        policyIcon: 'payments',
+        visualStalls: [
           {
-            title: 'Heirlooms',
+            title: 'Fresh Produce',
             img: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?auto=format&fit=crop&w=600&q=80',
             alt: 'Organic tomatoes and farm vegetables'
           },
@@ -73,22 +90,22 @@ export default function MarketsDirectory({ onNavigate, onReserveForMarket }) {
             alt: 'Freshly baked sourdough and bread'
           },
           {
-            title: 'Orchard Fresh',
+            title: 'Orchard Fruits',
             img: 'https://images.unsplash.com/photo-1619566636858-adf3ef46400b?auto=format&fit=crop&w=600&q=80',
             alt: 'Organic apples and seasonal fruits'
           }
         ],
-        pinLeft: fb.mapPos?.left || `${25 + (idx * 30) % 55}%`,
-        pinTop: fb.mapPos?.top || `${20 + (idx * 25) % 55}%`,
-        mapPos: fb.mapPos || { top: '30%', left: '45%' },
-        popupPos: fb.popupPos || { top: '45%', left: '45%' },
-        popupBadge: fb.popupBadge || `${operatingDays} • ${timings}`,
+        pinLeft: `${25 + (idx * 28) % 55}%`,
+        pinTop: `${20 + (idx * 22) % 55}%`,
+        mapPos: { top: '30%', left: '45%' },
+        popupPos: { top: '45%', left: '45%' },
+        popupBadge: `${operatingDays} • ${timings}`,
         popupStalls: `${farmersCount} Active Stalls`,
-        popupImg: fb.popupImg || fb.visualStalls?.[0]?.img || 'https://images.unsplash.com/photo-1488459716781-31db52582fe9?auto=format&fit=crop&w=600&q=80',
+        popupImg: 'https://images.unsplash.com/photo-1488459716781-31db52582fe9?auto=format&fit=crop&w=600&q=80',
         key: m.id === 1 ? 'downtown' : `market-${m.id}`,
         pickupWindow: timings,
-        parkingBadge: fb.parkingBadge || 'Free Street & Parking Lot Stalls',
-        farmers: m.farmers || [],
+        parkingBadge: 'Free Customer Parking & Bike Valet',
+        farmers: liveFarmers,
       };
     });
   }, [liveMarkets]);
@@ -151,12 +168,22 @@ export default function MarketsDirectory({ onNavigate, onReserveForMarket }) {
   };
 
   // Currently active market for the map popup
-  const activeMarket = allMarkets.find((m) => m.id === selectedMarketId) || allMarkets[0];
+  const activeMarket = allMarkets.find((m) => m.id === selectedMarketId) || allMarkets[0] || null;
+
+  if (loading) {
+    return (
+      <PageLoader
+        title="Loading Farmers Market Directory..."
+        subtitle="Discovering regional pavilions, vendor tables, and weekend operating schedules..."
+        minHeight="min-h-[80vh]"
+      />
+    );
+  }
 
   return (
     <div className="w-full flex flex-col bg-surface">
       {/* Breadcrumbs & Hero Header Section */}
-      <section className="w-full bg-gradient-to-b from-surface-container-low via-surface to-surface py-space-lg px-gutter border-b border-outline-variant/30">
+      <section className="w-full bg-gradient-to-b from-surface-container-low via-surface to-surface py-space-lg px-3 sm:px-6 lg:px-gutter border-b border-outline-variant/30">
         <div className="max-w-7xl mx-auto flex flex-col gap-space-sm">
           {/* Breadcrumb */}
           <nav aria-label="Breadcrumb" className="flex items-center gap-space-xs text-on-surface-variant font-label-sm">
@@ -206,7 +233,7 @@ export default function MarketsDirectory({ onNavigate, onReserveForMarket }) {
       </section>
 
       {/* Main 12-Column Split: Listings & Interactive Map */}
-      <section className="w-full max-w-7xl mx-auto px-gutter py-space-lg">
+      <section className="w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-gutter py-space-lg">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-space-lg items-start">
           
           {/* Left Column: Search, Filters & Cards (7 cols) */}
@@ -432,6 +459,29 @@ export default function MarketsDirectory({ onNavigate, onReserveForMarket }) {
                           <span className="material-symbols-outlined text-[18px] text-primary">groups</span>
                           <span>{market.vendorCountText}</span>
                         </div>
+
+                        {/* Live stalls inside this market plaza */}
+                        {market.farmers && market.farmers.length > 0 && (
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="text-[10px] font-bold text-primary uppercase tracking-wide">Live Stalls:</span>
+                            {market.farmers.map((f) => {
+                              const fp = f.farmer_profile || {};
+                              return (
+                                <span
+                                  key={f.id}
+                                  className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/25 inline-flex items-center gap-1 shadow-2xs"
+                                >
+                                  <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                                  <span>{fp.stall_name || f.name}</span>
+                                  {fp.stall_number && (
+                                    <span className="text-[9px] opacity-75 font-normal">({fp.stall_number})</span>
+                                  )}
+                                </span>
+                              );
+                            })}
+                          </div>
+                        )}
+
                         <div className="flex flex-wrap gap-1.5">
                           {market.tags.map((tag, tIdx) => (
                             <span

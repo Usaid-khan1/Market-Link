@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import browseApi from '../api/browse';
 import customerApi from '../api/customer';
 import { useAuth } from '../context/AuthContext';
+import PageLoader from './PageLoader';
 
 export default function FarmerProfile({ farmerId = 2, onNavigate, onReserveProduct, onNotifyProduct }) {
   const { isAuthenticated } = useAuth();
@@ -9,24 +10,23 @@ export default function FarmerProfile({ farmerId = 2, onNavigate, onReserveProdu
   const [isFavorited, setIsFavorited] = useState(false);
   const [favoriteCount, setFavoriteCount] = useState(89);
   const [liveFarmer, setLiveFarmer] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let mounted = true;
+    setLoading(true);
     browseApi.getFarmer(farmerId || 2).then((res) => {
       if (mounted && res.data) {
         setLiveFarmer(res.data);
       }
-    }).catch(() => {});
+    }).catch((err) => {
+      console.warn("Could not load farmer profile:", err);
+    }).finally(() => {
+      if (mounted) setLoading(false);
+    });
     return () => { mounted = false; };
   }, [farmerId]);
-  const [quantities, setQuantities] = useState({
-    1: 1,
-    2: 1,
-    3: 1,
-    4: 1,
-    5: 1,
-    6: 1
-  });
+  const [quantities, setQuantities] = useState({});
 
   const handleQtyChange = (id, delta) => {
     setQuantities((prev) => ({
@@ -45,91 +45,75 @@ export default function FarmerProfile({ farmerId = 2, onNavigate, onReserveProdu
     }
   };
 
-  const harvestItems = [
-    {
-      id: 1,
-      category: 'tomatoes',
-      name: 'Heirloom Brandywine Tomatoes',
-      price: 4.50,
-      unit: 'lb',
-      status: 'IN_STOCK',
-      badge: 'IN STOCK',
-      badgeClass: 'bg-secondary-container text-on-secondary-container',
-      harvestTime: 'Harvested: Friday Dawn',
-      desc: 'Rich, deeply flavorful vintage heirloom. High sugar-to-acid ratio with creamy texture. Ideal for caprese and crusty sourdough toast.',
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDnJ9PioJ06jB8v8Rrs8x0zt1bLicp8igbBa0iMVKsUNb8vXFcZAz90vd_l8g346NJDMtAlbU8bzmopUo0l3vnk6UWmuFglkkT8yBxGdijSvOPGaKh9sLKve8THZKymTByOtlnDpn73upXxEwTn-rj0cLVtk1kqaRoouL3NM0Teqp3YxsBGQl4LKY8UPTfJJwFnI1KZycXhHC2wK03U-WiRSioSKuTIBPpUb01Dc3DTdzGZqmWgZZdX',
-      alt: 'Rustic wooden crate filled with ripe, organically grown Heirloom Brandywine tomatoes'
-    },
-    {
-      id: 2,
-      category: 'greens',
-      name: 'Rainbow Chard & Kale Bundle',
-      price: 3.75,
-      unit: 'bunch',
-      status: 'IN_STOCK',
-      badge: 'IN STOCK',
-      badgeClass: 'bg-secondary-container text-on-secondary-container',
-      harvestTime: 'Harvested: Friday Dawn',
-      desc: 'Vivid ruby, amber, and snow stalks paired with tender Lacinato dinosaur kale. Washed in natural mountain spring water.',
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCLIjTMRUk_DaF12q5QkkMzy9aCaIv0lSF-CawUOxgWrtN6R9JTlgH1MYhD5alSjiBBohmGFIrYAea02ID79OMITc-88H-qtpm3f85FjFIovkrylndFo1raj6Gp22cQpMmsij1gvDsZfsRWwbpUVUoVFvjhtCRE8TzamnwEb6cmN47rD0doflET7MbDuL0H-AN5emCzJ4vpT8fcwjKrICTNBvtqgM11GHmCS__uH0KdcKcEQN5VDj_I',
-      alt: 'Vibrant bundles of freshly harvested rainbow Swiss chard with natural rustic jute twine'
-    },
-    {
-      id: 3,
-      category: 'microgreens',
-      name: 'Watercress & Micro Trio',
-      price: 4.00,
-      unit: 'clamshell',
-      status: 'IN_STOCK',
-      badge: 'IN STOCK',
-      badgeClass: 'bg-secondary-container text-on-secondary-container',
-      harvestTime: 'Harvested: Friday Dawn',
-      desc: 'Hydro-organic living greens including speckled pea tendrils, ruby radish shoots, and nutrient-dense peppery watercress.',
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAsSq1BOUhZJDoEC5aMJPxfi8OeJA406CerxPpDNeaocGSvzkRFNcD3vehYOOLSHVACcwCYTgmo207LpD3s6e4EBfktZrqKh49Jmhx3hl4b6wu9s60WWTtdUYSnmXeF-GzcI0cde68qym71aYKOpCbXpF7tJzRLvDtvp2FRT3eCqsIpBTULTUmChnYS-qxj_rQdy11LCIc1JtErIww7_Wg_m_KlIDwJ-nqnxcff_f7VLQYcf3ggDkA-',
-      alt: 'Macro view of living organic microgreens trio packed neatly in eco-friendly plant fiber clamshell'
-    },
-    {
-      id: 4,
-      category: 'roots',
-      name: 'Golden Baby Beets & Tops',
-      price: 3.50,
-      unit: 'bunch',
-      status: 'LOW_STOCK',
-      badge: 'LOW STOCK (4 left)',
-      badgeClass: 'bg-tertiary-fixed text-on-tertiary-fixed-variant',
-      harvestTime: 'Harvested: Friday Dawn',
-      desc: 'Milder and sweeter than red beets with zero bleeding when roasted. Vibrant edible greens sauté wonderfully with garlic.',
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAq65wBWMGPQ3pGUb1U1jp_GrGL72A502igNcyZHP2MP-QPcc2_z1c5HEBM6IVIHcoms0BBikb2hBxiLlvvst63Dj_F-uwIo5dN6GnKqWLPfKiTONGc6n2m80B99S0i-JLMOoE1KjT49k9KuSg8wA_Hh0tTOkxX9bcao6GDNk3snii88CuRMlJiwK_ki1u8y09aPFb3B5D_1uFWdjYYFLH7gQm4HlYwJzA330AG5-9b73zBjS491WvD',
-      alt: 'Freshly pulled golden yellow baby beets with healthy lush green tops on weathered wooden table'
-    },
-    {
-      id: 5,
-      category: 'tomatoes',
-      name: 'Sungold Cherry Tomatoes',
-      price: 5.00,
-      unit: 'pint',
-      status: 'IN_STOCK',
-      badge: 'IN STOCK',
-      badgeClass: 'bg-secondary-container text-on-secondary-container',
-      harvestTime: 'Harvested: Friday Dawn',
-      desc: 'Candy-sweet golden cherry tomatoes packed with intense summery aromatics. Handpicked at sunrise when brix levels peak.',
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAkw_oi0JeAT6YsMVNfM5o3cAeEEIqTC1UZWIalH0aPlHBK7NBb6FefjJXFevOWh5RE5cPz8ymAvbCacZWewoOSyKlj5VR4d_uOB5WPxwBUZFFkwrsGd4JSiLz_XkoR0v_Z2hyRjXjfILWKBMHg0q3Gls_XtFoAjyERy0e5c8Quw5hPpR_lVN3Ak3ILK72Y8CXZsGvnBXlmmufaOEHHtKwWNGoA5GdigzF7IplpUZmPTKK2aEu0-yc5',
-      alt: 'Pint cardboard basket overflowing with glowing ripe orange Sungold cherry tomatoes in warm daylight'
-    },
-    {
-      id: 6,
-      category: 'roots',
-      name: 'French Breakfast Radishes',
-      price: 3.00,
-      unit: 'bunch',
-      status: 'SOLD_OUT',
-      badge: 'SOLD OUT THIS WEEK',
-      badgeClass: 'bg-surface-variant text-on-surface-variant',
-      harvestTime: 'Next: Next Saturday',
-      desc: 'Mild peppery crunch with classic porcelain white tips. Completely reserved by Friday midday. Next bed ready next weekend.',
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuD__IwucZg3HhaG5B23GD8ooRhf_vKh338VCayP5psFBfH3SLW6dfSc9wJYAZeAo9boNPNuqv86iKL4wPCoWg6INy0jqS0OTN3nY6_Sk7IA9uMI5rgXPXOtA4SBWziJVI6LfyAqsOKGCuJNPKinVSb3RU3NP2FCL_dWUgCpAb6SygqCuUuegEhL_Tz7RrtTT_SGq7g4LcfC5H6yvoUYkCUmA5ttc4-l4WsWuLkzSEkvgUh3vODbJCYY',
-      alt: 'Neat bunch of French Breakfast radishes with elongated scarlet red roots and crisp white tips'
-    }
+  if (loading) {
+    return (
+      <PageLoader
+        title="Loading Producer Profile..."
+        subtitle="Connecting directly to the farm field & fresh harvest stock..."
+      />
+    );
+  }
+
+  if (!liveFarmer) {
+    return (
+      <div className="max-w-4xl mx-auto px-4 py-20 text-center">
+        <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center">
+          <span className="material-symbols-outlined text-4xl">person_off</span>
+        </div>
+        <h2 className="text-2xl font-bold text-neutral-800 dark:text-neutral-100 mb-2">Farmer Profile Not Found</h2>
+        <p className="text-neutral-500 dark:text-neutral-400 mb-8 max-w-md mx-auto">
+          This producer profile may have moved or is temporarily unavailable. Browse other registered farmers in our directory.
+        </p>
+        <button
+          onClick={() => onNavigate('markets')}
+          className="px-6 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl font-medium shadow-md transition-all cursor-pointer"
+        >
+          Explore Verified Markets
+        </button>
+      </div>
+    );
+  }
+
+  const farmProfile = liveFarmer?.farmer_profile || liveFarmer?.farmerProfile || {};
+  const farmName = farmProfile.farm_name || liveFarmer?.name || 'Local Farm';
+  const farmerName = liveFarmer?.name || 'Local Producer';
+  const bio = farmProfile.bio || 'Local sustainable grower committed to fresh, organic harvests delivered straight from field to market.';
+  const farmCity = farmProfile.city || farmProfile.address || 'Regional Agricultural Haven';
+  const farmAcreage = farmProfile.acreage ? `${farmProfile.acreage} Regenerative Acres` : 'Verified Farmstead';
+  const stallNumber = farmProfile.stall_number ? `Stall #${farmProfile.stall_number}` : 'Pavilion Stall';
+  const stallLocation = farmProfile.address || 'Market Pavilion';
+  const ratingAvg = liveFarmer.rating_avg || 5.0;
+  const reviewsCount = liveFarmer.reviews_count || 0;
+  const reviewsList = liveFarmer.reviews || [];
+  const rawProducts = liveFarmer?.products || [];
+
+  const harvestItems = rawProducts.map((p) => {
+    const isAvail = p.status === 'available';
+    const isLow = isAvail && p.stock_quantity !== undefined && p.stock_quantity <= 4;
+    return {
+      id: p.id,
+      category: (p.category?.name || p.category || 'all').toLowerCase(),
+      categoryName: p.category?.name || p.category || 'Produce',
+      name: p.name,
+      price: parseFloat(p.price || 0),
+      unit: p.unit || 'unit',
+      status: isAvail ? (isLow ? 'LOW_STOCK' : 'IN_STOCK') : 'SOLD_OUT',
+      badge: isAvail ? (isLow ? `LOW STOCK (${p.stock_quantity} left)` : 'IN STOCK') : 'SOLD OUT',
+      badgeClass: isAvail ? (isLow ? 'bg-amber-100 text-amber-800' : 'bg-secondary-container text-on-secondary-container') : 'bg-surface-variant text-on-surface-variant',
+      harvestTime: 'Harvested Today',
+      desc: p.description || 'Grown with care, picked fresh for market day reservation.',
+      image: p.image_url || p.image || 'https://images.unsplash.com/photo-1610832958506-aa56368176cf?auto=format&fit=crop&w=600&q=80',
+      alt: p.name,
+      rawProduct: p
+    };
+  });
+
+  const uniqueCategories = [
+    { id: 'all', label: `All Harvest (${harvestItems.length})` },
+    ...Array.from(new Set(harvestItems.map((i) => i.category))).filter(Boolean).map((cat) => ({
+      id: cat,
+      label: cat.charAt(0).toUpperCase() + cat.slice(1)
+    }))
   ];
 
   const filteredHarvest = harvestItems.filter((item) => {
@@ -140,7 +124,7 @@ export default function FarmerProfile({ farmerId = 2, onNavigate, onReserveProdu
   return (
     <div className="flex flex-col w-full">
       {/* Top Breadcrumb & Quick Anchor Bar */}
-      <section className="w-full bg-surface-container-low py-space-sm px-gutter border-b border-outline-variant/30">
+      <section className="w-full bg-surface-container-low py-space-sm px-3 sm:px-6 lg:px-gutter border-b border-outline-variant/30">
         <div className="max-w-7xl mx-auto flex items-center justify-between flex-wrap gap-space-sm">
           <nav aria-label="Breadcrumb" className="flex items-center gap-space-xs font-label-sm text-on-surface-variant text-xs">
             <button onClick={() => onNavigate('home')} className="hover:text-primary transition-colors flex items-center gap-1 cursor-pointer">
@@ -153,10 +137,10 @@ export default function FarmerProfile({ farmerId = 2, onNavigate, onReserveProdu
             </button>
             <span className="text-outline-variant">/</span>
             <button onClick={() => onNavigate('market-details')} className="hover:text-primary transition-colors cursor-pointer">
-              Downtown Historic Farmers Market
+              {stallLocation}
             </button>
             <span className="text-outline-variant">/</span>
-            <span className="text-primary font-bold">Green Pastures Organic</span>
+            <span className="text-primary font-bold">{farmName}</span>
           </nav>
           <div className="hidden md:flex items-center gap-space-md text-label-sm text-on-surface-variant font-label-sm text-xs">
             <span className="inline-flex items-center gap-1">
@@ -173,86 +157,86 @@ export default function FarmerProfile({ farmerId = 2, onNavigate, onReserveProdu
       </section>
 
       {/* Notice Banner: Order Cut-Off */}
-      <section className="w-full bg-surface-container px-gutter py-space-xs border-b border-outline-variant/30">
+      <section className="w-full bg-surface-container px-3 sm:px-6 lg:px-gutter py-space-xs border-b border-outline-variant/30">
         <div className="max-w-7xl mx-auto flex items-center justify-between flex-wrap gap-space-sm">
           <div className="flex items-center gap-space-sm">
             <span className="flex h-2.5 w-2.5 rounded-full bg-tertiary-container animate-pulse"></span>
             <p className="font-label-md text-label-md text-tertiary text-xs">
-              <strong>Order Cut-Off:</strong> Friday at 6:00 PM for Saturday morning pickup. Orders reserved online are freshly harvested at dawn!
+              <strong>Order Cut-Off:</strong> Friday at 6:00 PM for weekend pickup. Orders reserved online are freshly harvested at dawn!
             </p>
           </div>
           <span className="font-label-sm text-label-sm text-on-surface-variant hidden lg:inline text-xs">
-            Next Harvest Date: This Friday at 5:30 AM
+            Next Harvest Date: Peak Morning Harvest
           </span>
         </div>
       </section>
 
-      <div className="max-w-7xl mx-auto px-gutter py-space-lg w-full">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-gutter py-4 sm:py-space-lg w-full">
         {/* Farmer Header Hero Banner */}
         <header className="bg-surface-container-lowest rounded-xl shadow-md overflow-hidden relative mb-space-xl border border-outline-variant/30">
           {/* Background Ambient Cover Image with Scrim */}
-          <div className="relative h-64 md:h-80 w-full overflow-hidden">
+          <div className="relative min-h-[280px] sm:h-64 md:h-80 w-full overflow-hidden">
             <div
               className="w-full h-full bg-cover bg-center"
               style={{
-                backgroundImage: `url('https://lh3.googleusercontent.com/aida-public/AB6AXuCKhIGdpEkJKSUtvsufJU_HvFnwJatI9TLiv2hAepo-KedkTC_pXvY3u5hHkVlwJFOcCDtBTyceavl1SdO76dEd_MmJQ6REqIXuswDKZyqIzc7mcC_ilZYR_lj3mOdiFV6NgGWhMkdbwumq75gehdGF88t7OhiTn_iS0jH4QxHaBKNMbai4dkQcoYtrB84siKu3tHGJQjUbivmc9pfZ5dwZ8BbbauZ3iv1_zp6pwVtwMDhoexjlC5fu')`
+                backgroundImage: `url('https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=1400&q=80')`
               }}
             ></div>
             <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent"></div>
 
             {/* Floating Badges Top Right */}
-            <div className="absolute top-space-md right-space-md flex flex-wrap items-center gap-space-xs">
+            <div className="absolute top-space-md right-space-md hidden sm:flex flex-wrap items-center gap-space-xs">
               <span className="inline-flex items-center gap-1.5 px-space-md py-space-xs rounded-full bg-surface-container-lowest/95 text-primary font-label-sm text-label-sm shadow-sm backdrop-blur-md text-xs">
                 <span className="material-symbols-outlined text-[16px] text-primary fill">eco</span>
-                USDA Certified Organic #OR-9942
+                Verified Organic Grower
               </span>
               <span className="inline-flex items-center gap-1.5 px-space-md py-space-xs rounded-full bg-surface-container-lowest/95 text-secondary font-label-sm text-label-sm shadow-sm backdrop-blur-md text-xs">
                 <span className="material-symbols-outlined text-[16px] text-secondary fill">nature_people</span>
-                Certified Naturally Grown
+                Fresh Field Direct
               </span>
             </div>
 
             {/* Farmer Banner Content Inside Scrim */}
-            <div className="absolute bottom-space-md left-space-md right-space-md flex flex-col md:flex-row items-start md:items-end justify-between gap-space-md">
-              <div className="flex items-end gap-space-md">
-                <div className="w-24 h-24 md:w-28 md:h-28 rounded-xl bg-surface-container-lowest shadow-xl overflow-hidden shrink-0 border-2 border-white">
+            <div className="absolute bottom-3 left-3 right-3 sm:bottom-space-md sm:left-space-md sm:right-space-md flex flex-col md:flex-row items-start md:items-end justify-between gap-3 sm:gap-space-md">
+              <div className="flex items-end gap-3 sm:gap-space-md">
+                <div className="w-16 h-16 sm:w-24 sm:h-24 md:w-28 md:h-28 rounded-xl bg-surface-container-lowest shadow-xl overflow-hidden shrink-0 border-2 border-white">
                   <img
-                    alt="Martha &amp; Joe Miller"
+                    alt={farmerName}
                     className="w-full h-full object-cover"
-                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuBJEkHF1d2vtmuYvB10Epq1AlSNLsGHmSbTixaxVRL1uYWIk9FReEZZwWuy_ONgo33VuLbznOR0dNmXDqD-l0WCS1yayILhsxdWvJQ3Gk8UqyBZOhUbPCvlFMiw44S7rHks3SQShZfZIHNkx0OA0zypMJsGAC6WmcY2W3nPPDUKXn9C54Jnkdr5SEWtTyzf0IMtZpxWulQKiBJ53zKHaa3GkGpzgd0K9dOBmOpzhpajMHpae4MbuQD_"
+                    src="https://images.unsplash.com/photo-1544717302-de2939b7ef71?auto=format&fit=crop&w=300&q=80"
                   />
                 </div>
-                <div className="text-on-primary">
+                <div className="text-on-primary min-w-0">
                   <div className="flex items-center gap-space-xs flex-wrap mb-1">
-                    <span className="px-space-xs py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-label-sm text-label-sm text-xs font-bold">
-                      Stall #4, Aisle B
+                    <span className="px-space-xs py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-label-sm text-label-sm text-[10px] sm:text-xs font-bold">
+                      {stallNumber}
                     </span>
-                    <span className="px-space-xs py-0.5 rounded-full bg-surface/20 text-on-primary font-label-sm text-label-sm backdrop-blur-sm text-xs">
-                      Downtown Historic Market
+                    <span className="px-space-xs py-0.5 rounded-full bg-surface/20 text-on-primary font-label-sm text-label-sm backdrop-blur-sm text-[10px] sm:text-xs">
+                      {stallLocation}
                     </span>
                   </div>
-                  <h1 className="font-headline-lg text-headline-lg text-on-primary leading-tight font-bold drop-shadow-sm">
-                    Green Pastures Organic
+                  <h1 className="font-headline-lg text-lg sm:text-2xl md:text-headline-lg text-on-primary leading-tight font-bold drop-shadow-sm truncate">
+                    {farmName}
                   </h1>
-                  <p className="font-body-md text-body-md text-surface-container-high">
-                    Martha &amp; Joe Miller <span className="opacity-80 font-normal">(4th Generation Family Growers)</span>
+                  <p className="font-body-md text-xs sm:text-sm text-surface-container-high truncate">
+                    {farmerName} <span className="opacity-80 font-normal hidden sm:inline">(Local Produce Grower)</span>
                   </p>
                 </div>
               </div>
 
               {/* Quick Stat Badge / Rating */}
-              <div className="flex items-center gap-space-md bg-surface-container-lowest/90 backdrop-blur-md px-space-md py-space-sm rounded-lg shadow-sm">
+              <div className="flex items-center gap-space-md bg-surface-container-lowest/90 backdrop-blur-md px-3 sm:px-space-md py-2 sm:py-space-sm rounded-lg shadow-sm">
                 <div className="flex flex-col items-center">
                   <div className="flex items-center text-tertiary font-bold text-headline-sm font-headline-sm leading-none">
                     <span className="material-symbols-outlined text-[22px] text-tertiary-container mr-1 fill">star</span>
-                    4.98
+                    {ratingAvg}
                   </div>
-                  <span className="font-label-sm text-label-sm text-on-surface-variant text-xs">142 reviews</span>
+                  <span className="font-label-sm text-label-sm text-on-surface-variant text-xs">{reviewsCount} reviews</span>
                 </div>
                 <div className="w-px h-8 bg-surface-variant"></div>
                 <div className="flex flex-col">
-                  <span className="font-label-md text-label-md text-primary font-bold text-xs">Pine Creek, OR</span>
-                  <span className="font-label-sm text-label-sm text-on-surface-variant text-xs">45 Regenerative Acres</span>
+                  <span className="font-label-md text-label-md text-primary font-bold text-xs">{farmCity}</span>
+                  <span className="font-label-sm text-label-sm text-on-surface-variant text-xs">{farmAcreage}</span>
                 </div>
               </div>
             </div>
@@ -262,17 +246,17 @@ export default function FarmerProfile({ farmerId = 2, onNavigate, onReserveProdu
           <div className="p-space-md md:p-space-lg bg-surface-container-lowest flex flex-col lg:flex-row lg:items-center justify-between gap-space-md">
             <div className="max-w-2xl">
               <p className="font-body-md text-body-md text-on-surface leading-relaxed text-sm">
-                Nurturing rich bio-intensive living soil along the Pine Creek riverbed for over 38 years. Martha &amp; Joe Miller grow heritage heirloom varieties without synthetic pesticides, chemical fertilizers, or heated greenhouses—harvesting by hand at sunrise for immediate weekend market distribution.
+                {bio}
               </p>
               <div className="flex items-center gap-space-md mt-space-sm flex-wrap text-label-sm font-label-sm text-on-surface-variant text-xs">
                 <span className="inline-flex items-center gap-1 text-primary">
                   <span className="material-symbols-outlined text-[16px]">schedule</span>
-                  Saturday Pickups held until 11:30 AM at Stall #4
+                  Pickups available at {stallNumber}
                 </span>
                 <span>•</span>
                 <span className="inline-flex items-center gap-1">
                   <span className="material-symbols-outlined text-[16px]">storefront</span>
-                  Oak Valley Sunday Bazaar (9:00 AM – 2:00 PM)
+                  {stallLocation}
                 </span>
               </div>
             </div>
@@ -339,13 +323,7 @@ export default function FarmerProfile({ farmerId = 2, onNavigate, onReserveProdu
 
               {/* Filter Chips Bar */}
               <div className="flex flex-wrap items-center gap-2 pb-1" id="category-filter-bar">
-                {[
-                  { id: 'all', label: 'All Harvest (6)' },
-                  { id: 'tomatoes', label: 'Heirloom Tomatoes' },
-                  { id: 'greens', label: 'Greens & Chard' },
-                  { id: 'roots', label: 'Root Veggies' },
-                  { id: 'microgreens', label: 'Microgreens' }
-                ].map((chip) => {
+                {uniqueCategories.map((chip) => {
                   const isActive = activeCategory === chip.id;
                   return (
                     <button
@@ -366,101 +344,121 @@ export default function FarmerProfile({ farmerId = 2, onNavigate, onReserveProdu
 
               {/* Product Card Grid (2 Columns) */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-space-md">
-                {filteredHarvest.map((item) => {
-                  const isSoldOut = item.status === 'SOLD_OUT';
-                  const currentQty = quantities[item.id] || 1;
+                {filteredHarvest.length === 0 ? (
+                  <div className="col-span-full py-16 px-4 text-center rounded-2xl bg-surface-container-low/50 border border-dashed border-outline-variant/40">
+                    <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant">
+                      <span className="material-symbols-outlined text-3xl">eco</span>
+                    </div>
+                    <h3 className="font-headline-sm text-base font-semibold text-on-surface mb-1">No Produce in this Selection</h3>
+                    <p className="font-body-sm text-xs text-on-surface-variant max-w-sm mx-auto mb-4">
+                      {farmName} currently has no harvested items listed under this category for upcoming market day reservations.
+                    </p>
+                    {activeCategory !== 'all' && (
+                      <button
+                        onClick={() => setActiveCategory('all')}
+                        className="px-4 py-1.5 rounded-full bg-primary text-on-primary text-xs font-medium cursor-pointer"
+                      >
+                        View All Produce
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  filteredHarvest.map((item) => {
+                    const isSoldOut = item.status === 'SOLD_OUT';
+                    const currentQty = quantities[item.id] || 1;
 
-                  return (
-                    <article
-                      key={item.id}
-                      className="bg-surface-container-lowest rounded-xl shadow-sm hover:shadow-md transition-all p-space-md flex flex-col justify-between border border-outline-variant/30"
-                    >
-                      <div>
-                        <div className="relative h-44 w-full rounded-lg overflow-hidden mb-space-sm bg-surface-container">
-                          <img
-                            alt={item.name}
-                            src={item.image}
-                            className={`w-full h-full object-cover transition-transform duration-300 hover:scale-105 ${
-                              isSoldOut ? 'grayscale-[30%]' : ''
-                            }`}
-                          />
-                          <div className="absolute top-2 left-2">
-                            <span className={`inline-flex items-center px-space-xs py-0.5 rounded-full font-label-sm text-label-sm shadow-xs font-bold text-xs ${item.badgeClass}`}>
-                              {item.badge}
-                            </span>
-                          </div>
-                          <div className="absolute bottom-2 right-2 bg-surface-container-lowest/90 backdrop-blur-sm px-2 py-0.5 rounded font-label-sm text-label-sm text-on-surface text-xs">
-                            {item.harvestTime}
-                          </div>
-                        </div>
-
-                        <div className="flex items-start justify-between gap-space-xs mb-1">
-                          <div>
-                            <span className="font-label-sm text-label-sm text-primary font-bold text-xs">Green Pastures Organic</span>
-                            <h3 className="font-headline-sm text-headline-sm text-on-surface font-semibold text-base">
-                              {item.name}
-                            </h3>
-                          </div>
-                          <div className="text-right shrink-0">
-                            <span className="font-headline-sm text-headline-sm text-primary font-bold">${item.price.toFixed(2)}</span>
-                            <span className="font-label-sm text-label-sm text-on-surface-variant block text-xs">/ {item.unit}</span>
-                          </div>
-                        </div>
-                        <p className="font-body-sm text-body-sm text-on-surface-variant line-clamp-2 mb-space-md text-xs leading-relaxed">
-                          {item.desc}
-                        </p>
-                      </div>
-
-                      <div className="pt-space-sm bg-surface-container-low/40 rounded-lg p-space-sm flex items-center justify-between gap-space-sm mt-auto border border-outline-variant/20">
-                        {!isSoldOut ? (
-                          <>
-                            <div className="flex items-center bg-surface-container-lowest rounded-full shadow-xs px-2 py-1 border border-outline-variant/30">
-                              <button
-                                aria-label="Decrease quantity"
-                                onClick={() => handleQtyChange(item.id, -1)}
-                                className="qty-btn-minus text-on-surface-variant hover:text-primary px-1 font-bold cursor-pointer"
-                                type="button"
-                              >
-                                −
-                              </button>
-                              <span className="qty-display font-label-md text-label-md px-2 text-on-surface text-xs font-bold">
-                                {currentQty}
+                    return (
+                      <article
+                        key={item.id}
+                        className="bg-surface-container-lowest rounded-xl shadow-sm hover:shadow-md transition-all p-space-md flex flex-col justify-between border border-outline-variant/30"
+                      >
+                        <div>
+                          <div className="relative h-44 w-full rounded-lg overflow-hidden mb-space-sm bg-surface-container">
+                            <img
+                              alt={item.name}
+                              src={item.image}
+                              className={`w-full h-full object-cover transition-transform duration-300 hover:scale-105 ${
+                                isSoldOut ? 'grayscale-[30%]' : ''
+                              }`}
+                            />
+                            <div className="absolute top-2 left-2">
+                              <span className={`inline-flex items-center px-space-xs py-0.5 rounded-full font-label-sm text-label-sm shadow-xs font-bold text-xs ${item.badgeClass}`}>
+                                {item.badge}
                               </span>
-                              <button
-                                aria-label="Increase quantity"
-                                onClick={() => handleQtyChange(item.id, 1)}
-                                className="qty-btn-plus text-on-surface-variant hover:text-primary px-1 font-bold cursor-pointer"
-                                type="button"
-                              >
-                                +
-                              </button>
                             </div>
+                            <div className="absolute bottom-2 right-2 bg-surface-container-lowest/90 backdrop-blur-sm px-2 py-0.5 rounded font-label-sm text-label-sm text-on-surface text-xs">
+                              {item.harvestTime}
+                            </div>
+                          </div>
+
+                          <div className="flex items-start justify-between gap-space-xs mb-1">
+                            <div>
+                              <span className="font-label-sm text-label-sm text-primary font-bold text-xs">{farmName}</span>
+                              <h3 className="font-headline-sm text-headline-sm text-on-surface font-semibold text-base">
+                                {item.name}
+                              </h3>
+                            </div>
+                            <div className="text-right shrink-0">
+                              <span className="font-headline-sm text-headline-sm text-primary font-bold">${item.price.toFixed(2)}</span>
+                              <span className="font-label-sm text-label-sm text-on-surface-variant block text-xs">/ {item.unit}</span>
+                            </div>
+                          </div>
+                          <p className="font-body-sm text-body-sm text-on-surface-variant line-clamp-2 mb-space-md text-xs leading-relaxed">
+                            {item.desc}
+                          </p>
+                        </div>
+
+                        <div className="pt-space-sm bg-surface-container-low/40 rounded-lg p-space-sm flex items-center justify-between gap-space-sm mt-auto border border-outline-variant/20">
+                          {!isSoldOut ? (
+                            <>
+                              <div className="flex items-center bg-surface-container-lowest rounded-full shadow-xs px-2 py-1 border border-outline-variant/30">
+                                <button
+                                  aria-label="Decrease quantity"
+                                  onClick={() => handleQtyChange(item.id, -1)}
+                                  className="qty-btn-minus text-on-surface-variant hover:text-primary px-1 font-bold cursor-pointer"
+                                  type="button"
+                                >
+                                  −
+                                </button>
+                                <span className="qty-display font-label-md text-label-md px-2 text-on-surface text-xs font-bold">
+                                  {currentQty}
+                                </span>
+                                <button
+                                  aria-label="Increase quantity"
+                                  onClick={() => handleQtyChange(item.id, 1)}
+                                  className="qty-btn-plus text-on-surface-variant hover:text-primary px-1 font-bold cursor-pointer"
+                                  type="button"
+                                >
+                                  +
+                                </button>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => onReserveProduct({
+                                  ...item,
+                                  farm: farmName,
+                                  market: `${stallLocation} (${stallNumber})`,
+                                  quantity: currentQty
+                                })}
+                                className="flex-1 text-center py-space-xs px-space-sm rounded-full bg-tertiary-container hover:bg-tertiary text-on-tertiary font-label-md text-label-md transition-colors shadow-xs cursor-pointer text-xs"
+                              >
+                                Reserve for Pickup
+                              </button>
+                            </>
+                          ) : (
                             <button
                               type="button"
-                              onClick={() => onReserveProduct({
-                                ...item,
-                                farm: 'Green Pastures Organic',
-                                market: 'Downtown Historic Farmers Market (Stall #4)',
-                                quantity: currentQty
-                              })}
-                              className="flex-1 text-center py-space-xs px-space-sm rounded-full bg-tertiary-container hover:bg-tertiary text-on-tertiary font-label-md text-label-md transition-colors shadow-xs cursor-pointer text-xs"
+                              onClick={() => onNotifyProduct(item)}
+                              className="w-full py-space-xs px-space-sm rounded-full bg-surface-variant text-on-surface-variant font-label-md text-label-md cursor-pointer text-center text-xs hover:bg-surface-container-highest transition-colors"
                             >
-                              Reserve for Pickup
+                              Notify Next Harvest
                             </button>
-                          </>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => onNotifyProduct(item)}
-                            className="w-full py-space-xs px-space-sm rounded-full bg-surface-variant text-on-surface-variant font-label-md text-label-md cursor-pointer text-center text-xs hover:bg-surface-container-highest transition-colors"
-                          >
-                            Notify Next Harvest
-                          </button>
-                        )}
-                      </div>
-                    </article>
-                  );
-                })}
+                          )}
+                        </div>
+                      </article>
+                    );
+                  })
+                )}
               </div>
             </section>
 
@@ -477,7 +475,7 @@ export default function FarmerProfile({ farmerId = 2, onNavigate, onReserveProdu
                 </div>
                 <button
                   type="button"
-                  onClick={() => alert('Review form opened for Green Pastures Organic!')}
+                  onClick={() => alert(`Review form opened for ${farmName}!`)}
                   className="px-space-md py-space-xs rounded-full bg-primary text-on-primary hover:bg-primary-container font-label-md text-label-md transition-colors shrink-0 text-xs cursor-pointer"
                 >
                   Write a Review
@@ -488,14 +486,14 @@ export default function FarmerProfile({ farmerId = 2, onNavigate, onReserveProdu
               <div className="grid grid-cols-1 md:grid-cols-12 gap-space-lg py-space-lg items-center">
                 {/* Big Score Left */}
                 <div className="md:col-span-4 flex flex-col items-center justify-center p-space-md bg-surface-container-low rounded-xl text-center border border-outline-variant/20">
-                  <span className="font-display-lg text-display-lg text-primary font-bold leading-none">4.98</span>
+                  <span className="font-display-lg text-display-lg text-primary font-bold leading-none">{ratingAvg}</span>
                   <div className="flex items-center gap-0.5 text-tertiary-container my-1">
                     {[...Array(5)].map((_, i) => (
                       <span key={i} className="material-symbols-outlined text-[20px] fill">star</span>
                     ))}
                   </div>
-                  <p className="font-label-sm text-label-sm text-on-surface-variant font-bold text-xs">142 Total Market Reviews</p>
-                  <span className="font-label-sm text-label-sm text-secondary mt-1 text-xs">98% Recommendation Rate</span>
+                  <p className="font-label-sm text-label-sm text-on-surface-variant font-bold text-xs">{reviewsCount} Total Market Reviews</p>
+                  <span className="font-label-sm text-label-sm text-secondary mt-1 text-xs">Community Verified</span>
                 </div>
 
                 {/* Progress Bars Right */}
@@ -503,143 +501,69 @@ export default function FarmerProfile({ farmerId = 2, onNavigate, onReserveProdu
                   <div className="flex items-center gap-space-sm font-label-sm">
                     <span className="w-12 text-on-surface">5 stars</span>
                     <div className="flex-1 h-2.5 rounded-full bg-surface-container overflow-hidden">
-                      <div className="h-full bg-primary rounded-full" style={{ width: '94%' }}></div>
+                      <div className="h-full bg-primary rounded-full" style={{ width: '90%' }}></div>
                     </div>
-                    <span className="w-10 text-right text-on-surface-variant">94%</span>
+                    <span className="w-10 text-right text-on-surface-variant">90%</span>
                   </div>
                   <div className="flex items-center gap-space-sm font-label-sm">
                     <span className="w-12 text-on-surface">4 stars</span>
                     <div className="flex-1 h-2.5 rounded-full bg-surface-container overflow-hidden">
-                      <div className="h-full bg-primary rounded-full" style={{ width: '5%' }}></div>
+                      <div className="h-full bg-primary rounded-full" style={{ width: '10%' }}></div>
                     </div>
-                    <span className="w-10 text-right text-on-surface-variant">5%</span>
-                  </div>
-                  <div className="flex items-center gap-space-sm font-label-sm">
-                    <span className="w-12 text-on-surface">3 stars</span>
-                    <div className="flex-1 h-2.5 rounded-full bg-surface-container overflow-hidden">
-                      <div className="h-full bg-primary rounded-full" style={{ width: '1%' }}></div>
-                    </div>
-                    <span className="w-10 text-right text-on-surface-variant">1%</span>
-                  </div>
-                  <div className="flex items-center gap-space-sm font-label-sm">
-                    <span className="w-12 text-on-surface">2 stars</span>
-                    <div className="flex-1 h-2.5 rounded-full bg-surface-container overflow-hidden">
-                      <div className="h-full bg-surface-variant rounded-full" style={{ width: '0%' }}></div>
-                    </div>
-                    <span className="w-10 text-right text-on-surface-variant">0%</span>
-                  </div>
-                  <div className="flex items-center gap-space-sm font-label-sm">
-                    <span className="w-12 text-on-surface">1 star</span>
-                    <div className="flex-1 h-2.5 rounded-full bg-surface-container overflow-hidden">
-                      <div className="h-full bg-surface-variant rounded-full" style={{ width: '0%' }}></div>
-                    </div>
-                    <span className="w-10 text-right text-on-surface-variant">0%</span>
+                    <span className="w-10 text-right text-on-surface-variant">10%</span>
                   </div>
                 </div>
-              </div>
-
-              {/* Highlight Tags */}
-              <div className="flex items-center gap-space-xs flex-wrap pb-space-lg mb-space-lg border-b border-outline-variant/20 text-xs">
-                <span className="font-label-sm text-on-surface-variant mr-1">Shopper Mentions:</span>
-                <span className="px-space-sm py-1 rounded-full bg-surface-container text-on-surface font-label-sm">🌿 Freshest Greens (88)</span>
-                <span className="px-space-sm py-1 rounded-full bg-surface-container text-on-surface font-label-sm">🍅 Generous Bunches (64)</span>
-                <span className="px-space-sm py-1 rounded-full bg-surface-container text-on-surface font-label-sm">🤝 Friendly Handshake (52)</span>
-                <span className="px-space-sm py-1 rounded-full bg-surface-container text-on-surface font-label-sm">✨ Zero Bruising (41)</span>
               </div>
 
               {/* Review List */}
               <div className="flex flex-col gap-space-lg">
-                {/* Review 1 */}
-                <div className="flex flex-col gap-space-sm pb-space-md border-b border-surface-container">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <div className="flex items-center gap-space-xs">
-                        <span className="font-label-lg text-on-surface font-bold text-sm">Clara M.</span>
-                        <span className="px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container text-xs font-bold">
-                          Verified Saturday Shopper
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1 text-tertiary-container mt-0.5">
-                        {[...Array(5)].map((_, i) => (
-                          <span key={i} className="material-symbols-outlined text-[16px] fill">star</span>
-                        ))}
-                        <span className="font-label-sm text-on-surface-variant ml-2 text-xs">2 weeks ago</span>
-                      </div>
+                {reviewsList.length === 0 ? (
+                  <div className="py-12 px-4 text-center rounded-xl bg-surface-container-low/40 border border-dashed border-outline-variant/30 my-4">
+                    <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant">
+                      <span className="material-symbols-outlined text-2xl text-amber-500">rate_review</span>
                     </div>
-                  </div>
-                  <p className="font-body-md text-on-surface leading-relaxed text-xs">
-                    "Martha's Brandywine tomatoes taste like real summer sunshine. Reserving ahead meant I didn't have to stress about waking up at 7am to get them before they sold out! Picked my box right at Stall #4, handed my cash, and was back home making gazpacho in no time."
-                  </p>
-                  {/* Farmer Reply */}
-                  <div className="ml-space-md md:ml-space-xl p-space-md bg-surface-container-low rounded-xl relative flex flex-col gap-1 border border-outline-variant/20">
-                    <div className="flex items-center gap-space-xs">
-                      <span className="material-symbols-outlined text-primary text-[18px]">subdirectory_arrow_right</span>
-                      <span className="font-label-md text-primary font-bold text-xs">Martha &amp; Joe Miller (Green Pastures Organic)</span>
-                      <span className="text-xs text-on-surface-variant font-label-sm">Grower Reply</span>
-                    </div>
-                    <p className="font-body-sm text-on-surface-variant pl-6 leading-relaxed text-xs">
-                      "Thank you so much Clara! We pick them right when the skin gives a gentle give on Friday afternoon so they are peak sweetness for your table. Save us some of that gazpacho next Saturday!"
+                    <h4 className="font-bold text-sm text-on-surface mb-1">No Reviews Yet</h4>
+                    <p className="text-xs text-on-surface-variant max-w-sm mx-auto">
+                      Be the first customer to visit {farmName} at {stallNumber} and leave a review after your harvest pickup!
                     </p>
                   </div>
-                </div>
-
-                {/* Review 2 */}
-                <div className="flex flex-col gap-space-sm pb-space-md border-b border-surface-container">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <div className="flex items-center gap-space-xs">
-                        <span className="font-label-lg text-on-surface font-bold text-sm">David K.</span>
-                        <span className="px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container text-xs font-bold">
-                          Oak Valley Regular
-                        </span>
+                ) : (
+                  reviewsList.map((rev) => (
+                    <div key={rev.id} className="flex flex-col gap-space-sm pb-space-md border-b border-surface-container">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <div className="flex items-center gap-space-xs">
+                            <span className="font-label-lg text-on-surface font-bold text-sm">{rev.customer?.name || 'Verified Shopper'}</span>
+                            <span className="px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container text-xs font-bold">
+                              Verified Shopper
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1 text-tertiary-container mt-0.5">
+                            {[...Array(rev.rating || 5)].map((_, i) => (
+                              <span key={i} className="material-symbols-outlined text-[16px] fill">star</span>
+                            ))}
+                            <span className="font-label-sm text-on-surface-variant ml-2 text-xs">Recently</span>
+                          </div>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-1 text-tertiary-container mt-0.5">
-                        {[...Array(5)].map((_, i) => (
-                          <span key={i} className="material-symbols-outlined text-[16px] fill">star</span>
-                        ))}
-                        <span className="font-label-sm text-on-surface-variant ml-2 text-xs">1 month ago</span>
-                      </div>
+                      <p className="font-body-md text-on-surface leading-relaxed text-xs">
+                        "{rev.comment || 'Great produce and exceptional service at the stall.'}"
+                      </p>
+                      {rev.farmer_reply && (
+                        <div className="ml-space-md md:ml-space-xl p-space-md bg-surface-container-low rounded-xl relative flex flex-col gap-1 border border-outline-variant/20">
+                          <div className="flex items-center gap-space-xs">
+                            <span className="material-symbols-outlined text-primary text-[18px]">subdirectory_arrow_right</span>
+                            <span className="font-label-md text-primary font-bold text-xs">{farmName}</span>
+                            <span className="text-xs text-on-surface-variant font-label-sm">Grower Reply</span>
+                          </div>
+                          <p className="font-body-sm text-on-surface-variant pl-6 leading-relaxed text-xs">
+                            "{rev.farmer_reply}"
+                          </p>
+                        </div>
+                      )}
                     </div>
-                  </div>
-                  <p className="font-body-md text-on-surface leading-relaxed text-xs">
-                    "The microgreens and rainbow chard stayed crisp in my crisper drawer for almost 10 full days. Unbeatable freshness compared to grocery stores. Love that Joe takes the time to explain how they practice compost crop rotation."
-                  </p>
-                  {/* Farmer Reply */}
-                  <div className="ml-space-md md:ml-space-xl p-space-md bg-surface-container-low rounded-xl relative flex flex-col gap-1 border border-outline-variant/20">
-                    <div className="flex items-center gap-space-xs">
-                      <span className="material-symbols-outlined text-primary text-[18px]">subdirectory_arrow_right</span>
-                      <span className="font-label-md text-primary font-bold text-xs">Martha &amp; Joe Miller (Green Pastures Organic)</span>
-                      <span className="text-xs text-on-surface-variant font-label-sm">Grower Reply</span>
-                    </div>
-                    <p className="font-body-sm text-on-surface-variant pl-6 leading-relaxed text-xs">
-                      "That's the beauty of zero cold-storage transit, David! Harvested just hours before market. Thank you for championing our regenerative soil efforts."
-                    </p>
-                  </div>
-                </div>
-
-                {/* Review 3 */}
-                <div className="flex flex-col gap-space-sm">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <div className="flex items-center gap-space-xs">
-                        <span className="font-label-lg text-on-surface font-bold text-sm">Samantha T.</span>
-                        <span className="px-2 py-0.5 rounded-full bg-surface-container text-on-surface-variant text-xs font-bold">
-                          Verified Shopper
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1 text-tertiary-container mt-0.5">
-                        {[...Array(4)].map((_, i) => (
-                          <span key={i} className="material-symbols-outlined text-[16px] fill">star</span>
-                        ))}
-                        <span className="material-symbols-outlined text-[16px] text-outline-variant">star</span>
-                        <span className="font-label-sm text-on-surface-variant ml-2 text-xs">1 month ago</span>
-                      </div>
-                    </div>
-                  </div>
-                  <p className="font-body-md text-on-surface leading-relaxed text-xs">
-                    "Love everything here. Just make sure to get your order in before Friday 6pm cut-off because they do strictly pack based on reservations to eliminate food waste. Can't wait for melon season."
-                  </p>
-                </div>
+                  ))
+                )}
               </div>
             </section>
           </main>
@@ -655,28 +579,28 @@ export default function FarmerProfile({ farmerId = 2, onNavigate, onReserveProdu
               <div
                 className="w-full h-44 rounded-lg bg-cover bg-center overflow-hidden mb-space-sm relative shadow-inner"
                 style={{
-                  backgroundImage: `url('https://lh3.googleusercontent.com/aida-public/AB6AXuDHs_48b0JRNCR7FgbiCwJcTZhZXrENz63AKqCm8MRQ7wna6FYEzEaFGq585_XR2-ctrwligUTejcYOOAH589S5KTyh5zxh51gX3vukP4pLE2_lTfe60X_E1ikZtiC6-eX4_Fqb-GgzySW8M-eB2Wswoz3V-2s_VSPMcPg9Y9obA9u-Evp1fHkS-9pO9p93iET1A-1VFoQTHAfBl1GamTfZnb15HKFa6bBvNiJD765nBua0LlYMDJJJ')`
+                  backgroundImage: `url('https://images.unsplash.com/photo-1488459716781-31db52582fe9?auto=format&fit=crop&w=600&q=80')`
                 }}
               >
                 <div className="absolute inset-0 bg-primary/10 flex items-center justify-center pointer-events-none">
                   <div className="bg-primary text-on-primary px-space-sm py-1 rounded-full shadow-lg flex items-center gap-1 font-label-sm text-xs font-bold">
                     <span className="material-symbols-outlined text-[16px]">storefront</span>
-                    Stall #4 (North Arch)
+                    {stallNumber}
                   </div>
                 </div>
               </div>
 
               <div className="flex flex-col gap-1 mb-space-md text-xs">
-                <p className="font-label-md text-on-surface font-bold">Pioneer Pavilion - Downtown Historic Market</p>
-                <p className="font-body-sm text-on-surface-variant">120 Market Square, Central Plaza (North Arch entrance, Aisle B, Stall #4)</p>
+                <p className="font-label-md text-on-surface font-bold">{stallLocation}</p>
+                <p className="font-body-sm text-on-surface-variant">Located at {stallNumber}. Direct field harvest pickup point.</p>
                 <div className="flex items-center gap-space-xs text-xs font-label-sm text-primary mt-1">
                   <span className="material-symbols-outlined text-[16px]">schedule</span>
-                  Saturday: 8:00 AM – 1:00 PM (Pickups held until 11:30 AM)
+                  Open on scheduled market days
                 </div>
               </div>
 
               <a
-                href="https://maps.google.com"
+                href={`https://maps.google.com/?q=${encodeURIComponent(stallLocation)}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-full py-space-xs rounded-full bg-primary hover:bg-primary-container text-on-primary font-label-md transition-colors flex items-center justify-center gap-1.5 shadow-sm text-xs cursor-pointer"
@@ -698,21 +622,21 @@ export default function FarmerProfile({ farmerId = 2, onNavigate, onReserveProdu
                   <span className="material-symbols-outlined text-primary text-[20px] shrink-0 mt-0.5">payments</span>
                   <div>
                     <p className="font-label-md text-on-surface font-bold">100% In-Person Payment</p>
-                    <p className="font-body-sm text-on-surface-variant">Pay Martha &amp; Joe directly at Stall #4. Cash, chip cards, or local Market SNAP/EBT tokens accepted. Zero online card fees.</p>
+                    <p className="font-body-sm text-on-surface-variant">Pay {farmerName} directly at {stallNumber}. Cash, cards, or mobile pay accepted. Zero online fees.</p>
                   </div>
                 </li>
                 <li className="flex items-start gap-space-xs">
                   <span className="material-symbols-outlined text-primary text-[20px] shrink-0 mt-0.5">lock_clock</span>
                   <div>
                     <p className="font-label-md text-on-surface font-bold">Guaranteed Reserve Hold</p>
-                    <p className="font-body-sm text-on-surface-variant">Orders are labeled with your name and placed in shaded produce coolers until 11:30 AM on market day.</p>
+                    <p className="font-body-sm text-on-surface-variant">Pre-reserved orders are packed with your name and safely held at the stall on market day.</p>
                   </div>
                 </li>
                 <li className="flex items-start gap-space-xs">
                   <span className="material-symbols-outlined text-secondary text-[20px] shrink-0 mt-0.5">recycling</span>
                   <div>
-                    <p className="font-label-md text-on-surface font-bold">Zero Plastic Packaging Pledge</p>
-                    <p className="font-body-sm text-on-surface-variant">Packed in compostable plant starch or wooden crates. Bring your own canvas tote for $0.50 off your order total!</p>
+                    <p className="font-label-md text-on-surface font-bold">Eco-Friendly Packaging</p>
+                    <p className="font-body-sm text-on-surface-variant">Packed in recyclable crates and paper cartons to minimize agricultural footprint.</p>
                   </div>
                 </li>
               </ul>
@@ -720,11 +644,11 @@ export default function FarmerProfile({ farmerId = 2, onNavigate, onReserveProdu
               <div className="p-space-sm bg-surface-container-lowest rounded-lg flex items-center justify-between text-xs border border-outline-variant/30">
                 <div className="flex items-center gap-space-xs">
                   <span className="material-symbols-outlined text-tertiary text-[20px]">help_center</span>
-                  <span className="font-label-sm text-on-surface">Questions for the Miller family?</span>
+                  <span className="font-label-sm text-on-surface">Questions for {farmerName}?</span>
                 </div>
                 <button
                   type="button"
-                  onClick={() => alert('Message prompt opened for Green Pastures Organic!')}
+                  onClick={() => alert(`Direct inquiry message prompt for ${farmName}`)}
                   className="font-label-sm text-primary hover:underline font-bold cursor-pointer"
                 >
                   Ask Stall

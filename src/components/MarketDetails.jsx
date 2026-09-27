@@ -1,202 +1,297 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import PageLoader from './PageLoader';
 import browseApi from '../api/browse';
+import * as maplibregl from 'maplibre-gl';
+import 'maplibre-gl/dist/maplibre-gl.css';
+
+const MAP_STYLE = {
+  version: 8,
+  sources: {
+    'osm-tiles': {
+      type: 'raster',
+      tiles: [
+        'https://a.tile.openstreetmap.org/{z}/{x}/{y}.png',
+        'https://b.tile.openstreetmap.org/{z}/{x}/{y}.png',
+        'https://c.tile.openstreetmap.org/{z}/{x}/{y}.png',
+      ],
+      tileSize: 256,
+      attribution:
+        '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a> contributors',
+    },
+  },
+  layers: [
+    {
+      id: 'osm-tiles-layer',
+      type: 'raster',
+      source: 'osm-tiles',
+      minzoom: 0,
+      maxzoom: 19,
+    },
+  ],
+};
 
 export default function MarketDetails({ marketId = 1, onNavigate, onReserveProduct, onNotifyProduct }) {
   const [mapFilter, setMapFilter] = useState('all');
   const [producerFilter, setProducerFilter] = useState('all');
   const [preferredMarket, setPreferredMarket] = useState(false);
   const [liveMarket, setLiveMarket] = useState(null);
+  const [marketProducts, setMarketProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const mapContainerRef = useRef(null);
+  const mapRef = useRef(null);
 
   useEffect(() => {
     let mounted = true;
-    browseApi.getMarket(marketId || 1).then((res) => {
-      if (mounted && res.data) {
-        setLiveMarket(res.data);
-      }
-    }).catch(() => {});
+    setLoading(true);
+    Promise.allSettled([
+      browseApi.getMarket(marketId || 1),
+      browseApi.getProducts({ market_id: marketId || 1 }),
+    ])
+      .then(([marketRes, prodRes]) => {
+        if (mounted) {
+          if (marketRes.status === 'fulfilled' && marketRes.value?.data) {
+            setLiveMarket(marketRes.value.data);
+          } else {
+            setLiveMarket(null);
+          }
+          if (prodRes.status === 'fulfilled' && prodRes.value?.data && Array.isArray(prodRes.value.data)) {
+            setMarketProducts(prodRes.value.data);
+          } else {
+            setMarketProducts([]);
+          }
+        }
+      })
+      .catch((err) => {
+        console.warn('Could not load market details:', err);
+        if (mounted) {
+          setLiveMarket(null);
+          setMarketProducts([]);
+        }
+      })
+      .finally(() => {
+        if (mounted) setLoading(false);
+      });
     return () => { mounted = false; };
   }, [marketId]);
 
-  // Producers data for Downtown Historic Market
-  const producers = [
-    {
-      id: 'prod-1',
-      name: 'Green Pastures Organic',
-      farmers: 'Martha & Joe Miller • 4th Gen Family Farm',
-      stall: 'Stall #4 • Aisle B',
-      category: 'veg',
-      rating: '4.98',
-      reviews: '142',
-      desc: 'Heirloom Brandywine tomatoes, rainbow Swiss chard, crisp bibb lettuces, and cold-pressed microgreens grown without synthetic sprays.',
-      status: 'active',
-      btnText: 'Pre-Order Harvest',
-      farmKey: 'green-pastures'
-    },
-    {
-      id: 'prod-2',
-      name: 'Miller & Stone Hearth',
-      farmers: 'Gabe & Elena Vance • Naturally Leavened',
-      stall: 'Stall #18 • Aisle C',
-      category: 'bakery',
-      rating: '5.00',
-      reviews: '88',
-      desc: 'Artisan woodfired country sourdough batards, flaky butter morning croissants, seeded rye loaves, and heritage stoneground brioche.',
-      status: 'active',
-      btnText: 'Reserve Bread',
-      farmKey: 'miller-stone'
-    },
-    {
-      id: 'prod-3',
-      name: 'Sunrise Orchard',
-      farmers: 'Caleb Hughes • Blue Ridge Terraces',
-      stall: 'Stall #12 • Aisle A',
-      category: 'fruit',
-      rating: '4.94',
-      reviews: '115',
-      desc: 'First-press sweet unfiltered apple cider, crisp tree-ripened Honeycrisp, Asian heirloom pears, and sun-dried orchard apple crisps.',
-      status: 'active',
-      btnText: 'Reserve Apples',
-      farmKey: 'sunrise-orchard'
-    },
-    {
-      id: 'prod-4',
-      name: 'Heritage Hen Hollow',
-      farmers: 'Nora Callahan • Free-Range Rotational',
-      stall: 'Stall #21 • Aisle C',
-      category: 'dairy',
-      rating: '4.97',
-      reviews: '92',
-      desc: 'Rich golden-yolk pasture eggs from heritage breed hens, pasture duck eggs, raw clover honey jars, and heritage roasting fowl.',
-      status: 'sold-out',
-      btnText: 'Sold Out This Sat',
-      farmKey: 'heritage-hen'
-    },
-    {
-      id: 'prod-5',
-      name: 'Pine Ridge Apiary',
-      farmers: 'Silas Finch • Mountain Foothill Hives',
-      stall: 'Stall #9 • Aisle D',
-      category: 'honey',
-      rating: '4.99',
-      reviews: '76',
-      desc: '100% unpasteurized wildflower & sourwood honey, fresh golden bee pollen pellets, hand-dipped beeswax taper candles, and honeycomb slabs.',
-      status: 'active',
-      btnText: 'Reserve Honey',
-      farmKey: 'pine-ridge'
-    },
-    {
-      id: 'prod-6',
-      name: 'Fiddlehead Farm',
-      farmers: 'Devon & Sarah Lin • Regenerative Growers',
-      stall: 'Stall #6 • Aisle B',
-      category: 'veg',
-      rating: '4.92',
-      reviews: '64',
-      desc: 'Nutty acorn and butternut squash, Lacinato dinosaur kale, sweet culinary garlic bulbs, and hand-bundled French tarragon herbs.',
-      status: 'active',
-      btnText: 'Pre-Order Harvest',
-      farmKey: 'fiddlehead'
-    }
-  ];
+  // Registered stalls dynamically loaded from this market (no dummy data)
+  const marketStalls = useMemo(() => {
+    if (!liveMarket?.farmers || !Array.isArray(liveMarket.farmers)) return [];
+    return liveMarket.farmers.map((f, idx) => {
+      const p = f.farmer_profile || {};
+      const stallNo = p.stall_number || `Stall #${idx + 1}`;
+      const stallNm = p.stall_name || `${f.name}'s Stand`;
+      const days = Array.isArray(p.operating_days) ? p.operating_days.join(', ') : (p.operating_days || 'Weekend Morning');
+      return {
+        id: `farmer-${f.id}`,
+        farmerId: f.id,
+        name: stallNm,
+        stallNumber: stallNo,
+        farmers: `${f.name} • ${p.contact_person || 'Grower'}`,
+        stall: `${stallNo} • ${p.address || liveMarket.address || 'Market Plaza'}`,
+        category: 'veg',
+        rating: '5.00',
+        reviews: 'Verified',
+        desc: p.bio || `Fresh local harvest brought directly to ${liveMarket.market_name}. Operating: ${days}. Contact: ${f.phone || f.email || 'At the stand'}.`,
+        status: 'active',
+        btnText: 'View Stall Profile',
+        farmKey: `farmer-${f.id}`,
+        isLiveStall: true,
+        pickupWindow: `${p.pickup_time_start || '08:00 AM'} – ${p.pickup_time_end || '01:30 PM'}`,
+        latitude: parseFloat(p.latitude) || parseFloat(liveMarket.latitude) || 24.9849,
+        longitude: parseFloat(p.longitude) || parseFloat(liveMarket.longitude) || 67.0596,
+        phone: f.phone,
+        email: f.email,
+        products: f.products || [],
+      };
+    });
+  }, [liveMarket]);
 
-  // Saturday harvest products
-  const harvestItems = [
-    {
-      id: 'det-prod-1',
-      name: 'Heirloom Brandywine Tomatoes',
-      price: 4.50,
-      unit: 'lb',
-      stall: 'Stall #4 • Green Pastures',
-      farm: 'Green Pastures Organic',
-      market: 'Downtown Historic Market (Stall #4)',
-      status: 'IN_STOCK',
-      badge: 'IN STOCK',
-      desc: 'Deep pink beefsteak heirloom variety, intensely sweet and slightly acidic old-fashioned tomato flavor picked Friday morning.',
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBc6WOIs-DtydvuW6H54kRRGUUX1R5wiIdAcb4hK48Bnxqs0doTLgBKBk46UPCrz9k3b4g-sCxaEwZrbSjOM08CFB4uMw6SlHYRVEc9FcuNSWPJLxT4lFiwY87nptH_MpF5BRNN6-NBba_ddMB51hOoRu0CiKC0dNwE6rz3LQqD_UAAfZCrEME6DOne9Tm_w5GUC-XuUmaGYUfoIgg0d4Bl0gHh5sRIlAXDDFpsJwNC48Zv8QoD-PN3',
-      alt: 'A rustic wooden basket filled with multi-colored ripe heirloom brandywine tomatoes'
-    },
-    {
-      id: 'det-prod-2',
-      name: 'Crisp Honeycrisp Apples',
-      price: 3.20,
-      unit: 'lb',
-      stall: 'Stall #12 • Sunrise Orchard',
-      farm: 'Sunrise Orchard',
-      market: 'Downtown Historic Market (Stall #12)',
-      status: 'IN_STOCK',
-      badge: 'IN STOCK',
-      desc: 'Hand-picked high-elevation mountain apples, intensely crunchy with balanced aromatic sweetness. Perfect for pies and snacking.',
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDBT8rgggOVQbE-n-FUqb6bnGjh4GGnJj5RryqJNxqbuaKNdRgkj4X-0jit45RnEWOCcCKg6ynxmc0WNryaxmng_NO0K7fJlAXwWoGpHER8ZX_delOrrScmt3SwO4I9yBKNcpOI5UrRRJfDDDjs6BcpsN6_zAK7qPI8GuIoZKt65Gvx6gkPpeY5XDd5bMHDmCxeQjICK5C2cmF-N4GK9VywH55ujRomBWtuxpWse0uzke3Yscib6moO',
-      alt: 'Freshly harvested crisp honeycrisp apples in an untreated wooden orchard crate'
-    },
-    {
-      id: 'det-prod-3',
-      name: 'Country Sourdough Loaf',
-      price: 7.50,
-      unit: 'loaf',
-      stall: 'Stall #18 • Miller & Stone',
-      farm: 'Miller & Stone Hearth',
-      market: 'Downtown Historic Market (Stall #18)',
-      status: 'LOW_STOCK',
-      badge: 'LOW STOCK • 5 LEFT',
-      desc: '36-hour cold fermented sourdough made with stoneground organic red fife and wheat flours. Baked fresh in wood-fired hearth at 5:00 AM.',
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDXDGaZdBdaEbaaIg173NKFNDi93BmFCb6z0n0AkWQqZYsuIDTgP3qtRZEFivb5BBVpVV_GX3q7dq3aZs-tsKhqPwbcmoz28j-17r3z56wtZa4_kH2ZVTFQt2EF0lzSUQ-GHyILNI-9xo_7ncwougVGYbU-cdcJkYSKSgbjlXTr1HSn4-6b6jD9UQ_KdZO_ZR8mXn8MkyfSHoiE-9WnW8n5zXiGhWbtOx_Cu3j2T7jZXsVyRoPH9qO7',
-      alt: 'Artisan woodfired country sourdough bread boule on baker linen'
-    },
-    {
-      id: 'det-prod-4',
-      name: 'Pasture-Raised Organic Eggs',
-      price: 6.50,
-      unit: 'dozen',
-      stall: 'Stall #21 • Heritage Hen',
-      farm: 'Heritage Hen Hollow',
-      market: 'Downtown Historic Market (Stall #21)',
-      status: 'SOLD_OUT',
-      badge: 'SOLD OUT THIS WEEK',
-      desc: 'Rotational clover pasture hens foraging daily. Rich amber yolks high in natural Omega-3s. Maximum allocation claimed for this Saturday.',
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAaUGBVatxc2dIxlFmKwcTdiqhByBwt_G3BbZB3rH7pZ26QuAHaOAFjGi-PQ5FSMbCJn0iqEM4q4bALqMj7uSpeGx4TfJvAbn0S1xxrapHEsL1FgIUW9YGdkZ7rHSviOyMZGlmCSZj_6n8veNL5-7YlZ-Mq1GRxzDlzGnJzb2Up2rH6uQYW0kzH2zXuxRI1WvTd03SkV6qaTYHOZKhOcv9W3N616p_OJiVwUUzSIJni-pQqgsEeA7R7',
-      alt: 'Cardboard egg carton open showing rich brown organic farm pasture eggs'
-    },
-    {
-      id: 'det-prod-5',
-      name: 'Wildflower Raw Honey 16oz',
-      price: 12.00,
-      unit: 'jar',
-      stall: 'Stall #9 • Pine Ridge Apiary',
-      farm: 'Pine Ridge Apiary',
-      market: 'Downtown Historic Market (Stall #9)',
-      status: 'LOW_STOCK',
-      badge: 'LOW STOCK • 3 JARS LEFT',
-      desc: 'Raw, unfiltered honey spun straight from foothill hives. Natural enzymes, local pollen, and delicate wildflower aromatics preserved.',
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBMPUk6sGa67_Mf41nY1JtOxOuDhH7AJ7VbDHf5vqtxwN4bckJUdc4ReH_1BP2ocuwlyRmax1k1LU7_r_NDbWguCMJNKwhWHYgmfX4q0Q8vHNCpN7sZDMnafU2eH1lCCk4Sb6PBwcc8idGvntrlACw0dd_Vw-ZD-S_L57oQaWY6rmFHOjJj2kdApkPmLTWGVyPdHMDvLDXddwlLyGc0jseqXV-jPfZaRSLtpls3uD06fQVPE3AOYuns',
-      alt: 'Glass mason jar of raw unpasteurized amber wildflower honey'
-    },
-    {
-      id: 'det-prod-6',
-      name: 'Watercress & Micro Bundle',
-      price: 4.00,
-      unit: 'bunch',
-      stall: 'Stall #4 • Green Pastures',
-      farm: 'Green Pastures Organic',
-      market: 'Downtown Historic Market (Stall #4)',
-      status: 'IN_STOCK',
-      badge: 'IN STOCK',
-      desc: 'Peppery crisp spring-fed watercress paired with sprouted radish greens. Bundled with natural biodegradable jute twine.',
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCK6McM0sQxiAeP4WrT8qjQtWGggDfBnuCMK7jO_DMb5rHdN0cEpIDKAZxbY8UfZbowgtS8mvvOt6q3DILZzF45k8kyEIVV6nRCB1G6QTTugN8iYrI9sx5buQ1b0b9ZwFJZCa_LLAkI8OO02_V1elGDibgBNDwXjC-BDbDl6G4Ri09yToO0ZrW0_ViHBBLsU55rmFsImvgRw5kSqGTLvlwZSOXbjrj_OyPM5Qu1etV6MW861fqp-HIX',
-      alt: 'Vibrant fresh green watercress bundle tied with natural jute twine'
-    }
-  ];
+  const allProducers = marketStalls;
 
   // Filter producers
-  const filteredProducers = producers.filter((p) => {
-    if (producerFilter === 'all') return true;
-    return p.category === producerFilter;
-  });
+  const filteredProducers = useMemo(() => {
+    return allProducers.filter((p) => {
+      if (producerFilter === 'all') return true;
+      return p.category === producerFilter;
+    });
+  }, [allProducers, producerFilter]);
+
+  // Live harvest products for this market (no dummy data)
+  const harvestItems = useMemo(() => {
+    if (marketProducts && marketProducts.length > 0) {
+      return marketProducts.map((p) => {
+        const numPrice = Number(p.price) || 0;
+        const isSoldOut = p.status === 'sold_out' || p.stock_quantity <= 0;
+        const isLowStock = p.stock_quantity > 0 && p.stock_quantity <= 5;
+        return {
+          id: p.id,
+          name: p.name,
+          price: numPrice,
+          unit: p.unit || 'lb',
+          stall: p.stall_name || (p.farmer_name ? `${p.farmer_name}'s Stand` : 'Farm Stand'),
+          farm: p.farmer_name || 'Regional Grower',
+          market: p.market_name || liveMarket?.market_name || 'Downtown Historic Market',
+          status: isSoldOut ? 'SOLD_OUT' : (isLowStock ? 'LOW_STOCK' : 'IN_STOCK'),
+          badge: isSoldOut ? 'SOLD OUT THIS WEEK' : (isLowStock ? `LOW STOCK • ${p.stock_quantity} LEFT` : 'IN STOCK'),
+          desc: p.description || 'Fresh morning harvest harvested for weekend market pickup.',
+          image: p.image || 'https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=600&q=80',
+          alt: p.name,
+        };
+      });
+    }
+
+    // Also collect products attached to farmers if browse/products was empty
+    const farmerProducts = [];
+    (liveMarket?.farmers || []).forEach((f) => {
+      if (Array.isArray(f.products)) {
+        f.products.forEach((p) => {
+          const numPrice = Number(p.price) || 0;
+          const isSoldOut = p.status === 'sold_out' || p.stock_quantity <= 0;
+          const isLowStock = p.stock_quantity > 0 && p.stock_quantity <= 5;
+          farmerProducts.push({
+            id: p.id,
+            name: p.name,
+            price: numPrice,
+            unit: p.unit || 'lb',
+            stall: f.farmer_profile?.stall_name || `${f.name}'s Stand`,
+            farm: f.name || 'Regional Grower',
+            market: liveMarket?.market_name || 'Downtown Historic Market',
+            status: isSoldOut ? 'SOLD_OUT' : (isLowStock ? 'LOW_STOCK' : 'IN_STOCK'),
+            badge: isSoldOut ? 'SOLD OUT THIS WEEK' : (isLowStock ? `LOW STOCK • ${p.stock_quantity} LEFT` : 'IN STOCK'),
+            desc: p.description || 'Fresh morning harvest harvested for weekend market pickup.',
+            image: p.image || 'https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=600&q=80',
+            alt: p.name,
+          });
+        });
+      }
+    });
+    return farmerProducts;
+  }, [marketProducts, liveMarket]);
+
+  // Interactive OpenStreetMap for Market Plaza & Farmer Stalls
+  useEffect(() => {
+    if (!mapContainerRef.current) return;
+
+    if (mapRef.current) {
+      mapRef.current.remove();
+      mapRef.current = null;
+    }
+
+    const defaultLat = parseFloat(liveMarket?.latitude) || 24.98494;
+    const defaultLng = parseFloat(liveMarket?.longitude) || 67.059616;
+
+    const map = new maplibregl.Map({
+      container: mapContainerRef.current,
+      style: MAP_STYLE,
+      center: [defaultLng, defaultLat],
+      zoom: 14.5,
+      attributionControl: false,
+    });
+
+    map.addControl(new maplibregl.NavigationControl({ showCompass: true }), 'top-right');
+
+    map.on('load', () => {
+      // 1. Market Plaza Center Pin
+      const marketEl = document.createElement('div');
+      marketEl.innerHTML = `
+        <div style="
+          width: 38px; height: 38px; border-radius: 50%; background: #125224;
+          border: 3px solid #ffffff; box-shadow: 0 4px 14px rgba(18,82,36,0.5);
+          display: flex; align-items: center; justify-content: center; color: white; cursor: pointer;
+        ">
+          <span class="material-symbols-outlined" style="font-size: 20px;">storefront</span>
+        </div>
+      `;
+
+      new maplibregl.Marker({ element: marketEl })
+        .setLngLat([defaultLng, defaultLat])
+        .setPopup(
+          new maplibregl.Popup({ offset: 25 }).setHTML(`
+            <div style="font-family: sans-serif; padding: 4px; min-width: 140px;">
+              <div style="font-weight: 800; color: #125224; font-size: 13px;">${liveMarket?.market_name || 'Farmers Market Plaza'}</div>
+              <div style="font-size: 11px; color: #444; margin-top: 2px;">${liveMarket?.address || 'Market Location'}</div>
+              <div style="font-size: 10px; color: #777; margin-top: 4px; font-weight: bold;">Plaza Central Grounds</div>
+            </div>
+          `)
+        )
+        .addTo(map);
+
+      // 2. Stall Markers for registered farmers in this market
+      marketStalls.forEach((stall) => {
+        if (!stall.latitude || !stall.longitude) return;
+        const stallEl = document.createElement('div');
+        stallEl.innerHTML = `
+          <div style="
+            padding: 4px 9px; border-radius: 20px; background: #914d00;
+            border: 2px solid white; box-shadow: 0 4px 12px rgba(145,77,0,0.4);
+            display: flex; align-items: center; gap: 4px; color: white; font-weight: bold; font-size: 11px; cursor: pointer;
+          ">
+            <span class="material-symbols-outlined" style="font-size: 14px;">agriculture</span>
+            <span>${stall.stallNumber || 'Stall'}</span>
+          </div>
+        `;
+
+        new maplibregl.Marker({ element: stallEl })
+          .setLngLat([stall.longitude, stall.latitude])
+          .setPopup(
+            new maplibregl.Popup({ offset: 20 }).setHTML(`
+              <div style="font-family: sans-serif; padding: 4px; min-width: 160px;">
+                <div style="font-weight: 800; color: #914d00; font-size: 13px;">${stall.name}</div>
+                <div style="font-size: 11px; color: #222; font-weight: 600; margin-top: 2px;">${stall.stallNumber}</div>
+                <div style="font-size: 10px; color: #555; margin-top: 2px;">${stall.farmers}</div>
+                <div style="font-size: 10px; color: #125224; margin-top: 4px; font-weight: bold;">Pickup: ${stall.pickupWindow}</div>
+              </div>
+            `)
+          )
+          .addTo(map);
+      });
+    });
+
+    mapRef.current = map;
+
+    return () => {
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
+      }
+    };
+  }, [liveMarket, marketStalls]);
+
+  if (loading) {
+    return (
+      <PageLoader
+        title="Loading Market Pavilion & Stalls..."
+        subtitle="Connecting to real-time stall rosters, grower map pins, and morning harvest inventory..."
+        minHeight="min-h-[85vh]"
+      />
+    );
+  }
+
+  if (!liveMarket) {
+    return (
+      <div className="w-full min-h-[70vh] flex flex-col items-center justify-center p-8 bg-surface">
+        <div className="max-w-md w-full p-8 rounded-2xl bg-white border border-outline-variant/30 text-center shadow-lg">
+          <span className="material-symbols-outlined text-[54px] text-primary mb-3">storefront</span>
+          <h2 className="text-xl font-bold text-on-surface mb-2">Market Pavilion Not Found</h2>
+          <p className="text-sm text-on-surface-variant mb-6">
+            The market pavilion you requested could not be found or is currently not scheduled.
+          </p>
+          <button
+            onClick={() => onNavigate('markets')}
+            className="w-full py-3 px-4 rounded-xl bg-primary text-white font-bold text-sm cursor-pointer hover:bg-primary/90 transition-all"
+          >
+            Browse All Regional Markets
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col w-full">
       {/* Breadcrumb & Top Indicator */}
-      <section className="w-full bg-surface-container-low py-space-sm px-gutter border-b border-outline-variant/30">
+      <section className="w-full bg-surface-container-low py-space-sm px-3 sm:px-6 lg:px-gutter border-b border-outline-variant/30">
         <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-space-sm">
           <nav aria-label="Breadcrumbs" className="flex items-center gap-space-xs font-label-sm text-on-surface-variant">
             <button
@@ -214,33 +309,33 @@ export default function MarketDetails({ marketId = 1, onNavigate, onReserveProdu
               Markets
             </button>
             <span>/</span>
-            <span className="text-primary font-bold">Downtown Historic Farmers Market</span>
+            <span className="text-primary font-bold">{liveMarket?.market_name || 'Market Details'}</span>
           </nav>
           <div className="inline-flex items-center gap-space-xs text-secondary font-label-sm">
             <span className="w-2 h-2 rounded-full bg-secondary animate-ping"></span>
-            <span>Stall Reservations Open for Saturday</span>
+            <span>Stall Reservations Open for {Array.isArray(liveMarket?.operating_days) ? liveMarket.operating_days[0] : (liveMarket?.operating_days || 'Weekend')}</span>
           </div>
         </div>
       </section>
 
       {/* Market Detail Header Hero */}
-      <section className="w-full py-space-xl px-gutter relative overflow-hidden bg-gradient-to-b from-surface-container-low via-surface to-surface">
+      <section className="w-full py-8 sm:py-space-xl px-3 sm:px-6 lg:px-gutter relative overflow-hidden bg-gradient-to-b from-surface-container-low via-surface to-surface">
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-space-xl items-start">
             {/* Left 8 Cols: Market Meta & Action Stack */}
             <div className="lg:col-span-8 flex flex-col gap-space-md">
               <div className="flex flex-wrap items-center gap-space-xs">
-                <span className="inline-flex items-center gap-1 px-space-sm py-1 rounded-full bg-secondary-container text-on-secondary-container font-label-sm shadow-sm">
+                <span className="inline-flex items-center gap-1 px-space-sm py-1 rounded-full bg-secondary-container text-on-secondary-container font-label-sm shadow-sm font-bold">
                   <span className="material-symbols-outlined text-[15px]">verified</span>
-                  Open Every Saturday
+                  {liveMarket?.operating_days ? (Array.isArray(liveMarket.operating_days) ? liveMarket.operating_days.join(' & ') : liveMarket.operating_days) : 'Open Every Saturday'}
                 </span>
-                <span className="inline-flex items-center gap-1 px-space-sm py-1 rounded-full bg-surface-container-highest text-on-surface font-label-sm">
+                <span className="inline-flex items-center gap-1 px-space-sm py-1 rounded-full bg-surface-container-highest text-on-surface font-label-sm font-bold">
                   <span className="material-symbols-outlined text-[15px]">storefront</span>
-                  28 Certified Stalls
+                  {marketStalls.length > 0 ? `${marketStalls.length} Registered Stalls` : 'Certified Stalls'}
                 </span>
                 <span className="inline-flex items-center gap-1 px-space-sm py-1 rounded-full bg-surface-container-high text-primary font-label-sm font-bold">
                   <span className="material-symbols-outlined text-[15px]">payments</span>
-                  SNAP / EBT Tokens Accepted
+                  Cash &amp; Card In-Person
                 </span>
                 <span className="inline-flex items-center gap-1 px-space-sm py-1 rounded-full bg-surface-container-high text-on-surface-variant font-label-sm">
                   <span className="material-symbols-outlined text-[15px]">pets</span>
@@ -249,12 +344,12 @@ export default function MarketDetails({ marketId = 1, onNavigate, onReserveProdu
               </div>
 
               <div className="flex flex-col gap-space-xs">
-                <h1 className="font-display-lg text-on-surface leading-tight tracking-tight">
-                  Downtown Historic Farmers Market
+                <h1 className="font-display-lg text-on-surface leading-tight tracking-tight font-extrabold">
+                  {liveMarket?.market_name || 'Downtown Historic Farmers Market'}
                 </h1>
                 <p className="font-body-lg text-on-surface-variant flex items-center gap-space-xs">
                   <span className="material-symbols-outlined text-primary text-[20px]">location_on</span>
-                  120 Market Square, Central Plaza, Downtown (Pioneer Pavilion)
+                  {liveMarket?.address || '120 Market Square, Central Plaza, Downtown (Pioneer Pavilion)'}
                 </p>
               </div>
 
@@ -265,11 +360,15 @@ export default function MarketDetails({ marketId = 1, onNavigate, onReserveProdu
                     <span className="material-symbols-outlined text-[26px]">calendar_today</span>
                   </div>
                   <div>
-                    <p className="font-label-md text-on-surface">Next Market Window: This Saturday</p>
-                    <p className="font-body-sm text-on-surface-variant">8:00 AM – 1:00 PM • Early Birds / Seniors: 7:30 AM</p>
+                    <p className="font-label-md text-on-surface font-bold">
+                      Market Window: {Array.isArray(liveMarket?.operating_days) ? liveMarket.operating_days.join(' & ') : (liveMarket?.operating_days || 'Saturday & Sunday')}
+                    </p>
+                    <p className="font-body-sm text-on-surface-variant">
+                      {liveMarket?.timings || '8:00 AM – 1:00 PM • Early Birds / Seniors: 7:30 AM'}
+                    </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 font-label-sm text-primary">
+                <div className="flex items-center gap-2 font-label-sm text-primary font-bold">
                   <span className="material-symbols-outlined text-[18px]">verified_user</span>
                   <span>100% In-Person Payment at Stalls</span>
                 </div>
@@ -278,10 +377,10 @@ export default function MarketDetails({ marketId = 1, onNavigate, onReserveProdu
               {/* Action CTA Ribbon */}
               <div className="flex flex-wrap items-center gap-space-sm pt-space-xs">
                 <a
-                  href="https://maps.google.com/?q=120+Market+Square+Downtown"
+                  href={`https://maps.google.com/?q=${encodeURIComponent(liveMarket?.address || liveMarket?.market_name || 'Farmers Market')}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center gap-space-xs px-space-lg py-space-sm rounded-full bg-tertiary-container text-on-tertiary font-label-md shadow-md hover:bg-tertiary transition-all active:scale-95 cursor-pointer"
+                  className="inline-flex items-center justify-center gap-space-xs px-space-lg py-space-sm rounded-full bg-tertiary-container text-on-tertiary font-label-md shadow-md hover:bg-tertiary transition-all active:scale-95 cursor-pointer font-bold"
                 >
                   <span className="material-symbols-outlined text-[18px]">directions</span>
                   Get Directions
@@ -329,14 +428,14 @@ export default function MarketDetails({ marketId = 1, onNavigate, onReserveProdu
             <div className="lg:col-span-4 bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col gap-space-md border border-outline-variant/30">
               <div className="flex items-center justify-between pb-space-xs">
                 <h3 className="font-headline-sm text-primary font-bold">Stall Highlights</h3>
-                <span className="font-label-sm px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container text-xs">
-                  Updated Today
+                <span className="font-label-sm px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container text-xs font-bold">
+                  {marketStalls.length > 0 ? `${marketStalls.length} Active Stalls` : 'Updated Today'}
                 </span>
               </div>
 
               <div className="grid grid-cols-2 gap-space-sm">
                 <div className="p-space-sm rounded-lg bg-surface-container-low flex flex-col">
-                  <span className="font-display-lg-mobile text-primary font-bold">28</span>
+                  <span className="font-display-lg-mobile text-primary font-bold">{marketStalls.length > 0 ? marketStalls.length : 28}</span>
                   <span className="font-label-sm text-on-surface-variant text-xs">Family Farms</span>
                 </div>
                 <div className="p-space-sm rounded-lg bg-surface-container-low flex flex-col">
@@ -365,7 +464,7 @@ export default function MarketDetails({ marketId = 1, onNavigate, onReserveProdu
       </section>
 
       {/* Interactive Stall Map & Pavilion Directory */}
-      <section className="w-full py-space-lg px-gutter bg-surface">
+      <section className="w-full py-space-lg px-3 sm:px-6 lg:px-gutter bg-surface">
         <div className="max-w-7xl mx-auto flex flex-col gap-space-md">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-space-sm">
             <div>
@@ -445,6 +544,42 @@ export default function MarketDetails({ marketId = 1, onNavigate, onReserveProdu
                     </span>
                   </div>
                 </div>
+
+                {/* Live Stalls Banner if farmers registered in this market */}
+                {marketStalls.length > 0 && (
+                  <div className="p-3.5 rounded-xl bg-gradient-to-r from-primary/10 via-secondary/10 to-transparent border border-primary/20 flex flex-col gap-2">
+                    <div className="flex items-center justify-between">
+                      <span className="font-label-sm text-primary font-bold uppercase tracking-wider flex items-center gap-1.5 text-xs">
+                        <span className="w-2 h-2 rounded-full bg-primary animate-ping" />
+                        Live Stalls Registered in {liveMarket?.market_name || 'This Market'} ({marketStalls.length})
+                      </span>
+                      <span className="text-[10px] bg-primary text-white font-bold px-2 py-0.5 rounded-full">
+                        Verified Booths
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                      {marketStalls.map((st) => (
+                        <div key={st.id} className="p-3 rounded-lg bg-surface-container-lowest border border-outline-variant/30 flex items-center justify-between gap-2 shadow-sm">
+                          <div>
+                            <span className="px-1.5 py-0.5 rounded bg-primary/10 text-primary font-bold text-[10px]">
+                              {st.stallNumber || 'Stall Booth'}
+                            </span>
+                            <p className="font-bold text-on-surface text-xs mt-1">{st.name}</p>
+                            <p className="text-[10px] text-on-surface-variant">{st.farmers}</p>
+                            <p className="text-[10px] text-primary font-medium mt-0.5">Pickup: {st.pickupWindow}</p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => onNavigate('farmer-profile', st.farmerId)}
+                            className="px-2.5 py-1 rounded-lg bg-primary hover:bg-[#0d3b1c] text-white font-bold text-[10px] cursor-pointer shrink-0"
+                          >
+                            Visit Stall
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* Aisles Container (A, B, C, D) */}
                 <div className="grid grid-cols-4 gap-space-md text-center">
@@ -579,14 +714,20 @@ export default function MarketDetails({ marketId = 1, onNavigate, onReserveProdu
               </div>
             </div>
 
-            {/* Map Location Embed Placeholder Container */}
-            <div className="w-full h-56 rounded-xl overflow-hidden relative shadow-inner border border-outline-variant/30">
-              <div className="absolute inset-0 bg-surface-container-high flex flex-col items-center justify-center p-space-md text-center">
-                <span className="material-symbols-outlined text-primary text-[42px] mb-space-xs">place</span>
-                <p className="font-headline-sm text-on-surface">Central Plaza Pioneer Pavilion Map View</p>
-                <p className="font-body-sm text-on-surface-variant max-w-md text-xs mt-1">
-                  GPS: 120 Market Square (Corner of 2nd Ave &amp; Pioneer Blvd). Loading bays open on South Street for bulk crate pick-up.
-                </p>
+            {/* Interactive OpenStreetMap Market Map with Live Stalls */}
+            <div className="w-full h-72 sm:h-80 rounded-2xl overflow-hidden relative shadow-md border border-outline-variant/30 bg-surface-container-high">
+              <div ref={mapContainerRef} className="w-full h-full" />
+              
+              {/* Floating Legend / Stats */}
+              <div className="absolute top-3 left-3 bg-surface-container-lowest/90 backdrop-blur-md px-3 py-1.5 rounded-xl border border-outline-variant/30 shadow-md text-xs flex items-center gap-3 z-10 pointer-events-none">
+                <div className="flex items-center gap-1.5 font-bold text-primary">
+                  <span className="w-2.5 h-2.5 rounded-full bg-primary inline-block" />
+                  <span>{liveMarket?.market_name || 'Market Plaza'}</span>
+                </div>
+                <div className="flex items-center gap-1.5 font-bold text-[#914d00]">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#914d00] inline-block" />
+                  <span>{marketStalls.length} Registered Stalls</span>
+                </div>
               </div>
             </div>
           </div>
@@ -642,7 +783,7 @@ export default function MarketDetails({ marketId = 1, onNavigate, onReserveProdu
       </section>
 
       {/* Participating Farmers & Producers Section */}
-      <section className="w-full py-space-xl px-gutter bg-surface">
+      <section className="w-full py-space-xl px-3 sm:px-6 lg:px-gutter bg-surface">
         <div className="max-w-7xl mx-auto flex flex-col gap-space-lg">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-space-md">
             <div>
@@ -650,19 +791,23 @@ export default function MarketDetails({ marketId = 1, onNavigate, onReserveProdu
                 <span className="material-symbols-outlined text-[16px]">agriculture</span>
                 <span>Local Soil Stewards</span>
               </div>
-              <h2 className="font-headline-lg text-on-surface">Farmers &amp; Producers at Downtown Historic</h2>
-              <p className="font-body-md text-on-surface-variant">28 active regional family growers harvesting specifically for this Saturday.</p>
+              <h2 className="font-headline-lg text-on-surface font-extrabold">Farmers &amp; Producers at {liveMarket?.market_name || 'Downtown Historic'}</h2>
+              <p className="font-body-md text-on-surface-variant">
+                {marketStalls.length > 0
+                  ? `${marketStalls.length} verified farm stand${marketStalls.length === 1 ? '' : 's'} actively harvesting and packing fresh items for this market plaza.`
+                  : '28 active regional family growers harvesting specifically for this weekend.'}
+              </p>
             </div>
 
             {/* Filter Pills */}
             <div className="flex flex-wrap items-center gap-space-xs">
               {[
-                { id: 'all', label: 'All Producers (28)' },
-                { id: 'veg', label: 'Vegetables (9)' },
-                { id: 'fruit', label: 'Fruit Orchards (6)' },
-                { id: 'bakery', label: 'Artisan Bakery (4)' },
-                { id: 'dairy', label: 'Dairy & Eggs (5)' },
-                { id: 'honey', label: 'Honey (4)' }
+                { id: 'all', label: `All Stalls (${filteredProducers.length})` },
+                { id: 'veg', label: 'Vegetables & Produce' },
+                { id: 'fruit', label: 'Fruit Orchards' },
+                { id: 'bakery', label: 'Artisan Bakery' },
+                { id: 'dairy', label: 'Dairy & Eggs' },
+                { id: 'honey', label: 'Honey & Preserves' }
               ].map((pill) => {
                 const isActive = producerFilter === pill.id;
                 return (
@@ -684,61 +829,92 @@ export default function MarketDetails({ marketId = 1, onNavigate, onReserveProdu
           </div>
 
           {/* Producer Cards Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-space-md">
-            {filteredProducers.map((producer) => (
-              <div
-                key={producer.id}
-                className="bg-surface-container-lowest rounded-xl p-space-md shadow-sm hover:shadow-md transition-all flex flex-col justify-between gap-space-md border border-outline-variant/30"
-              >
-                <div className="flex flex-col gap-space-sm">
-                  <div className="flex items-start justify-between gap-space-xs">
-                    <div>
-                      <span className="px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-label-sm text-xs">
-                        {producer.stall}
-                      </span>
-                      <h3 className="font-headline-md text-on-surface mt-1">{producer.name}</h3>
-                      <p className="font-label-sm text-primary text-xs">{producer.farmers}</p>
+          {filteredProducers.length === 0 ? (
+            <div className="bg-surface-container-lowest rounded-2xl p-12 text-center border border-outline-variant/30 flex flex-col items-center justify-center gap-3">
+              <span className="material-symbols-outlined text-primary text-[44px]">storefront</span>
+              <h3 className="font-headline-md font-bold text-on-surface">No farm stands found for this filter</h3>
+              <p className="font-body-md text-on-surface-variant text-xs sm:text-sm max-w-md">
+                No producers matched your current category selection. Switch to "All Stalls" to view all active growers.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-space-md">
+              {filteredProducers.map((producer) => (
+                <div
+                  key={producer.id}
+                  className={`bg-surface-container-lowest rounded-xl p-space-md shadow-sm hover:shadow-md transition-all flex flex-col justify-between gap-space-md border ${
+                    producer.isLiveStall ? 'border-primary/40 ring-1 ring-primary/20 bg-emerald-50/10' : 'border-outline-variant/30'
+                  }`}
+                >
+                  <div className="flex flex-col gap-space-sm">
+                    <div className="flex items-start justify-between gap-space-xs">
+                      <div>
+                        {producer.isLiveStall ? (
+                          <span className="px-2.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/25 font-label-sm text-[11px] font-black inline-flex items-center gap-1 mb-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                            {producer.stallNumber || 'Registered Stall'}
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-label-sm text-xs">
+                            {producer.stall}
+                          </span>
+                        )}
+                        <h3 className="font-headline-md text-on-surface mt-1 font-bold">{producer.name}</h3>
+                        <p className="font-label-sm text-primary text-xs font-semibold">{producer.farmers}</p>
+                      </div>
+                      <div className="flex items-center gap-0.5 px-2 py-1 rounded bg-surface-container-low text-on-surface font-label-sm text-xs">
+                        <span className="material-symbols-outlined text-secondary text-[16px] fill">star</span>
+                        <span>{producer.rating}</span>
+                        <span className="text-on-surface-variant font-normal">({producer.reviews})</span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-0.5 px-2 py-1 rounded bg-surface-container-low text-on-surface font-label-sm text-xs">
-                      <span className="material-symbols-outlined text-secondary text-[16px] fill">star</span>
-                      <span>{producer.rating}</span>
-                      <span className="text-on-surface-variant font-normal">({producer.reviews})</span>
-                    </div>
+                    <p className="font-body-sm text-on-surface-variant text-xs leading-relaxed">
+                      {producer.desc}
+                    </p>
                   </div>
-                  <p className="font-body-sm text-on-surface-variant text-xs leading-relaxed">
-                    {producer.desc}
-                  </p>
-                </div>
 
-                <div className="flex items-center justify-between pt-space-xs gap-space-xs border-t border-outline-variant/20">
-                  <button
-                    onClick={() => onNavigate(producer.farmKey === 'green-pastures' ? 'farmer-profile' : 'products')}
-                    className="font-label-sm text-primary hover:underline flex items-center gap-1 text-xs cursor-pointer"
-                  >
-                    <span>View Stall Stock</span>
-                    <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
-                  </button>
-                  {producer.status === 'sold-out' ? (
-                    <span className="px-space-sm py-1 rounded-full bg-surface-container text-on-surface-variant font-label-sm text-xs">
-                      Sold Out This Sat
-                    </span>
-                  ) : (
+                  <div className="flex items-center justify-between pt-space-xs gap-space-xs border-t border-outline-variant/20">
                     <button
-                      onClick={() => onNavigate('products')}
-                      className="px-space-md py-1.5 rounded-full bg-tertiary-container text-on-tertiary font-label-sm hover:bg-tertiary transition-colors text-xs cursor-pointer shadow-sm"
+                      onClick={() => {
+                        if (producer.farmerId) {
+                          onNavigate('farmer-profile', producer.farmerId);
+                        } else {
+                          onNavigate(producer.farmKey === 'green-pastures' ? 'farmer-profile' : 'products');
+                        }
+                      }}
+                      className="font-label-sm text-primary hover:underline flex items-center gap-1 text-xs cursor-pointer font-bold"
                     >
-                      {producer.btnText}
+                      <span>{producer.isLiveStall ? 'Visit Live Stall' : 'View Stall Stock'}</span>
+                      <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
                     </button>
-                  )}
+                    {producer.status === 'sold-out' ? (
+                      <span className="px-space-sm py-1 rounded-full bg-surface-container text-on-surface-variant font-label-sm text-xs">
+                        Sold Out This Sat
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          if (producer.farmerId) {
+                            onNavigate('farmer-profile', producer.farmerId);
+                          } else {
+                            onNavigate('products');
+                          }
+                        }}
+                        className="px-space-md py-1.5 rounded-full bg-tertiary-container text-on-tertiary font-label-sm hover:bg-tertiary transition-colors text-xs cursor-pointer shadow-sm font-bold"
+                      >
+                        {producer.btnText}
+                      </button>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
       {/* Featured Produce Available for Saturday Reservation Section */}
-      <section className="w-full py-space-xl px-gutter bg-surface-container-low border-t border-outline-variant/30">
+      <section className="w-full py-space-xl px-3 sm:px-6 lg:px-gutter bg-surface-container-low border-t border-outline-variant/30">
         <div className="max-w-7xl mx-auto flex flex-col gap-space-lg">
           <div>
             <div className="inline-flex items-center gap-1 font-label-sm text-primary uppercase tracking-wider mb-1 font-bold">
@@ -751,83 +927,93 @@ export default function MarketDetails({ marketId = 1, onNavigate, onReserveProdu
             </p>
           </div>
 
-          {/* 6 Produce Cards Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-space-md">
-            {harvestItems.map((item) => {
-              const isSoldOut = item.status === 'SOLD_OUT';
-              return (
-                <div
-                  key={item.id}
-                  className={`bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col border border-outline-variant/30 ${
-                    isSoldOut ? 'opacity-90' : ''
-                  }`}
-                >
-                  <div className="h-48 w-full relative overflow-hidden bg-surface-container">
-                    <img
-                      src={item.image}
-                      alt={item.alt}
-                      className={`w-full h-full object-cover hover:scale-105 transition-transform duration-300 ${
-                        isSoldOut ? 'grayscale-[30%]' : ''
-                      }`}
-                    />
-                    <div className="absolute top-space-xs left-space-xs">
-                      <span
-                        className={`px-2.5 py-1 rounded-full font-label-sm shadow-sm text-xs ${
-                          isSoldOut
-                            ? 'bg-surface-container-highest text-on-surface-variant font-bold'
-                            : item.status === 'LOW_STOCK'
-                            ? 'bg-surface-container-high text-tertiary font-bold'
-                            : 'bg-secondary-container text-on-secondary-container'
+          {/* Produce Cards Grid */}
+          {harvestItems.length === 0 ? (
+            <div className="bg-surface-container-lowest rounded-2xl p-12 text-center border border-outline-variant/30 flex flex-col items-center justify-center gap-3">
+              <span className="material-symbols-outlined text-primary text-[44px]">spa</span>
+              <h3 className="font-headline-md font-bold text-on-surface">No harvest crates listed yet for this market</h3>
+              <p className="font-body-md text-on-surface-variant text-xs sm:text-sm max-w-md">
+                Farmers bring fresh inventory directly from the fields. Check back Friday dawn when growers post their weekend availability.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-space-md">
+              {harvestItems.map((item) => {
+                const isSoldOut = item.status === 'SOLD_OUT';
+                return (
+                  <div
+                    key={item.id}
+                    className={`bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col border border-outline-variant/30 ${
+                      isSoldOut ? 'opacity-90' : ''
+                    }`}
+                  >
+                    <div className="h-48 w-full relative overflow-hidden bg-surface-container">
+                      <img
+                        src={item.image}
+                        alt={item.alt}
+                        className={`w-full h-full object-cover hover:scale-105 transition-transform duration-300 ${
+                          isSoldOut ? 'grayscale-[30%]' : ''
                         }`}
-                      >
-                        {item.badge}
-                      </span>
-                    </div>
-                    <div className="absolute bottom-space-xs right-space-xs">
-                      <span className="px-2 py-0.5 rounded-full bg-surface-container-lowest/90 backdrop-blur font-label-sm text-primary shadow-sm text-xs">
-                        {item.stall}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="p-space-md flex flex-col flex-grow justify-between gap-space-md">
-                    <div>
-                      <div className="flex items-baseline justify-between">
-                        <h3 className="font-headline-sm text-on-surface text-base">{item.name}</h3>
-                        <span className="font-headline-sm text-primary font-bold">
-                          ${item.price.toFixed(2)}
-                          <span className="text-xs font-normal text-on-surface-variant">/{item.unit}</span>
+                      />
+                      <div className="absolute top-space-xs left-space-xs">
+                        <span
+                          className={`px-2.5 py-1 rounded-full font-label-sm shadow-sm text-xs ${
+                            isSoldOut
+                              ? 'bg-surface-container-highest text-on-surface-variant font-bold'
+                              : item.status === 'LOW_STOCK'
+                              ? 'bg-surface-container-high text-tertiary font-bold'
+                              : 'bg-secondary-container text-on-secondary-container'
+                          }`}
+                        >
+                          {item.badge}
                         </span>
                       </div>
-                      <p className="font-body-sm text-on-surface-variant mt-1 text-xs leading-relaxed">
-                        {item.desc}
-                      </p>
+                      <div className="absolute bottom-space-xs right-space-xs">
+                        <span className="px-2 py-0.5 rounded-full bg-surface-container-lowest/90 backdrop-blur font-label-sm text-primary shadow-sm text-xs">
+                          {item.stall}
+                        </span>
+                      </div>
                     </div>
 
-                    {isSoldOut ? (
-                      <button
-                        type="button"
-                        disabled
-                        className="w-full inline-flex items-center justify-center gap-space-xs px-space-md py-space-sm rounded-full bg-surface-container text-on-surface-variant font-label-md cursor-not-allowed text-xs"
-                      >
-                        <span className="material-symbols-outlined text-[18px]">event_busy</span>
-                        Fully Reserved for Saturday
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => onReserveProduct(item)}
-                        className="w-full inline-flex items-center justify-center gap-space-xs px-space-md py-space-sm rounded-full bg-tertiary-container text-on-tertiary font-label-md hover:bg-tertiary transition-colors active:scale-95 shadow-sm cursor-pointer text-xs"
-                      >
-                        <span className="material-symbols-outlined text-[18px]">bookmark_add</span>
-                        Reserve for Saturday Pickup
-                      </button>
-                    )}
+                    <div className="p-space-md flex flex-col flex-grow justify-between gap-space-md">
+                      <div>
+                        <div className="flex items-baseline justify-between">
+                          <h3 className="font-headline-sm text-on-surface text-base">{item.name}</h3>
+                          <span className="font-headline-sm text-primary font-bold">
+                            ${item.price.toFixed(2)}
+                            <span className="text-xs font-normal text-on-surface-variant">/{item.unit}</span>
+                          </span>
+                        </div>
+                        <p className="font-body-sm text-on-surface-variant mt-1 text-xs leading-relaxed">
+                          {item.desc}
+                        </p>
+                      </div>
+
+                      {isSoldOut ? (
+                        <button
+                          type="button"
+                          disabled
+                          className="w-full inline-flex items-center justify-center gap-space-xs px-space-md py-space-sm rounded-full bg-surface-container text-on-surface-variant font-label-md cursor-not-allowed text-xs"
+                        >
+                          <span className="material-symbols-outlined text-[18px]">event_busy</span>
+                          Fully Reserved for Saturday
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => onReserveProduct(item)}
+                          className="w-full inline-flex items-center justify-center gap-space-xs px-space-md py-space-sm rounded-full bg-tertiary-container text-on-tertiary font-label-md hover:bg-tertiary transition-colors active:scale-95 shadow-sm cursor-pointer text-xs"
+                        >
+                          <span className="material-symbols-outlined text-[18px]">bookmark_add</span>
+                          Reserve for Saturday Pickup
+                        </button>
+                      )}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
 
           {/* Bottom Reservation Note */}
           <div className="p-space-md rounded-xl bg-surface-container flex flex-col sm:flex-row items-center justify-between gap-space-sm border border-outline-variant/30">
@@ -852,7 +1038,7 @@ export default function MarketDetails({ marketId = 1, onNavigate, onReserveProdu
       </section>
 
       {/* Community Notice & Market Organizer Box */}
-      <section className="w-full py-space-xl px-gutter bg-surface">
+      <section className="w-full py-space-xl px-3 sm:px-6 lg:px-gutter bg-surface">
         <div className="max-w-7xl mx-auto">
           <div className="bg-primary text-on-primary rounded-xl p-space-lg shadow-md relative overflow-hidden">
             {/* Decorative subtle leaf background SVG icon */}

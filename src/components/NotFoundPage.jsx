@@ -28,7 +28,7 @@ export default function NotFoundPage({ onNavigate, onSearch, onOpenFarmerPortal 
         <div className="pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 w-[720px] h-[360px] bg-secondary-container/20 rounded-full blur-3xl"></div>
         <div className="pointer-events-none absolute top-48 right-12 w-64 h-64 bg-tertiary-fixed/30 rounded-full blur-2xl"></div>
 
-        <div className="max-w-5xl mx-auto px-gutter relative flex flex-col items-center text-center">
+        <div className="max-w-5xl mx-auto px-3 sm:px-6 lg:px-gutter relative flex flex-col items-center text-center">
           {/* Badge */}
           <div className="inline-flex items-center gap-space-xs px-space-md py-space-xs bg-surface-container-low text-primary rounded-full shadow-sm mb-space-lg border border-outline-variant/30">
             <span className="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
@@ -300,7 +300,7 @@ export default function NotFoundPage({ onNavigate, onSearch, onOpenFarmerPortal 
 
       {/* Harvest Wayfinding Section */}
       <section className="w-full bg-surface-container-low py-space-xl border-t border-outline-variant/30">
-        <div className="max-w-6xl mx-auto px-gutter">
+        <div className="max-w-6xl mx-auto px-3 sm:px-6 lg:px-gutter">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-space-lg">
             <div>
               <span className="font-label-sm uppercase tracking-wider text-primary text-xs font-bold">
@@ -500,7 +500,7 @@ export default function NotFoundPage({ onNavigate, onSearch, onOpenFarmerPortal 
 
       {/* Regional Grower CTA Banner */}
       <section className="w-full py-space-xl">
-        <div className="max-w-4xl mx-auto px-gutter text-center">
+        <div className="max-w-4xl mx-auto px-3 sm:px-6 lg:px-gutter text-center">
           <div className="p-space-lg sm:p-space-xl rounded-3xl bg-secondary-container/30 flex flex-col sm:flex-row items-center justify-between gap-space-lg text-left border border-secondary-fixed/40">
             <div className="flex items-center gap-space-md">
               <div className="w-14 h-14 rounded-2xl bg-primary flex items-center justify-center text-on-primary shrink-0 shadow-md">

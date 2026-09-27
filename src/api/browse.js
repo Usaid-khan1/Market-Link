@@ -17,6 +17,10 @@ export const browseApi = {
     return apiClient.get(`/browse/products/${id}`);
   },
 
+  getFarmers(params = {}) {
+    return apiClient.get('/browse/farmers', params);
+  },
+
   getFarmer(id) {
     return apiClient.get(`/browse/farmers/${id}`);
   },

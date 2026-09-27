@@ -22,7 +22,7 @@ export default function FeaturedMarkets({ markets, onSelectMarket, activeMarketF
     >
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-2/3 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
 
-      <div className="max-w-7xl mx-auto px-gutter">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-gutter">
         {/* Header */}
         <div className={`flex flex-col sm:flex-row sm:items-end justify-between mb-12 gap-4 transition-all duration-700 ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}>
           <div>
@@ -40,13 +40,24 @@ export default function FeaturedMarkets({ markets, onSelectMarket, activeMarketF
             onClick={() => onSelectMarket('all')}
             className="group inline-flex items-center gap-2 font-bold text-sm text-primary hover:text-primary-container transition-all duration-200 cursor-pointer px-4 py-2 rounded-xl hover:bg-primary/8"
           >
-            <span>{activeMarketFilter && activeMarketFilter !== 'all' ? 'Show All Markets' : 'View All 14 Nearby Markets'}</span>
+            <span>{activeMarketFilter && activeMarketFilter !== 'all' ? 'Show All Markets' : `View All Markets (${markets.length})`}</span>
             <span className="material-symbols-outlined text-[18px] group-hover:translate-x-1 transition-transform duration-200">chevron_right</span>
           </button>
         </div>
 
-        {/* Market Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* Market Cards Grid or Empty State */}
+        {markets.length === 0 ? (
+          <div className="p-12 text-center rounded-3xl border border-dashed border-outline-variant/50 bg-white flex flex-col items-center justify-center">
+            <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center text-primary mb-4">
+              <span className="material-symbols-outlined text-3xl">storefront</span>
+            </div>
+            <h3 className="text-base font-bold text-on-surface mb-1">No Markets Found</h3>
+            <p className="text-xs text-on-surface-variant max-w-md">
+              There are currently no active markets matching your criteria.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {markets.map((market, i) => {
             const isSelected = activeMarketFilter === market.key;
             return (
@@ -126,6 +137,7 @@ export default function FeaturedMarkets({ markets, onSelectMarket, activeMarketF
             );
           })}
         </div>
+        )}
       </div>
     </section>
   );

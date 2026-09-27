@@ -10,13 +10,15 @@ import customerApi from '../api/customer';
 import browseApi from '../api/browse';
 import { useAuth } from '../context/AuthContext';
 import { DashboardSidebar, DashboardHeader, DashboardToast, StatCard, DashboardTickerBanner } from './DashboardShell';
+import PageLoader from './PageLoader';
 
 export default function CustomerDashboard({ onNavigate, initialTab = 'dashboard' }) {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const [activeTab, setActiveTab] = useState(initialTab);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   // Stalls & Booking state for the interactive map
   const [stalls, setStalls] = useState([]);
@@ -108,22 +110,94 @@ export default function CustomerDashboard({ onNavigate, initialTab = 'dashboard'
   };
 
   // Load stalls & summary from backend API
-  useEffect(() => {
+  const fetchStalls = () => {
     browseApi.getStalls()
       .then((res) => {
-        if (res?.data && Array.isArray(res.data)) {
-          setStalls(res.data);
-        } else {
-          setStalls([]);
+        let loadedStalls = (res?.data && Array.isArray(res.data)) ? res.data : [];
+        
+        // Merge with locally updated farmer stall coordinates if present
+        try {
+          const localStallRaw = localStorage.getItem('marketlink_farmer_stall');
+          if (localStallRaw) {
+            const localStall = JSON.parse(localStallRaw);
+            const idx = loadedStalls.findIndex(
+              (s) => s.stall_name === localStall.stall_name || s.farmer_name === localStall.contact_person
+            );
+            if (idx >= 0) {
+              loadedStalls[idx] = {
+                ...loadedStalls[idx],
+                latitude: Number(localStall.latitude),
+                longitude: Number(localStall.longitude),
+                address: localStall.address || loadedStalls[idx].address,
+                stall_name: localStall.stall_name || loadedStalls[idx].stall_name,
+              };
+            } else if (localStall.latitude && localStall.longitude) {
+              loadedStalls.push({
+                id: 99,
+                farmer_id: 99,
+                farmer_name: localStall.contact_person || 'Farm Producer',
+                stall_name: localStall.stall_name || 'Harvest Stand',
+                contact_person: localStall.contact_person || 'Farmer',
+                address: localStall.address || 'Market Plaza',
+                latitude: Number(localStall.latitude),
+                longitude: Number(localStall.longitude),
+                operating_days: localStall.operating_days || ['Saturday', 'Sunday'],
+                pickup_time_start: localStall.pickup_time_start || '08:00 AM',
+                pickup_time_end: localStall.pickup_time_end || '01:30 PM',
+                rating: 5.0,
+                reviews_count: 1,
+                total_stock: 35,
+                products: []
+              });
+            }
+          }
+        } catch (e) {
+          console.warn('Could not merge local stall:', e);
         }
+
+        setStalls(loadedStalls);
       })
       .catch((err) => {
         console.warn('Could not load stalls directory:', err);
+        try {
+          const localStallRaw = localStorage.getItem('marketlink_farmer_stall');
+          if (localStallRaw) {
+            const localStall = JSON.parse(localStallRaw);
+            setStalls([{
+              id: 99,
+              farmer_id: 99,
+              farmer_name: localStall.contact_person || 'Farm Producer',
+              stall_name: localStall.stall_name || 'Harvest Stand',
+              contact_person: localStall.contact_person || 'Farmer',
+              address: localStall.address || 'Market Plaza',
+              latitude: Number(localStall.latitude),
+              longitude: Number(localStall.longitude),
+              operating_days: localStall.operating_days || ['Saturday', 'Sunday'],
+              pickup_time_start: localStall.pickup_time_start || '08:00 AM',
+              pickup_time_end: localStall.pickup_time_end || '01:30 PM',
+              rating: 5.0,
+              reviews_count: 1,
+              total_stock: 35,
+              products: []
+            }]);
+            return;
+          }
+        } catch {
+          // Ignore
+        }
         setStalls([]);
       });
+  };
 
-    fetchDashboardData();
-    fetchCustomerNotifications();
+  useEffect(() => {
+    setLoading(true);
+    Promise.allSettled([
+      fetchStalls(),
+      fetchDashboardData(),
+      fetchCustomerNotifications()
+    ]).finally(() => {
+      setLoading(false);
+    });
 
     const handleOrderUpdated = (e) => {
       const detail = e?.detail;
@@ -134,9 +208,15 @@ export default function CustomerDashboard({ onNavigate, initialTab = 'dashboard'
       fetchDashboardData();
     };
 
+    const handleStallUpdated = (e) => {
+      fetchStalls();
+    };
+
     window.addEventListener('marketlink:order-updated', handleOrderUpdated);
+    window.addEventListener('marketlink:stall-updated', handleStallUpdated);
     return () => {
       window.removeEventListener('marketlink:order-updated', handleOrderUpdated);
+      window.removeEventListener('marketlink:stall-updated', handleStallUpdated);
     };
   }, []);
 
@@ -208,15 +288,15 @@ export default function CustomerDashboard({ onNavigate, initialTab = 'dashboard'
     const prod = (stall.products && stall.products.length > 0)
       ? stall.products[0]
       : {
-          id: stall.id || 1,
-          name: `${stall.stall_name} Fresh Harvest Bundle`,
-          price: 15.00,
-          unit: 'crate',
-          farmer_id: stall.farmer_id || 2,
-          market_id: stall.market_id || 1,
-          farmer_name: stall.farmer_name,
-          stall_name: stall.stall_name,
-        };
+        id: stall.id || 1,
+        name: `${stall.stall_name} Fresh Harvest Bundle`,
+        price: 15.00,
+        unit: 'crate',
+        farmer_id: stall.farmer_id || 2,
+        market_id: stall.market_id || 1,
+        farmer_name: stall.farmer_name,
+        stall_name: stall.stall_name,
+      };
     setBookingModalProduct(prod);
   };
 
@@ -286,7 +366,7 @@ export default function CustomerDashboard({ onNavigate, initialTab = 'dashboard'
         }}
         footerActions={[
           { icon: 'storefront', label: 'Browse Local Markets', onClick: () => onNavigate && onNavigate('markets') },
-          { icon: 'logout', label: 'Exit / Logout', onClick: () => onNavigate && onNavigate('home'), danger: true },
+          { icon: 'logout', label: 'Exit / Logout', onClick: async () => { await logout(); if (onNavigate) onNavigate('home'); }, danger: true },
         ]}
       />
 
@@ -300,11 +380,11 @@ export default function CustomerDashboard({ onNavigate, initialTab = 'dashboard'
           breadcrumb={[
             'Shopper Portal',
             activeTab === 'dashboard' ? 'Dashboard Home'
-            : activeTab === 'orders' ? 'My Orders'
-            : activeTab === 'cart' ? 'Cart & Checkout'
-            : activeTab === 'favorites' ? 'Favorites'
-            : activeTab === 'reviews' ? 'My Reviews'
-            : 'Profile & Settings'
+              : activeTab === 'orders' ? 'My Orders'
+                : activeTab === 'cart' ? 'Cart & Checkout'
+                  : activeTab === 'favorites' ? 'Favorites'
+                    : activeTab === 'reviews' ? 'My Reviews'
+                      : 'Profile & Settings'
           ]}
           notifications={customerNotifications}
           onMarkAllRead={handleMarkAllRead}
@@ -315,37 +395,37 @@ export default function CustomerDashboard({ onNavigate, initialTab = 'dashboard'
                 onClick={() => setUserDropdownOpen(!userDropdownOpen)}
                 className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-surface-container transition-colors cursor-pointer"
               >
-                  <div
-                    className="w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs shadow-sm"
-                    style={{ background: 'linear-gradient(135deg, #125224, #3e6a00)', color: 'white' }}
-                  >
-                    {customerProfile.initials}
+                <div
+                  className="w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs shadow-sm"
+                  style={{ background: 'linear-gradient(135deg, #125224, #3e6a00)', color: 'white' }}
+                >
+                  {customerProfile.initials}
+                </div>
+                <div className="hidden sm:flex flex-col text-left">
+                  <span className="font-bold text-on-surface text-xs">{customerProfile.name}</span>
+                  <span className="text-[10px] text-on-surface-variant">Shopper</span>
+                </div>
+                <span className="material-symbols-outlined text-[18px] text-on-surface-variant">expand_more</span>
+              </button>
+              {userDropdownOpen && (
+                <div className="absolute right-0 mt-2 w-52 bg-white rounded-2xl shadow-[0_16px_40px_rgba(18,82,36,0.15)] border border-outline-variant/20 py-2 z-50 animate-bounce-in">
+                  <div className="px-4 py-2.5 border-b border-outline-variant/15">
+                    <p className="text-xs font-bold text-on-surface">{customerProfile.name}</p>
+                    <p className="text-[11px] text-on-surface-variant truncate">{customerProfile.email}</p>
                   </div>
-                  <div className="hidden sm:flex flex-col text-left">
-                    <span className="font-bold text-on-surface text-xs">{customerProfile.name}</span>
-                    <span className="text-[10px] text-on-surface-variant">Shopper</span>
-                  </div>
-                  <span className="material-symbols-outlined text-[18px] text-on-surface-variant">expand_more</span>
-                </button>
-                {userDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-52 bg-white rounded-2xl shadow-[0_16px_40px_rgba(18,82,36,0.15)] border border-outline-variant/20 py-2 z-50 animate-bounce-in">
-                    <div className="px-4 py-2.5 border-b border-outline-variant/15">
-                      <p className="text-xs font-bold text-on-surface">{customerProfile.name}</p>
-                      <p className="text-[11px] text-on-surface-variant truncate">{customerProfile.email}</p>
-                    </div>
-                    <button type="button" onClick={() => { setActiveTab('settings'); setUserDropdownOpen(false); }} className="w-full px-4 py-2 text-left text-xs font-semibold text-on-surface hover:bg-surface-container flex items-center gap-2 cursor-pointer">
-                      <span className="material-symbols-outlined text-[16px] text-primary">person</span><span>Profile & Settings</span>
-                    </button>
-                    <button type="button" onClick={() => { setActiveTab('orders'); setUserDropdownOpen(false); }} className="w-full px-4 py-2 text-left text-xs font-semibold text-on-surface hover:bg-surface-container flex items-center gap-2 cursor-pointer">
-                      <span className="material-symbols-outlined text-[16px] text-primary">receipt_long</span><span>My Orders</span>
-                    </button>
-                    <div className="border-t border-outline-variant/20 my-1" />
-                    <button type="button" onClick={() => { setUserDropdownOpen(false); if (onNavigate) onNavigate('home'); }} className="w-full px-4 py-2 text-left text-xs font-semibold text-error hover:bg-error-container/30 flex items-center gap-2 cursor-pointer">
-                      <span className="material-symbols-outlined text-[16px]">logout</span><span>Logout</span>
-                    </button>
-                  </div>
-                )}
-              </div>
+                  <button type="button" onClick={() => { setActiveTab('settings'); setUserDropdownOpen(false); }} className="w-full px-4 py-2 text-left text-xs font-semibold text-on-surface hover:bg-surface-container flex items-center gap-2 cursor-pointer">
+                    <span className="material-symbols-outlined text-[16px] text-primary">person</span><span>Profile & Settings</span>
+                  </button>
+                  <button type="button" onClick={() => { setActiveTab('orders'); setUserDropdownOpen(false); }} className="w-full px-4 py-2 text-left text-xs font-semibold text-on-surface hover:bg-surface-container flex items-center gap-2 cursor-pointer">
+                    <span className="material-symbols-outlined text-[16px] text-primary">receipt_long</span><span>My Orders</span>
+                  </button>
+                  <div className="border-t border-outline-variant/20 my-1" />
+                  <button type="button" onClick={async () => { await logout(); setUserDropdownOpen(false); if (onNavigate) onNavigate('home'); }} className="w-full px-4 py-2 text-left text-xs font-semibold text-error hover:bg-error-container/30 flex items-center gap-2 cursor-pointer">
+                    <span className="material-symbols-outlined text-[16px]">logout</span><span>Logout</span>
+                  </button>
+                </div>
+              )}
+            </div>
           }
         />
 
@@ -354,8 +434,15 @@ export default function CustomerDashboard({ onNavigate, initialTab = 'dashboard'
         {/* ======================================================== */}
         <main className="w-full pt-16 bg-gradient-to-br from-surface via-surface-container-low/30 to-surface min-h-screen">
           {activeTab === 'dashboard' ? (
+            loading ? (
+              <PageLoader
+                title="Loading Customer Dashboard..."
+                subtitle="Retrieving your orders, farm reservations, and stall notifications..."
+                minHeight="min-h-[70vh]"
+              />
+            ) : (
             /* 1. DASHBOARD HOME VIEW */
-            <div className="px-gutter py-space-lg max-w-7xl mx-auto w-full flex flex-col gap-space-lg animate-fade-in">
+            <div className="px-3 sm:px-6 lg:px-gutter py-4 sm:py-space-lg max-w-7xl mx-auto w-full flex flex-col gap-5 sm:gap-space-lg animate-fade-in">
               {/* Broadcast Alert */}
               <DashboardTickerBanner
                 text="Weekend Harvest Notice: 14 regional farmers markets open Saturday 8 AM • Pre-orders held at stalls until 1:00 PM • SNAP matching tokens active"
@@ -367,7 +454,7 @@ export default function CustomerDashboard({ onNavigate, initialTab = 'dashboard'
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-outline-variant/40 pb-5">
                 <div>
                   <h1 className="font-headline-md text-2xl sm:text-3xl text-on-surface font-bold tracking-tight">
-                    Welcome back, {customerProfile.name.split(' ')[0]} 👋
+                    Welcome back, {customerProfile.name.split(' ')[0]} 
                   </h1>
                   <p className="font-body-md text-xs sm:text-sm text-on-surface-variant mt-1">
                     Today is{' '}
@@ -396,7 +483,7 @@ export default function CustomerDashboard({ onNavigate, initialTab = 'dashboard'
               </div>
 
               {/* Row of 3 Stat Cards with Sparklines */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5">
                 <StatCard
                   icon="receipt_long"
                   label="Active Orders"
@@ -431,13 +518,13 @@ export default function CustomerDashboard({ onNavigate, initialTab = 'dashboard'
 
               {/* Ready for Pickup Digital Pass Card (Shown only if customer has an active ready/placed order) */}
               {dashboardSummary?.ready_order && (
-                <div className="bg-gradient-to-r from-primary-fixed/40 via-surface-container-lowest to-surface-container-lowest border border-primary/20 rounded-3xl p-5 sm:p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-5 relative overflow-hidden">
-                  <div className="flex items-start gap-4">
-                    <div className="w-14 h-14 rounded-2xl bg-primary text-white flex items-center justify-center flex-shrink-0 shadow-md">
-                      <span className="material-symbols-outlined text-[32px]">qr_code_scanner</span>
+                <div className="bg-gradient-to-r from-primary-fixed/40 via-surface-container-lowest to-surface-container-lowest border border-primary/20 rounded-3xl p-4 sm:p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-5 relative overflow-hidden">
+                  <div className="flex items-start gap-3 sm:gap-4">
+                    <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-primary text-white flex items-center justify-center flex-shrink-0 shadow-md">
+                      <span className="material-symbols-outlined text-[26px] sm:text-[32px]">qr_code_scanner</span>
                     </div>
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
                         <span className="px-2 py-0.5 rounded-full bg-primary text-white font-black text-[9px] uppercase tracking-wider">
                           READY FOR PICKUP
                         </span>
@@ -445,20 +532,20 @@ export default function CustomerDashboard({ onNavigate, initialTab = 'dashboard'
                           {dashboardSummary.ready_order.order_number || `#ML-${dashboardSummary.ready_order.id}`}
                         </span>
                       </div>
-                      <h3 className="font-bold text-on-surface text-base sm:text-lg">
+                      <h3 className="font-bold text-on-surface text-sm sm:text-lg truncate">
                         {dashboardSummary.ready_order.farmer?.farmer_profile?.stall_name || dashboardSummary.ready_order.farmer?.name || 'Local Farm'} &bull; {dashboardSummary.ready_order.market?.market_name || 'Market Pavilion'}
                       </h3>
                       <p className="text-xs text-on-surface-variant mt-0.5">
                         Pickup: <strong>{dashboardSummary.ready_order.pickup_date || 'Weekend'} &bull; {dashboardSummary.ready_order.pickup_time || 'Morning'}</strong>
                         {dashboardSummary.ready_order.items && dashboardSummary.ready_order.items.length > 0 && (
-                          <span> &bull; {dashboardSummary.ready_order.items.map((it) => `${it.quantity} ${it.product_name || it.product?.name || 'Item'}`).join(', ')}</span>
+                          <span className="hidden sm:inline"> &bull; {dashboardSummary.ready_order.items.map((it) => `${it.quantity} ${it.product_name || it.product?.name || 'Item'}`).join(', ')}</span>
                         )}
                       </p>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3 self-end md:self-auto">
-                    <div className="hidden sm:flex flex-col items-center bg-white p-2 rounded-xl border border-outline-variant/30 shadow-2xs">
+                  <div className="flex flex-wrap sm:flex-nowrap items-center gap-2.5 sm:gap-3 w-full md:w-auto justify-end">
+                    <div className="hidden lg:flex flex-col items-center bg-white p-2 rounded-xl border border-outline-variant/30 shadow-2xs">
                       <span className="font-mono text-[9px] text-on-surface-variant tracking-widest font-black">||| | || |||| |</span>
                       <span className="text-[8px] text-on-surface-variant/70 font-mono">PASS-{dashboardSummary.ready_order.id}</span>
                     </div>
@@ -472,7 +559,7 @@ export default function CustomerDashboard({ onNavigate, initialTab = 'dashboard'
                           showToast(`🚗 Plotting pickup route to ${match.stall_name}...`);
                         }
                       }}
-                      className="px-3.5 py-2.5 rounded-xl border border-primary/40 bg-white hover:bg-primary/5 text-primary text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
+                      className="flex-1 sm:flex-initial px-3.5 py-2.5 rounded-xl border border-primary/40 bg-white hover:bg-primary/5 text-primary text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
                     >
                       <span className="material-symbols-outlined text-[16px]">navigation</span>
                       <span>Route to Stall</span>
@@ -481,7 +568,7 @@ export default function CustomerDashboard({ onNavigate, initialTab = 'dashboard'
                     <button
                       type="button"
                       onClick={() => setActiveTab('orders')}
-                      className="px-4 py-2.5 rounded-xl bg-primary hover:bg-primary-container text-white text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
+                      className="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl bg-primary hover:bg-primary-container text-white text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
                     >
                       <span className="material-symbols-outlined text-[16px]">receipt_long</span>
                       <span>View Pickup Slip</span>
@@ -550,52 +637,52 @@ export default function CustomerDashboard({ onNavigate, initialTab = 'dashboard'
                         </tr>
                       ) : (
                         activeOrdersMini.map((ord) => (
-                        <tr key={ord.id} className="hover:bg-surface-container-low/40 transition-colors">
-                          <td className="py-3.5 px-4 font-bold text-on-surface whitespace-nowrap">
-                            {ord.id}
-                          </td>
-                          <td className="py-3.5 px-4">
-                            <span className="font-bold text-on-surface block">{ord.farmer}</span>
-                            <span className="text-[11px] text-on-surface-variant">{ord.market}</span>
-                          </td>
-                          <td className="py-3.5 px-4 max-w-xs truncate text-on-surface-variant">
-                            {ord.items}
-                          </td>
-                          <td className="py-3.5 px-4 whitespace-nowrap text-on-surface">
-                            {ord.pickupSlot}
-                          </td>
-                          <td className="py-3.5 px-4 whitespace-nowrap">
-                            {renderStatusBadge(ord.status)}
-                          </td>
-                          <td className="py-3.5 px-4 text-right whitespace-nowrap">
-                            <div className="flex items-center justify-end gap-1.5">
-                              <button
-                                type="button"
-                                title="Trace Pickup Route on Map"
-                                onClick={() => {
-                                  const match = stalls.find(s => s.stall_name.toLowerCase().includes(ord.farmer.toLowerCase().slice(0, 5))) || stalls[0];
-                                  if (match) {
-                                    setActiveBooking({ stallId: match.id, farmerId: match.farmer_id, farmer: match.stall_name, voucherId: ord.id });
-                                    document.getElementById('farmer-stalls-map')?.scrollIntoView({ behavior: 'smooth' });
-                                    showToast(`🚗 Plotting pickup route to ${match.stall_name}...`);
-                                  }
-                                }}
-                                className="px-2.5 py-1.5 rounded-lg border border-primary/30 hover:border-primary text-primary font-bold text-xs bg-primary/5 hover:bg-primary/10 cursor-pointer shadow-2xs flex items-center gap-1"
-                              >
-                                <span className="material-symbols-outlined text-[14px]">directions</span>
-                                <span>Route</span>
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => setActiveTab('orders')}
-                                className="px-3 py-1.5 rounded-lg border border-outline hover:border-primary text-primary font-bold text-xs bg-surface cursor-pointer shadow-2xs"
-                              >
-                                View
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))
+                          <tr key={ord.id} className="hover:bg-surface-container-low/40 transition-colors">
+                            <td className="py-3.5 px-4 font-bold text-on-surface whitespace-nowrap">
+                              {ord.id}
+                            </td>
+                            <td className="py-3.5 px-4">
+                              <span className="font-bold text-on-surface block">{ord.farmer}</span>
+                              <span className="text-[11px] text-on-surface-variant">{ord.market}</span>
+                            </td>
+                            <td className="py-3.5 px-4 max-w-xs truncate text-on-surface-variant">
+                              {ord.items}
+                            </td>
+                            <td className="py-3.5 px-4 whitespace-nowrap text-on-surface">
+                              {ord.pickupSlot}
+                            </td>
+                            <td className="py-3.5 px-4 whitespace-nowrap">
+                              {renderStatusBadge(ord.status)}
+                            </td>
+                            <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                              <div className="flex items-center justify-end gap-1.5">
+                                <button
+                                  type="button"
+                                  title="Trace Pickup Route on Map"
+                                  onClick={() => {
+                                    const match = stalls.find(s => s.stall_name.toLowerCase().includes(ord.farmer.toLowerCase().slice(0, 5))) || stalls[0];
+                                    if (match) {
+                                      setActiveBooking({ stallId: match.id, farmerId: match.farmer_id, farmer: match.stall_name, voucherId: ord.id });
+                                      document.getElementById('farmer-stalls-map')?.scrollIntoView({ behavior: 'smooth' });
+                                      showToast(`🚗 Plotting pickup route to ${match.stall_name}...`);
+                                    }
+                                  }}
+                                  className="px-2.5 py-1.5 rounded-lg border border-primary/30 hover:border-primary text-primary font-bold text-xs bg-primary/5 hover:bg-primary/10 cursor-pointer shadow-2xs flex items-center gap-1"
+                                >
+                                  <span className="material-symbols-outlined text-[14px]">directions</span>
+                                  <span>Route</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setActiveTab('orders')}
+                                  className="px-3 py-1.5 rounded-lg border border-outline hover:border-primary text-primary font-bold text-xs bg-surface cursor-pointer shadow-2xs"
+                                >
+                                  View
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))
                       )}
                     </tbody>
                   </table>
@@ -644,44 +731,44 @@ export default function CustomerDashboard({ onNavigate, initialTab = 'dashboard'
                       </div>
                     ) : (
                       recommendedProducts.map((prod) => (
-                      <div
-                        key={prod.id}
-                        className="p-3.5 rounded-xl border border-outline-variant/40 hover:border-primary/40 bg-surface flex gap-3.5 transition-all group"
-                      >
-                        <img
-                          src={prod.image}
-                          alt={prod.name}
-                          className="w-20 h-20 rounded-xl object-cover border border-outline-variant/30 shrink-0"
-                        />
-                        <div className="flex flex-col justify-between flex-1 min-w-0">
-                          <div>
-                            <span className="text-[10px] text-[#F28C28] font-bold block truncate">
-                              {prod.badge}
-                            </span>
-                            <h3 className="font-headline-sm text-xs sm:text-sm font-bold text-on-surface truncate">
-                              {prod.name}
-                            </h3>
-                            <span className="text-[11px] text-on-surface-variant block truncate">
-                              {prod.farmer}
-                            </span>
-                          </div>
+                        <div
+                          key={prod.id}
+                          className="p-3.5 rounded-xl border border-outline-variant/40 hover:border-primary/40 bg-surface flex gap-3.5 transition-all group"
+                        >
+                          <img
+                            src={prod.image}
+                            alt={prod.name}
+                            className="w-20 h-20 rounded-xl object-cover border border-outline-variant/30 shrink-0"
+                          />
+                          <div className="flex flex-col justify-between flex-1 min-w-0">
+                            <div>
+                              <span className="text-[10px] text-[#F28C28] font-bold block truncate">
+                                {prod.badge}
+                              </span>
+                              <h3 className="font-headline-sm text-xs sm:text-sm font-bold text-on-surface truncate">
+                                {prod.name}
+                              </h3>
+                              <span className="text-[11px] text-on-surface-variant block truncate">
+                                {prod.farmer}
+                              </span>
+                            </div>
 
-                          <div className="flex items-center justify-between pt-1">
-                            <span className="font-headline-sm text-sm font-bold text-primary">
-                              {prod.price} <span className="text-[10px] font-normal text-on-surface-variant">{prod.unit}</span>
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => handleAddToCartQuick(prod)}
-                              className="px-2.5 py-1 rounded-lg bg-[#E6F0E1] text-[#2E6B3A] hover:bg-primary hover:text-white text-[11px] font-bold transition-colors cursor-pointer flex items-center gap-1"
-                            >
-                              <span className="material-symbols-outlined text-[14px]">add</span>
-                              <span>Add</span>
-                            </button>
+                            <div className="flex items-center justify-between pt-1">
+                              <span className="font-headline-sm text-sm font-bold text-primary">
+                                {prod.price} <span className="text-[10px] font-normal text-on-surface-variant">{prod.unit}</span>
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => handleAddToCartQuick(prod)}
+                                className="px-2.5 py-1 rounded-lg bg-[#E6F0E1] text-[#2E6B3A] hover:bg-primary hover:text-white text-[11px] font-bold transition-colors cursor-pointer flex items-center gap-1"
+                              >
+                                <span className="material-symbols-outlined text-[14px]">add</span>
+                                <span>Add</span>
+                              </button>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))
+                      ))
                     )}
                   </div>
                 </div>
@@ -711,47 +798,48 @@ export default function CustomerDashboard({ onNavigate, initialTab = 'dashboard'
                       </div>
                     ) : (
                       favoriteFarmersMini.map((farmer) => (
-                      <div
-                        key={farmer.id}
-                        className="p-3 rounded-xl bg-surface-container-low/60 border border-outline-variant/30 space-y-2 hover:border-outline-variant transition-colors"
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <div>
-                            <h3 className="font-headline-sm text-xs font-bold text-on-surface">
-                              {farmer.name}
-                            </h3>
-                            <p className="text-[11px] text-on-surface-variant">
-                              {farmer.market}
-                            </p>
+                        <div
+                          key={farmer.id}
+                          className="p-3 rounded-xl bg-surface-container-low/60 border border-outline-variant/30 space-y-2 hover:border-outline-variant transition-colors"
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div>
+                              <h3 className="font-headline-sm text-xs font-bold text-on-surface">
+                                {farmer.name}
+                              </h3>
+                              <p className="text-[11px] text-on-surface-variant">
+                                {farmer.market}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-0.5 bg-amber-50 text-amber-700 px-1.5 py-0.5 rounded text-[10px] font-bold shrink-0">
+                              <span className="material-symbols-outlined text-[12px]">star</span>
+                              <span>{farmer.rating}</span>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-0.5 bg-amber-50 text-amber-700 px-1.5 py-0.5 rounded text-[10px] font-bold shrink-0">
-                            <span className="material-symbols-outlined text-[12px]">star</span>
-                            <span>{farmer.rating}</span>
-                          </div>
-                        </div>
 
-                        <div className="flex items-center justify-between text-[11px] pt-1 border-t border-outline-variant/20">
-                          <span className="text-on-surface-variant truncate mr-2">
-                            🌾 {farmer.harvest}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => onNavigate && onNavigate('farmer-profile')}
-                            className="font-bold text-[#2E6B3A] hover:underline shrink-0 cursor-pointer"
-                          >
-                            Visit Stall
-                          </button>
+                          <div className="flex items-center justify-between text-[11px] pt-1 border-t border-outline-variant/20">
+                            <span className="text-on-surface-variant truncate mr-2">
+                              🌾 {farmer.harvest}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => onNavigate && onNavigate('farmer-profile')}
+                              className="font-bold text-[#2E6B3A] hover:underline shrink-0 cursor-pointer"
+                            >
+                              Visit Stall
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                    ))
+                      ))
                     )}
                   </div>
                 </div>
               </div>
             </div>
+            )
           ) : activeTab === 'map' ? (
             /* STALL MAP & ROUTE VIEW */
-            <div className="px-gutter py-space-lg max-w-7xl mx-auto w-full flex flex-col gap-6 animate-fade-in">
+            <div className="px-3 sm:px-6 lg:px-gutter py-4 sm:py-space-lg max-w-7xl mx-auto w-full flex flex-col gap-6 animate-fade-in">
               <div className="border-b border-outline-variant/40 pb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div>
                   <h1 className="font-headline-md text-2xl text-on-surface font-bold tracking-tight">

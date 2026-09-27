@@ -1,7 +1,10 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import adminApi from '../api/admin';
+import MarketLocationPicker from './MarketLocationPicker';
+import PageLoader from './PageLoader';
 
 export default function ManageMarkets({ onNavigate, showToast, autoOpenAddModal = false, onCloseAddModal }) {
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all'); // 'all' | 'active' | 'inactive'
   const [currentPage, setCurrentPage] = useState(1);
@@ -114,6 +117,7 @@ export default function ManageMarkets({ onNavigate, showToast, autoOpenAddModal 
 
   // Load live markets from backend
   useEffect(() => {
+    setLoading(true);
     adminApi.getMarkets()
       .then((res) => {
         if (res?.data && Array.isArray(res.data)) {
@@ -138,7 +142,8 @@ export default function ManageMarkets({ onNavigate, showToast, autoOpenAddModal 
           setMarkets([]);
         }
       })
-      .catch((err) => console.warn('Could not load live markets:', err));
+      .catch((err) => console.warn('Could not load live markets:', err))
+      .finally(() => setLoading(false));
   }, []);
 
   // Handle Save Form
@@ -242,8 +247,18 @@ export default function ManageMarkets({ onNavigate, showToast, autoOpenAddModal 
     setDeleteModalMarket(null);
   };
 
+  if (loading) {
+    return (
+      <PageLoader
+        title="Loading Market Pavilions..."
+        subtitle="Retrieving regional market locations, active schedules, GPS mapping, and stall assignments..."
+        minHeight="min-h-[70vh]"
+      />
+    );
+  }
+
   return (
-    <div className="px-gutter py-space-lg max-w-7xl mx-auto w-full flex flex-col gap-space-lg animate-fade-in">
+    <div className="px-3 sm:px-6 lg:px-gutter py-4 sm:py-space-lg max-w-7xl mx-auto w-full flex flex-col gap-5 sm:gap-space-lg animate-fade-in">
       
       {/* 1. Header Section */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-space-md">
@@ -775,37 +790,28 @@ export default function ManageMarkets({ onNavigate, showToast, autoOpenAddModal 
                   </span>
                 </div>
 
-                {/* Map Placeholder Box */}
-                <div className="relative w-full h-44 rounded-xl bg-surface-container-high border-2 border-dashed border-outline-variant/60 overflow-hidden flex flex-col items-center justify-center p-4 group">
-                  {/* Subtle Grid Simulation */}
-                  <div
-                    className="absolute inset-0 opacity-15 pointer-events-none"
-                    style={{
-                      backgroundImage: 'radial-gradient(circle, #2E6B3A 1px, transparent 1px)',
-                      backgroundSize: '16px 16px'
-                    }}
-                  ></div>
-
-                  {/* Marker Pin */}
-                  <div className="relative z-10 flex flex-col items-center animate-bounce">
-                    <div className="w-10 h-10 rounded-full bg-primary text-on-primary flex items-center justify-center shadow-lg">
-                      <span className="material-symbols-outlined text-[24px]">location_on</span>
-                    </div>
-                    <div className="w-2.5 h-1 rounded-full bg-black/30 mt-1 blur-[1px]"></div>
-                  </div>
-
-                  <span className="relative z-10 mt-2 font-bold text-on-surface text-xs text-center">
-                    Map (Google Maps / OpenStreetMap embed here)
-                  </span>
-                  <span className="relative z-10 text-[11px] text-on-surface-variant text-center">
-                    Drag the pin or calibrate numeric latitude &amp; longitude inputs below
-                  </span>
-                </div>
+                {/* Real Interactive Map Component for Market Geolocation */}
+                <MarketLocationPicker
+                  latitude={formData.lat}
+                  longitude={formData.lng}
+                  marketName={formData.name}
+                  address={formData.address}
+                  onLocationChange={({ lat, lng }) => {
+                    setFormData((prev) => ({ ...prev, lat, lng }));
+                  }}
+                  onAddressChange={(newAddr) => {
+                    setFormData((prev) => ({ ...prev, address: newAddr }));
+                  }}
+                  showToast={showToast}
+                />
 
                 {/* Latitude & Longitude Input Fields */}
                 <div className="grid grid-cols-2 gap-space-md mt-1">
                   <div className="flex flex-col gap-1">
-                    <label className="text-[11px] font-bold text-on-surface-variant">Latitude</label>
+                    <label className="text-[11px] font-bold text-on-surface-variant flex items-center justify-between">
+                      <span>Latitude</span>
+                      <span className="text-[10px] text-primary font-mono font-normal">Synced with Pin</span>
+                    </label>
                     <input
                       type="text"
                       value={formData.lat}
@@ -815,7 +821,10 @@ export default function ManageMarkets({ onNavigate, showToast, autoOpenAddModal 
                     />
                   </div>
                   <div className="flex flex-col gap-1">
-                    <label className="text-[11px] font-bold text-on-surface-variant">Longitude</label>
+                    <label className="text-[11px] font-bold text-on-surface-variant flex items-center justify-between">
+                      <span>Longitude</span>
+                      <span className="text-[10px] text-primary font-mono font-normal">Synced with Pin</span>
+                    </label>
                     <input
                       type="text"
                       value={formData.lng}

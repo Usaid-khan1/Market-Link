@@ -72,7 +72,7 @@ export default function Navbar({ currentView, onNavigate, onOpenAuth, onFocusSea
             <span className="text-[18px] sm:text-[20px] font-black text-[#0b3d20] tracking-tight leading-none">
               MarketLink
             </span>
-            <span className="text-[9.5px] sm:text-[10px] text-[#4a584c] font-semibold tracking-tight mt-0.5 whitespace-nowrap">
+            <span className="hidden min-[400px]:inline text-[9.5px] sm:text-[10px] text-[#4a584c] font-semibold tracking-tight mt-0.5 whitespace-nowrap">
               Farm Fresh Just a Click Away
             </span>
           </div>
@@ -142,19 +142,6 @@ export default function Navbar({ currentView, onNavigate, onOpenAuth, onFocusSea
             </span>
           </button>
 
-          {/* Sign Out Button (when authenticated) */}
-          {isAuthenticated && (
-            <button
-              onClick={async () => {
-                await logout();
-                onNavigate('home');
-              }}
-              title="Sign Out"
-              className="w-9 h-9 rounded-full flex items-center justify-center text-[#556957] hover:text-red-600 hover:bg-red-50 transition-all cursor-pointer"
-            >
-              <span className="material-symbols-outlined text-[18px]">logout</span>
-            </button>
-          )}
 
           {/* Mobile Menu Hamburger */}
           <button

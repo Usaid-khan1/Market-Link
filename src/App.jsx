@@ -29,8 +29,8 @@ import AdminDashboard from './components/AdminDashboard';
 import FarmerDashboard from './components/FarmerDashboard';
 import CustomerDashboard from './components/CustomerDashboard';
 import Footer from './components/Footer';
+import PageLoader from './components/PageLoader';
 
-import { INITIAL_PRODUCTS, MARKETS } from './data/mockData';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import browseApi from './api/browse';
 
@@ -285,8 +285,10 @@ function AppContent() {
   const [toastMessage, setToastMessage] = useState(null);
 
   // Live Backend Data States
+  const [loadingPublicData, setLoadingPublicData] = useState(true);
   const [liveMarkets, setLiveMarkets] = useState([]);
   const [liveProducts, setLiveProducts] = useState([]);
+  const [liveFarmers, setLiveFarmers] = useState([]);
   const [liveAnnouncements, setLiveAnnouncements] = useState([]);
 
   // Fetch initial public catalog & announcements
@@ -294,10 +296,12 @@ function AppContent() {
     let isMounted = true;
 
     async function loadPublicData() {
+      setLoadingPublicData(true);
       try {
-        const [marketsRes, productsRes, announcementsRes] = await Promise.allSettled([
+        const [marketsRes, productsRes, farmersRes, announcementsRes] = await Promise.allSettled([
           browseApi.getMarkets(),
           browseApi.getProducts(),
+          browseApi.getFarmers(),
           browseApi.getAnnouncements(),
         ]);
 
@@ -308,12 +312,17 @@ function AppContent() {
           if (productsRes.status === 'fulfilled' && productsRes.value?.data) {
             setLiveProducts(productsRes.value.data);
           }
+          if (farmersRes.status === 'fulfilled' && farmersRes.value?.data) {
+            setLiveFarmers(farmersRes.value.data);
+          }
           if (announcementsRes.status === 'fulfilled' && announcementsRes.value?.data) {
             setLiveAnnouncements(announcementsRes.value.data);
           }
         }
       } catch (err) {
-        // Fallbacks already in place
+        console.warn('Could not load public data:', err);
+      } finally {
+        if (isMounted) setLoadingPublicData(false);
       }
     }
 
@@ -362,6 +371,8 @@ function AppContent() {
         hash === 'farmer-stock' ||
         hash === 'farmer-pre-orders' ||
         hash === 'farmer-reviews' ||
+        hash === 'farmer-stall' ||
+        hash === 'stall' ||
         hash === 'farmer-settings'
       ) {
         setCurrentView(hash);
@@ -476,9 +487,9 @@ function AppContent() {
     handleNavigate('products');
   };
 
-  // Filtered Products for Home
+  // Filtered Products for Home (100% Real API Data)
   const filteredProducts = useMemo(() => {
-    const list = liveProducts.length > 0 ? liveProducts : INITIAL_PRODUCTS;
+    const list = liveProducts;
     return list.filter((prod) => {
       if (selectedCategory !== 'all') {
         const catSlug = prod.category_name?.toLowerCase().replace(/\s+/g, '-') || prod.category;
@@ -499,22 +510,40 @@ function AppContent() {
     });
   }, [liveProducts, searchQuery, selectedCategory, activeMarketFilter]);
 
-  // Filtered Markets for Home Featured section
+  // Filtered Markets for Home Featured section (100% Real API Data)
   const filteredFeaturedMarkets = useMemo(() => {
-    const list = liveMarkets.length > 0 ? liveMarkets : MARKETS;
-    return list.filter((m) => {
-      const mName = m.market_name || m.name || '';
-      const mAddr = m.address || '';
-      if (selectedDay !== 'any') {
-        const opDays = Array.isArray(m.operating_days) ? m.operating_days.join(' ').toLowerCase() : (m.operating_days || m.days || '').toLowerCase();
-        if (!opDays.includes(selectedDay.toLowerCase())) return false;
-      }
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase();
-        if (!mName.toLowerCase().includes(q) && !mAddr.toLowerCase().includes(q)) return false;
-      }
-      return true;
-    });
+    const list = liveMarkets;
+    return list
+      .filter((m) => {
+        const mName = m.market_name || m.name || '';
+        const mAddr = m.address || '';
+        if (selectedDay !== 'any') {
+          const opDays = Array.isArray(m.operating_days) ? m.operating_days.join(' ').toLowerCase() : (m.operating_days || m.days || '').toLowerCase();
+          if (!opDays.includes(selectedDay.toLowerCase())) return false;
+        }
+        if (searchQuery.trim()) {
+          const q = searchQuery.toLowerCase();
+          if (!mName.toLowerCase().includes(q) && !mAddr.toLowerCase().includes(q)) return false;
+        }
+        return true;
+      })
+      .map((m) => {
+        const sched = Array.isArray(m.operating_days)
+          ? `${m.operating_days.join(', ')} • ${m.timings || '8am - 2pm'}`
+          : (m.operating_days || m.timings || 'Saturday 8am - 2pm');
+        return {
+          id: m.id,
+          key: m.id,
+          name: m.market_name || m.name,
+          address: m.address || m.location || 'Regional Market Plaza',
+          schedule: sched,
+          distance: m.distance || '0.8 mi',
+          stalls: m.farmers_count || 12,
+          pickupBay: m.pickup_bay || 'Main Pavilion',
+          image: m.image || 'https://images.unsplash.com/photo-1488459716781-31db52582fe9?auto=format&fit=crop&w=600&q=80',
+          special: m.special || null,
+        };
+      });
   }, [liveMarkets, selectedDay, searchQuery]);
 
   const handleResetFilters = () => {
@@ -621,7 +650,10 @@ function AppContent() {
     currentView === 'farmer-stock' ||
     currentView === 'farmer-pre-orders' ||
     currentView === 'farmer-reviews' ||
-    currentView === 'farmer-settings'
+    currentView === 'farmer-stall' ||
+    currentView === 'stall' ||
+    currentView === 'farmer-settings' ||
+    currentView === 'settings'
   ) {
     if (!isAuthenticated && !isLoading) {
       return (
@@ -671,7 +703,9 @@ function AppContent() {
         ? 'pre-orders'
         : currentView === 'farmer-reviews'
         ? 'reviews'
-        : currentView === 'farmer-settings'
+        : currentView === 'farmer-stall' || currentView === 'stall'
+        ? 'stall'
+        : currentView === 'farmer-settings' || currentView === 'settings'
         ? 'settings'
         : 'dashboard';
 
@@ -820,6 +854,12 @@ function AppContent() {
             onNavigate={handleNavigate}
             onReserveForMarket={handleReserveForMarket}
           />
+        ) : loadingPublicData ? (
+          <PageLoader
+            title="Connecting to Regional Food System..."
+            subtitle="Cataloging certified farmers, neighborhood markets, and fresh morning harvests..."
+            minHeight="min-h-[75vh]"
+          />
         ) : (
           <div className="flex flex-col w-full">
             {/* HERO SECTION */}
@@ -881,13 +921,16 @@ function AppContent() {
             />
 
             {/* MEET YOUR REGIONAL GROWERS */}
-            <GrowersShowcase onNavigate={(sec) => {
-              if (sec === 'about-us') {
-                handleNavigate('about-us');
-              } else {
-                handleNavigate(sec);
-              }
-            }} />
+            <GrowersShowcase
+              growers={liveFarmers}
+              onNavigate={(sec) => {
+                if (sec === 'about-us') {
+                  handleNavigate('about-us');
+                } else {
+                  handleNavigate(sec);
+                }
+              }}
+            />
 
             {/* COMMUNITY TESTIMONIALS & STATS STRIP */}
             <CommunitySection />

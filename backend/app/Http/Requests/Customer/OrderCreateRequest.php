@@ -11,6 +11,46 @@ class OrderCreateRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        $marketId = $this->input('market_id');
+
+        // If market_id is missing or doesn't exist in markets table
+        if (! $marketId || ! \App\Models\Market::where('id', $marketId)->exists()) {
+            $resolvedMarketId = null;
+
+            // 1. Try from product
+            $items = $this->input('items', []);
+            if (! empty($items[0]['product_id'])) {
+                $product = \App\Models\Product::find($items[0]['product_id']);
+                if ($product && $product->market_id && \App\Models\Market::where('id', $product->market_id)->exists()) {
+                    $resolvedMarketId = (int) $product->market_id;
+                }
+            }
+
+            // 2. Try from farmer profile
+            if (! $resolvedMarketId && $this->input('farmer_id')) {
+                $farmer = \App\Models\User::find($this->input('farmer_id'));
+                $profile = $farmer?->farmerProfile;
+                if ($profile && ! empty($profile->market_ids) && is_array($profile->market_ids) && count($profile->market_ids) > 0) {
+                    $firstChosenMarket = $profile->market_ids[0];
+                    if ($firstChosenMarket && \App\Models\Market::where('id', $firstChosenMarket)->exists()) {
+                        $resolvedMarketId = (int) $firstChosenMarket;
+                    }
+                }
+            }
+
+            // 3. Fallback to first existing market
+            if (! $resolvedMarketId) {
+                $resolvedMarketId = \App\Models\Market::first()?->id;
+            }
+
+            if ($resolvedMarketId) {
+                $this->merge(['market_id' => $resolvedMarketId]);
+            }
+        }
+    }
+
     public function rules(): array
     {
         return [

@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import farmerApi from '../api/farmer';
+import PageLoader from './PageLoader';
 
 export default function FarmerStockTemplate({ showToast }) {
+  const [loading, setLoading] = useState(true);
   const daysOfWeek = [
     { key: 'Monday', label: 'Mon', activeMarket: null },
     { key: 'Tuesday', label: 'Tue', activeMarket: null },
@@ -55,6 +57,7 @@ export default function FarmerStockTemplate({ showToast }) {
 
   // Load live templates and products from backend
   useEffect(() => {
+    setLoading(true);
     // 1. Load farmer products first
     farmerApi.getProducts()
       .then((pRes) => {
@@ -96,7 +99,8 @@ export default function FarmerStockTemplate({ showToast }) {
           }
         });
       })
-      .catch((err) => console.warn('Could not load stock templates or products:', err));
+      .catch((err) => console.warn('Could not load stock templates or products:', err))
+      .finally(() => setLoading(false));
   }, []);
 
   // Save Template
@@ -129,18 +133,28 @@ export default function FarmerStockTemplate({ showToast }) {
     showToast?.(`🎉 Template applied! Live stock levels updated for ${selectedDay}.`);
   };
 
+  if (loading) {
+    return (
+      <PageLoader
+        title="Loading Weekly Inventory Schedule..."
+        subtitle="Retrieving market day allocation templates and recurring harvests..."
+        minHeight="min-h-[70vh]"
+      />
+    );
+  }
+
   return (
-    <div className="px-gutter py-space-lg max-w-7xl mx-auto w-full flex flex-col gap-space-lg animate-fade-in">
+    <div className="px-3 sm:px-6 lg:px-gutter py-4 sm:py-space-lg max-w-7xl mx-auto w-full flex flex-col gap-space-lg animate-fade-in">
       
       {/* 1. Header Section */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-space-md">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-space-md">
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-space-xs text-on-surface-variant font-label-sm text-xs">
             <span>FARMER STALL</span>
             <span className="material-symbols-outlined text-[14px]">chevron_right</span>
             <span className="text-primary font-bold">RECURRING INVENTORY</span>
           </div>
-          <h1 className="font-headline-lg text-headline-lg sm:text-3xl text-on-surface tracking-tight font-bold">
+          <h1 className="font-headline-lg text-2xl sm:text-3xl text-on-surface tracking-tight font-bold">
             Weekly Stock Template
           </h1>
           <p className="font-body-md text-body-md text-on-surface-variant text-xs sm:text-sm">
@@ -148,18 +162,18 @@ export default function FarmerStockTemplate({ showToast }) {
           </p>
         </div>
 
-        <div className="flex items-center gap-space-sm">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-space-sm">
           <button
             type="button"
             onClick={handleSaveTemplate}
-            className="px-space-md py-2.5 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-xs font-bold transition-colors cursor-pointer border border-outline-variant/30"
+            className="px-3 sm:px-space-md py-2.5 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-xs font-bold transition-colors cursor-pointer border border-outline-variant/30"
           >
             Save Template
           </button>
           <button
             type="button"
             onClick={handleApplyTemplate}
-            className="px-space-lg py-2.5 rounded-xl bg-primary text-on-primary font-label-md text-xs font-bold hover:bg-primary-container transition-colors shadow-md cursor-pointer active:scale-95 flex items-center gap-2"
+            className="px-3 sm:px-space-lg py-2.5 rounded-xl bg-primary text-on-primary font-label-md text-xs font-bold hover:bg-primary-container transition-colors shadow-md cursor-pointer active:scale-95 flex items-center gap-2"
           >
             <span className="material-symbols-outlined text-[18px]">publish</span>
             <span>Apply Template to This Week</span>

@@ -18,6 +18,7 @@ class FarmerProfileResource extends JsonResource
             'id' => $this->id,
             'user_id' => $this->user_id,
             'stall_name' => $this->stall_name,
+            'stall_number' => $this->stall_number,
             'contact_person' => $this->contact_person,
             'operating_days' => $this->operating_days,
             'market_ids' => $this->market_ids,

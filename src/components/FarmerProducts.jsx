@@ -1,8 +1,10 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import farmerApi from '../api/farmer';
+import PageLoader from './PageLoader';
 
 export default function FarmerProducts({ showToast }) {
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -167,6 +169,7 @@ export default function FarmerProducts({ showToast }) {
 
   // Load products from backend
   useEffect(() => {
+    setLoading(true);
     farmerApi.getProducts()
       .then((res) => {
         if (res?.data && Array.isArray(res.data)) {
@@ -196,6 +199,9 @@ export default function FarmerProducts({ showToast }) {
       .catch((err) => {
         console.warn('Could not load farmer products:', err);
         setProducts([]);
+      })
+      .finally(() => {
+        setLoading(false);
       });
   }, []);
 
@@ -331,8 +337,18 @@ export default function FarmerProducts({ showToast }) {
     setDeleteModalProduct(null);
   };
 
+  if (loading) {
+    return (
+      <PageLoader
+        title="Loading Product Catalog..."
+        subtitle="Retrieving current field stock, pricing, and availability..."
+        minHeight="min-h-[70vh]"
+      />
+    );
+  }
+
   return (
-    <div className="px-gutter py-space-lg max-w-7xl mx-auto w-full flex flex-col gap-space-lg animate-fade-in">
+    <div className="px-3 sm:px-6 lg:px-gutter py-4 sm:py-space-lg max-w-7xl mx-auto w-full flex flex-col gap-5 sm:gap-space-lg animate-fade-in">
       
       {/* 1. Header Section */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-space-md">

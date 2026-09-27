@@ -103,14 +103,17 @@ export default function CustomerCart({ onNavigate, showToast, onCartUpdated }) {
         pickupDate.setDate(pickupDate.getDate() + 2);
 
         try {
-          const res = await customerApi.createOrder({
+          const payload = {
             farmer_id: numericFarmerId,
-            market_id: group.marketId || 1,
             pickup_date: pickupDate.toISOString().split('T')[0],
             pickup_time: group.selectedSlot || 'Saturday • 9:30 AM – 11:00 AM',
             notes: shopperNotes || 'Customer Cart Pre-Order',
             items: itemsPayload,
-          });
+          };
+          if (group.marketId) {
+            payload.market_id = group.marketId;
+          }
+          const res = await customerApi.createOrder(payload);
           const created = res.data;
           orders.push({
             orderId: created?.id ? `#ML-${created.id}` : `#ML-${8922 + idx}`,

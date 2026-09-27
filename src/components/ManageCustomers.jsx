@@ -1,7 +1,9 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import adminApi from '../api/admin';
+import PageLoader from './PageLoader';
 
 export default function ManageCustomers({ onNavigate, showToast }) {
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all'); // 'all' | 'active' | 'suspended'
   const [tierFilter, setTierFilter] = useState('all'); // 'all' | 'vip' | 'regular' | 'ebt'
@@ -65,6 +67,7 @@ export default function ManageCustomers({ onNavigate, showToast }) {
 
   // Load live customers from backend
   useEffect(() => {
+    setLoading(true);
     adminApi.getCustomers()
       .then((res) => {
         if (res?.data && Array.isArray(res.data)) {
@@ -97,7 +100,8 @@ export default function ManageCustomers({ onNavigate, showToast }) {
           setCustomers([]);
         }
       })
-      .catch((err) => console.warn('Could not load live customers:', err));
+      .catch((err) => console.warn('Could not load live customers:', err))
+      .finally(() => setLoading(false));
   }, []);
 
   // Toggle Suspend / Reactivate
@@ -169,8 +173,18 @@ export default function ManageCustomers({ onNavigate, showToast }) {
     });
   };
 
+  if (loading) {
+    return (
+      <PageLoader
+        title="Loading Customer Accounts..."
+        subtitle="Retrieving verified shoppers, order frequency, loyalty tiers, and account statuses..."
+        minHeight="min-h-[70vh]"
+      />
+    );
+  }
+
   return (
-    <div className="px-gutter py-space-lg max-w-7xl mx-auto w-full flex flex-col gap-space-lg animate-fade-in">
+    <div className="px-3 sm:px-6 lg:px-gutter py-4 sm:py-space-lg max-w-7xl mx-auto w-full flex flex-col gap-5 sm:gap-space-lg animate-fade-in">
       
       {/* 1. Header Section */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-space-md">

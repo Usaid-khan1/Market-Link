@@ -1,8 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { GROWERS } from '../data/mockData';
+import browseApi from '../api/browse';
 
-export default function GrowersShowcase({ onNavigate }) {
+export default function GrowersShowcase({ onNavigate, growers: propGrowers }) {
   const [visible, setVisible] = useState(false);
+  const [liveGrowers, setLiveGrowers] = useState([]);
   const ref = useRef(null);
 
   useEffect(() => {
@@ -14,6 +15,22 @@ export default function GrowersShowcase({ onNavigate }) {
     return () => observer.disconnect();
   }, []);
 
+  useEffect(() => {
+    if (propGrowers && propGrowers.length > 0) {
+      setLiveGrowers(propGrowers);
+    } else {
+      browseApi.getFarmers()
+        .then((res) => {
+          if (res?.data && Array.isArray(res.data)) {
+            setLiveGrowers(res.data);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [propGrowers]);
+
+  const displayList = (propGrowers && propGrowers.length > 0) ? propGrowers : liveGrowers;
+
   return (
     <section ref={ref} id="about-us" className="w-full py-20 bg-surface relative overflow-hidden">
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-2/3 h-px bg-gradient-to-r from-transparent via-outline-variant/50 to-transparent" />
@@ -22,7 +39,7 @@ export default function GrowersShowcase({ onNavigate }) {
         style={{ background: 'radial-gradient(circle, rgba(185,244,116,0.1) 0%, transparent 70%)' }}
       />
 
-      <div className="max-w-7xl mx-auto px-gutter">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-gutter">
         {/* Header */}
         <div className={`flex flex-col sm:flex-row sm:items-end justify-between mb-12 gap-4 transition-all duration-700 ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}>
           <div>
@@ -44,79 +61,99 @@ export default function GrowersShowcase({ onNavigate }) {
           </button>
         </div>
 
-        {/* Grower Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {GROWERS.map((farmer, i) => (
-            <div
-              key={farmer.id}
-              className={`group relative bg-white rounded-2xl overflow-hidden border border-outline-variant/20 hover:-translate-y-2 transition-all duration-500 hover:shadow-[0_20px_48px_rgba(18,82,36,0.12)] cursor-default ${
-                visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
-              }`}
-              style={{
-                transitionDelay: `${i * 100}ms`,
-                boxShadow: '0 4px 16px rgba(18,82,36,0.06)',
-              }}
-            >
-              {/* Top accent bar */}
-              <div
-                className="h-1.5 w-full"
-                style={{ background: 'linear-gradient(90deg, #125224, #3e6a00, #b9f474)' }}
-              />
-
-              <div className="p-6">
-                {/* Farmer header */}
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="relative">
-                    <div className="w-16 h-16 rounded-2xl overflow-hidden bg-surface-container-high shadow-md border-2 border-white">
-                      <img
-                        src={farmer.image}
-                        alt={farmer.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      />
-                    </div>
-                    {/* Online dot */}
-                    <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-secondary-fixed border-2 border-white flex items-center justify-center">
-                      <div className="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse" />
-                    </div>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-headline-sm text-on-surface font-bold truncate">{farmer.name}</h3>
-                    <p className="text-primary font-bold text-xs">{farmer.farm}</p>
-                    <div className="flex items-center gap-1 mt-1">
-                      {[...Array(5)].map((_, si) => (
-                        <span key={si} className="material-symbols-outlined text-[13px] text-tertiary fill">star</span>
-                      ))}
-                      <span className="text-on-surface font-bold text-xs ml-1">{farmer.rating}</span>
-                      <span className="text-on-surface-variant text-xs">({farmer.pickups})</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Quote */}
-                <div className="relative">
-                  <span className="material-symbols-outlined text-[32px] text-primary/10 absolute -top-2 -left-1">format_quote</span>
-                  <p className="font-body-md text-on-surface-variant italic text-sm leading-relaxed pl-6">
-                    {farmer.quote}
-                  </p>
-                </div>
-
-                {/* Footer */}
-                <div className="mt-5 pt-4 border-t border-outline-variant/20 flex items-center justify-between">
-                  <span className="flex items-center gap-1.5 text-on-surface-variant text-xs">
-                    <span className="material-symbols-outlined text-[14px] text-primary">location_on</span>
-                    {farmer.location}
-                  </span>
-                  <span className="px-2.5 py-1 rounded-full bg-primary/8 text-primary font-bold text-[10px] uppercase tracking-wide">
-                    {farmer.marketTag}
-                  </span>
-                </div>
-              </div>
-
-              {/* Hover glow */}
-              <div className="absolute inset-0 rounded-2xl border-2 border-primary opacity-0 group-hover:opacity-10 transition-opacity duration-300 pointer-events-none" />
+        {/* Grower Cards Grid or Empty State */}
+        {displayList.length === 0 ? (
+          <div className="p-12 text-center rounded-3xl border border-dashed border-outline-variant/50 bg-surface-container-lowest flex flex-col items-center justify-center">
+            <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center text-primary mb-4">
+              <span className="material-symbols-outlined text-3xl">agriculture</span>
             </div>
-          ))}
-        </div>
+            <h3 className="text-base font-bold text-on-surface mb-1">Regional Growers Joining The Network</h3>
+            <p className="text-xs text-on-surface-variant max-w-md mb-5">
+              Verified local producers and organic family farms are currently registering their seasonal crop yields.
+            </p>
+            <button
+              onClick={() => onNavigate('register')}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-on-primary font-bold text-xs shadow-md hover:bg-primary/90 transition-all cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-[16px]">add_business</span>
+              Register Your Farm Stall
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {displayList.slice(0, 6).map((farmer, i) => (
+              <div
+                key={farmer.id}
+                onClick={() => onNavigate('farmer-profile', farmer.id)}
+                className={`group relative bg-white rounded-2xl overflow-hidden border border-outline-variant/20 hover:-translate-y-2 transition-all duration-500 hover:shadow-[0_20px_48px_rgba(18,82,36,0.12)] cursor-pointer ${
+                  visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
+                }`}
+                style={{
+                  transitionDelay: `${i * 100}ms`,
+                  boxShadow: '0 4px 16px rgba(18,82,36,0.06)',
+                }}
+              >
+                {/* Top accent bar */}
+                <div
+                  className="h-1.5 w-full"
+                  style={{ background: 'linear-gradient(90deg, #125224, #3e6a00, #b9f474)' }}
+                />
+
+                <div className="p-6">
+                  {/* Farmer header */}
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="relative">
+                      <div className="w-16 h-16 rounded-2xl overflow-hidden bg-surface-container-high shadow-md border-2 border-white">
+                        <img
+                          src={farmer.image || 'https://images.unsplash.com/photo-1595273670150-bd0c3c392e46?auto=format&fit=crop&w=400&q=80'}
+                          alt={farmer.name}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                      </div>
+                      {/* Online dot */}
+                      <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-secondary-fixed border-2 border-white flex items-center justify-center">
+                        <div className="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse" />
+                      </div>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-headline-sm text-on-surface font-bold truncate">{farmer.name}</h3>
+                      <p className="text-primary font-bold text-xs">{farmer.farm}</p>
+                      <div className="flex items-center gap-1 mt-1">
+                        {[...Array(5)].map((_, si) => (
+                          <span key={si} className="material-symbols-outlined text-[13px] text-tertiary fill">star</span>
+                        ))}
+                        <span className="text-on-surface font-bold text-xs ml-1">{farmer.rating || '5.0'}</span>
+                        <span className="text-on-surface-variant text-xs">({farmer.pickups || 'Active'})</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Quote / Bio */}
+                  <div className="relative">
+                    <span className="material-symbols-outlined text-[32px] text-primary/10 absolute -top-2 -left-1">format_quote</span>
+                    <p className="font-body-md text-on-surface-variant italic text-sm leading-relaxed pl-6 line-clamp-2">
+                      {farmer.quote || farmer.bio || 'Dedicated to regenerative farming and providing fresh produce directly to our local community.'}
+                    </p>
+                  </div>
+
+                  {/* Footer */}
+                  <div className="mt-5 pt-4 border-t border-outline-variant/20 flex items-center justify-between">
+                    <span className="flex items-center gap-1.5 text-on-surface-variant text-xs truncate max-w-[150px]">
+                      <span className="material-symbols-outlined text-[14px] text-primary">location_on</span>
+                      {farmer.market_name || farmer.location || 'Local Pavilion'}
+                    </span>
+                    <span className="px-2.5 py-1 rounded-full bg-primary/8 text-primary font-bold text-[10px] uppercase tracking-wide">
+                      {farmer.specialty || 'Verified Grower'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Hover glow */}
+                <div className="absolute inset-0 rounded-2xl border-2 border-primary opacity-0 group-hover:opacity-10 transition-opacity duration-300 pointer-events-none" />
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );

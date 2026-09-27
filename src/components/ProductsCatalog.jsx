@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import PageLoader from './PageLoader';
 import browseApi from '../api/browse';
 import customerApi from '../api/customer';
 import { useAuth } from '../context/AuthContext';
@@ -15,13 +16,25 @@ export default function ProductsCatalog({ onNavigate, onReserveProduct, onNotify
   const [currentPage, setCurrentPage] = useState(1);
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
   const [liveProducts, setLiveProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const fetchLiveProducts = () => {
-    browseApi.getProducts().then((res) => {
-      if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
-        setLiveProducts(res.data);
-      }
-    }).catch(() => {});
+    setLoading(true);
+    browseApi.getProducts()
+      .then((res) => {
+        if (res?.data && Array.isArray(res.data)) {
+          setLiveProducts(res.data);
+        } else {
+          setLiveProducts([]);
+        }
+      })
+      .catch((err) => {
+        console.warn('Could not load products:', err);
+        setLiveProducts([]);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   };
 
   useEffect(() => {
@@ -72,8 +85,9 @@ export default function ProductsCatalog({ onNavigate, onReserveProduct, onNotify
     }));
   };
 
-  // Full catalog items (9 items matching the user's HTML)
-  const allCatalogProducts = [
+  // Live catalog data only - mock products removed
+  const allCatalogProducts = [];
+  const _unusedMockProducts = [
     {
       id: 1,
       name: 'Heirloom Brandywine Tomatoes',
@@ -256,13 +270,13 @@ export default function ProductsCatalog({ onNavigate, onReserveProduct, onNotify
     }
   ];
 
-  // Combined Catalog products (Dynamic Backend Products + Catalog Seed)
+  // Combined Catalog products (Derived solely from live API data - no dummy fallbacks)
   const combinedCatalogProducts = useMemo(() => {
     if (!liveProducts || liveProducts.length === 0) {
-      return allCatalogProducts;
+      return [];
     }
 
-    const liveMapped = liveProducts.map((p) => {
+    return liveProducts.map((p) => {
       const catName = p.category_name || (typeof p.category === 'object' ? p.category?.name : '') || 'Fresh Vegetables';
       let catCode = 'veg';
       const lowerCat = catName.toLowerCase();
@@ -296,17 +310,12 @@ export default function ProductsCatalog({ onNavigate, onReserveProduct, onNotify
         stock_quantity: p.stock_quantity,
         status: p.status === 'sold_out' || p.stock_quantity <= 0 ? 'SOLD_OUT' : 'IN_STOCK',
         badge: p.status === 'sold_out' || p.stock_quantity <= 0 ? 'SOLD OUT' : 'IN STOCK',
-        harvestTime: 'Harvested: Fresh Field Batch',
+        harvestTime: 'Harvested: Fresh Daily Batch',
         desc: p.description || 'Fresh harvest direct from regional grower.',
         image: p.image || 'https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=400&q=80',
         alt: p.name
       };
     });
-
-    const liveNames = new Set(liveMapped.map((m) => m.name.toLowerCase()));
-    const remainingSeed = allCatalogProducts.filter((s) => !liveNames.has(s.name.toLowerCase()));
-
-    return [...liveMapped, ...remainingSeed];
   }, [liveProducts]);
 
   // Filtering Logic
@@ -391,11 +400,21 @@ export default function ProductsCatalog({ onNavigate, onReserveProduct, onNotify
     }));
   };
 
+  if (loading) {
+    return (
+      <PageLoader
+        title="Gathering Farm Harvests..."
+        subtitle="Cataloging heirloom produce, orchard fruits, and fresh morning pickings from regional growers..."
+        minHeight="min-h-[80vh]"
+      />
+    );
+  }
+
   return (
     <div className="flex flex-col w-full">
       {/* Top Breadcrumb & Page Banner */}
       <section className="w-full bg-surface-container-low py-space-lg">
-        <div className="max-w-7xl mx-auto px-gutter flex flex-col gap-space-md">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-gutter flex flex-col gap-space-md">
           {/* Breadcrumb */}
           <nav aria-label="Breadcrumbs" className="flex items-center gap-space-xs font-body-sm text-on-surface-variant text-xs">
             <button onClick={() => onNavigate('home')} className="hover:text-primary transition-colors cursor-pointer">
@@ -462,7 +481,7 @@ export default function ProductsCatalog({ onNavigate, onReserveProduct, onNotify
 
       {/* Search & Quick Action Toolbar */}
       <section className="w-full bg-surface py-space-md shadow-sm border-y border-outline-variant/30">
-        <div className="max-w-7xl mx-auto px-gutter flex flex-col gap-space-sm">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-gutter flex flex-col gap-space-sm">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-space-md items-center">
             {/* Search Input */}
             <div className="lg:col-span-7 relative">
@@ -535,14 +554,21 @@ export default function ProductsCatalog({ onNavigate, onReserveProduct, onNotify
       </section>
 
       {/* Two-Column Main Area: Filter Sidebar + Products Grid */}
-      <main className="w-full max-w-7xl mx-auto px-gutter py-space-xl">
+      <main className="w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-gutter py-6 sm:py-space-xl">
+        {/* Mobile Filter Backdrop */}
+        {mobileFilterOpen && (
+          <div
+            onClick={() => setMobileFilterOpen(false)}
+            className="fixed inset-0 bg-black/60 z-40 lg:hidden backdrop-blur-xs"
+          />
+        )}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-space-xl items-start">
           {/* Left Filter Sidebar */}
           <aside
             id="filter-sidebar"
             className={`${
               mobileFilterOpen
-                ? 'fixed inset-y-0 left-0 z-50 w-80 overflow-y-auto block'
+                ? 'fixed inset-y-0 left-0 z-50 w-80 max-w-[85vw] overflow-y-auto block'
                 : 'hidden'
             } lg:block lg:col-span-3 bg-surface-container-lowest p-space-md rounded-2xl shadow-sm space-y-space-md border border-outline-variant/30`}
           >

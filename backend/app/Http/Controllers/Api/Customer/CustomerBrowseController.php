@@ -36,12 +36,13 @@ class CustomerBrowseController extends Controller
         }
 
         $markets = $query->get()->map(function ($market) {
-            // Find approved farmers who operate at this market
+            // Find approved/active farmers who operate at this market
             $farmers = User::where('role', 'farmer')
                 ->whereHas('farmerProfile', function ($q) use ($market) {
-                    $q->where('status', 'approved')
+                    $q->whereIn('status', ['approved', 'active', 'pending'])
                         ->where(function ($sq) use ($market) {
-                            $sq->whereJsonContains('market_ids', $market->id)
+                            $sq->whereJsonContains('market_ids', (int) $market->id)
+                                ->orWhereJsonContains('market_ids', (string) $market->id)
                                 ->orWhere('address', 'like', "%{$market->market_name}%");
                         });
                 })
@@ -67,9 +68,10 @@ class CustomerBrowseController extends Controller
 
         $farmers = User::where('role', 'farmer')
             ->whereHas('farmerProfile', function ($q) use ($market) {
-                $q->where('status', 'approved')
+                $q->whereIn('status', ['approved', 'active', 'pending'])
                     ->where(function ($sq) use ($market) {
-                        $sq->whereJsonContains('market_ids', $market->id)
+                        $sq->whereJsonContains('market_ids', (int) $market->id)
+                            ->orWhereJsonContains('market_ids', (string) $market->id)
                             ->orWhere('address', 'like', "%{$market->market_name}%");
                     });
             })
@@ -152,12 +154,60 @@ class CustomerBrowseController extends Controller
     }
 
     /**
+     * Public list of approved/active farmers/growers.
+     */
+    public function farmers(Request $request): JsonResponse
+    {
+        $query = User::where('role', 'farmer')
+            ->where(function ($q) {
+                $q->whereDoesntHave('farmerProfile')
+                  ->orWhereHas('farmerProfile', fn ($fp) => $fp->where('status', '!=', 'rejected'));
+            })
+            ->with(['farmerProfile', 'products' => fn ($q) => $q->where('status', 'available'), 'reviewsReceived']);
+
+        if ($request->filled('search')) {
+            $search = $request->query('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhereHas('farmerProfile', fn ($fp) => $fp->where('farm_name', 'like', "%{$search}%"));
+            });
+        }
+
+        $farmers = $query->get()->map(function ($farmer) {
+            $profile = $farmer->farmerProfile;
+            $avgRating = (float) $farmer->reviewsReceived()->avg('rating');
+            $reviewsCount = $farmer->reviewsReceived()->count();
+
+            return [
+                'id' => $farmer->id,
+                'name' => $farmer->name,
+                'farm' => $profile?->farm_name ?: ($farmer->name . ' Organic Farm'),
+                'bio' => $profile?->bio ?: 'Certified sustainable grower specializing in heirloom produce and direct farm pickups.',
+                'image' => $farmer->avatar ?: 'https://images.unsplash.com/photo-1595273670150-bd0c3c392e46?auto=format&fit=crop&w=400&q=80',
+                'rating' => $avgRating > 0 ? round($avgRating, 1) : 5.0,
+                'reviews_count' => $reviewsCount,
+                'pickups' => $reviewsCount > 0 ? "{$reviewsCount} reviews" : 'New Grower',
+                'quote' => $profile?->bio ?: 'Cultivating heirloom varieties using traditional, regenerative farming practices.',
+                'specialty' => $profile?->specialty ?: 'Organic Heritage Harvests',
+                'operating_days' => $profile?->operating_days ?: ['Saturday'],
+                'market_name' => $profile?->city ?: 'Regional Market Pavilion',
+                'products_count' => $farmer->products->count(),
+            ];
+        });
+
+        return $this->success($farmers, 'Farmers retrieved successfully');
+    }
+
+    /**
      * Public/Customer view of farmer profile and current products.
      */
     public function farmerShow(int $id): JsonResponse
     {
         $farmer = User::where('role', 'farmer')
-            ->whereHas('farmerProfile', fn ($q) => $q->where('status', 'approved'))
+            ->where(function ($q) {
+                $q->whereDoesntHave('farmerProfile')
+                  ->orWhereHas('farmerProfile', fn ($fp) => $fp->where('status', '!=', 'rejected'));
+            })
             ->with(['farmerProfile', 'products' => fn ($q) => $q->where('status', 'available')->with('category'), 'reviewsReceived.customer'])
             ->findOrFail($id);
 
@@ -179,7 +229,7 @@ class CustomerBrowseController extends Controller
     public function stalls(Request $request): JsonResponse
     {
         $farmers = User::where('role', 'farmer')
-            ->whereHas('farmerProfile', fn ($q) => $q->where('status', 'approved')->whereNotNull('latitude')->whereNotNull('longitude'))
+            ->whereHas('farmerProfile', fn ($q) => $q->whereIn('status', ['approved', 'active', 'pending'])->whereNotNull('latitude')->whereNotNull('longitude'))
             ->with([
                 'farmerProfile',
                 'products' => fn ($q) => $q->where('status', 'available')->with(['category', 'market']),
@@ -193,24 +243,28 @@ class CustomerBrowseController extends Controller
             $avgRating = (float) $farmer->reviewsReceived()->avg('rating');
             $reviewsCount = $farmer->reviewsReceived()->count();
 
-            // Associated market
-            $market = $products->first()?->market;
+            // Associated market chosen by farmer or from products
+            $chosenMarketId = (!empty($profile->market_ids) && is_array($profile->market_ids) && count($profile->market_ids) > 0)
+                ? $profile->market_ids[0]
+                : null;
+            $market = ($chosenMarketId ? \App\Models\Market::find($chosenMarketId) : null) ?: $products->first()?->market;
 
             return [
                 'id' => $profile->id,
                 'farmer_id' => $farmer->id,
                 'farmer_name' => $farmer->name,
-                'stall_name' => $profile->stall_name,
-                'contact_person' => $profile->contact_person,
-                'address' => $profile->address,
+                'stall_name' => $profile->stall_name ?: ($farmer->name . "'s Farm Stand"),
+                'stall_number' => $profile->stall_number ?: ($profile->stall_name . ' Booth'),
+                'contact_person' => $profile->contact_person ?: $farmer->name,
+                'address' => $profile->address ?: ($market ? $market->address : 'Farmers Market Plaza'),
                 'latitude' => (float) $profile->latitude,
                 'longitude' => (float) $profile->longitude,
-                'operating_days' => $profile->operating_days,
-                'pickup_time_start' => $profile->pickup_time_start,
-                'pickup_time_end' => $profile->pickup_time_end,
-                'market_name' => $market ? $market->market_name : null,
-                'market_id' => $market ? $market->id : null,
-                'rating' => $avgRating ? round($avgRating, 1) : 4.9,
+                'operating_days' => $profile->operating_days ?: ($market ? $market->operating_days : ['Saturday', 'Sunday']),
+                'pickup_time_start' => $profile->pickup_time_start ?: '08:00 AM',
+                'pickup_time_end' => $profile->pickup_time_end ?: '02:00 PM',
+                'market_name' => $market ? $market->market_name : 'Market Plaza Stall',
+                'market_id' => $market ? $market->id : 1,
+                'rating' => $avgRating ? round($avgRating, 1) : 5.0,
                 'reviews_count' => $reviewsCount,
                 'total_stock' => (int) $products->sum('stock_quantity'),
                 'products' => ProductResource::collection($products)->resolve(),

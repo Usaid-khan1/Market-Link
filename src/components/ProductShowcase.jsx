@@ -32,7 +32,7 @@ export default function ProductShowcase({
     >
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-2/3 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
 
-      <div className="max-w-7xl mx-auto px-gutter">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-gutter">
         {/* Header */}
         <div className={`flex flex-col sm:flex-row sm:items-end justify-between mb-12 gap-4 transition-all duration-700 ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}>
           <div>
