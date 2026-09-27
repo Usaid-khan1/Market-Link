@@ -15,42 +15,20 @@ export default function FarmerStockTemplate({ showToast }) {
   const [selectedDay, setSelectedDay] = useState('Saturday');
 
   // Weekly templates data per day
-  const [templates, setTemplates] = useState({
-    Saturday: [
-      { id: 't-1', name: 'Heirloom Brandywine Tomatoes', unit: 'lb', defaultQty: 40, included: true },
-      { id: 't-2', name: 'Rainbow Swiss Chard & Lacinato Kale', unit: 'bunch', defaultQty: 25, included: true },
-      { id: 't-3', name: 'Organic Romanesco Cauliflower', unit: 'piece', defaultQty: 18, included: true },
-      { id: 't-4', name: 'Sweet Italian Genovese Basil', unit: 'bunch', defaultQty: 20, included: true },
-      { id: 't-5', name: 'Baby Sugar Snap Peas', unit: 'basket', defaultQty: 25, included: true },
-      { id: 't-6', name: 'Japanese Sweet Bell Peppers', unit: 'lb', defaultQty: 15, included: false }
-    ],
-    Wednesday: [
-      { id: 't-1', name: 'Heirloom Brandywine Tomatoes', unit: 'lb', defaultQty: 25, included: true },
-      { id: 't-2', name: 'Rainbow Swiss Chard & Lacinato Kale', unit: 'bunch', defaultQty: 15, included: true },
-      { id: 't-3', name: 'Organic Romanesco Cauliflower', unit: 'piece', defaultQty: 10, included: false },
-      { id: 't-4', name: 'Sweet Italian Genovese Basil', unit: 'bunch', defaultQty: 15, included: true },
-      { id: 't-5', name: 'Baby Sugar Snap Peas', unit: 'basket', defaultQty: 12, included: true },
-      { id: 't-6', name: 'Japanese Sweet Bell Peppers', unit: 'lb', defaultQty: 10, included: false }
-    ],
-    Sunday: [
-      { id: 't-1', name: 'Heirloom Brandywine Tomatoes', unit: 'lb', defaultQty: 30, included: true },
-      { id: 't-2', name: 'Rainbow Swiss Chard & Lacinato Kale', unit: 'bunch', defaultQty: 20, included: true },
-      { id: 't-3', name: 'Organic Romanesco Cauliflower', unit: 'piece', defaultQty: 14, included: true },
-      { id: 't-4', name: 'Sweet Italian Genovese Basil', unit: 'bunch', defaultQty: 15, included: true },
-      { id: 't-5', name: 'Baby Sugar Snap Peas', unit: 'basket', defaultQty: 20, included: true },
-      { id: 't-6', name: 'Japanese Sweet Bell Peppers', unit: 'lb', defaultQty: 12, included: false }
-    ]
-  });
+  const [templates, setTemplates] = useState({});
+  const [farmerProducts, setFarmerProducts] = useState([]);
 
   // Current day's template items
-  const currentItems = templates[selectedDay] || [
-    { id: 't-1', name: 'Heirloom Brandywine Tomatoes', unit: 'lb', defaultQty: 10, included: false },
-    { id: 't-2', name: 'Rainbow Swiss Chard & Lacinato Kale', unit: 'bunch', defaultQty: 10, included: false },
-    { id: 't-3', name: 'Organic Romanesco Cauliflower', unit: 'piece', defaultQty: 10, included: false },
-    { id: 't-4', name: 'Sweet Italian Genovese Basil', unit: 'bunch', defaultQty: 10, included: false },
-    { id: 't-5', name: 'Baby Sugar Snap Peas', unit: 'basket', defaultQty: 10, included: false },
-    { id: 't-6', name: 'Japanese Sweet Bell Peppers', unit: 'lb', defaultQty: 10, included: false }
-  ];
+  const currentItems = templates[selectedDay] || (farmerProducts.length > 0
+    ? farmerProducts.map((p) => ({
+        id: p.id,
+        productId: p.id,
+        name: p.name,
+        unit: p.unit || 'unit',
+        defaultQty: p.stock_quantity > 0 ? p.stock_quantity : 10,
+        included: true
+      }))
+    : []);
 
   // Toggle Item Included
   const handleToggleInclude = (itemId) => {
@@ -77,26 +55,48 @@ export default function FarmerStockTemplate({ showToast }) {
 
   // Load live templates and products from backend
   useEffect(() => {
-    farmerApi.getStockTemplates()
-      .then((res) => {
-        if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
-          const grouped = {};
-          res.data.forEach((tpl) => {
-            const day = tpl.day_of_week;
-            if (!grouped[day]) grouped[day] = [];
-            grouped[day].push({
-              id: tpl.product_id || tpl.id,
-              productId: tpl.product_id,
-              name: tpl.product?.name || `Product #${tpl.product_id}`,
-              unit: tpl.product?.unit || 'unit',
-              defaultQty: tpl.default_quantity,
-              included: Boolean(tpl.is_included)
+    // 1. Load farmer products first
+    farmerApi.getProducts()
+      .then((pRes) => {
+        const prods = (pRes?.data && Array.isArray(pRes.data)) ? pRes.data : [];
+        setFarmerProducts(prods);
+
+        // 2. Load existing stock templates
+        return farmerApi.getStockTemplates().then((res) => {
+          if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
+            const grouped = {};
+            res.data.forEach((tpl) => {
+              const day = tpl.day_of_week;
+              if (!grouped[day]) grouped[day] = [];
+              grouped[day].push({
+                id: tpl.product_id || tpl.id,
+                productId: tpl.product_id,
+                name: tpl.product?.name || `Product #${tpl.product_id}`,
+                unit: tpl.product?.unit || 'unit',
+                defaultQty: tpl.default_quantity,
+                included: Boolean(tpl.is_included)
+              });
             });
-          });
-          setTemplates((prev) => ({ ...prev, ...grouped }));
-        }
+            setTemplates(grouped);
+          } else if (prods.length > 0) {
+            // Initialize defaults from live products for market days
+            const defaultList = prods.map((p) => ({
+              id: p.id,
+              productId: p.id,
+              name: p.name,
+              unit: p.unit || 'unit',
+              defaultQty: p.stock_quantity > 0 ? p.stock_quantity : 15,
+              included: true
+            }));
+            setTemplates({
+              Saturday: defaultList,
+              Wednesday: defaultList,
+              Sunday: defaultList
+            });
+          }
+        });
       })
-      .catch((err) => console.warn('Could not load stock templates:', err));
+      .catch((err) => console.warn('Could not load stock templates or products:', err));
   }, []);
 
   // Save Template
@@ -253,16 +253,23 @@ export default function FarmerStockTemplate({ showToast }) {
               </tr>
             </thead>
             <tbody className="divide-y divide-surface-container-high/50 text-on-surface text-xs">
-              {currentItems.map((item) => (
-                <tr
-                  key={item.id}
-                  className={`transition-colors ${
-                    item.included
-                      ? 'hover:bg-surface-container-low/60'
-                      : 'opacity-50 bg-surface-container-low/20'
-                  }`}
-                >
-                  {/* Toggle Include */}
+              {currentItems.length === 0 ? (
+                <tr>
+                  <td colSpan="4" className="py-12 text-center text-on-surface-variant text-xs italic">
+                    No produce items found in your catalog. Add products first to build weekly stock templates.
+                  </td>
+                </tr>
+              ) : (
+                currentItems.map((item) => (
+                  <tr
+                    key={item.id}
+                    className={`transition-colors ${
+                      item.included
+                        ? 'hover:bg-surface-container-low/60'
+                        : 'opacity-50 bg-surface-container-low/20'
+                    }`}
+                  >
+                    {/* Toggle Include */}
                   <td className="py-4 px-space-md">
                     <label className="flex items-center gap-2.5 cursor-pointer">
                       <button
@@ -328,7 +335,7 @@ export default function FarmerStockTemplate({ showToast }) {
                     )}
                   </td>
                 </tr>
-              ))}
+              )))}
             </tbody>
           </table>
         </div>

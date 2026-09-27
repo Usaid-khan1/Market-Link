@@ -21,6 +21,11 @@ export const farmerApi = {
   createProduct(data) {
     return apiClient.post('/farmer/products', data);
   },
+  uploadProductImage(file) {
+    const formData = new FormData();
+    formData.append('image', file);
+    return apiClient.post('/farmer/products/upload-image', formData);
+  },
   getProduct(id) {
     return apiClient.get(`/farmer/products/${id}`);
   },

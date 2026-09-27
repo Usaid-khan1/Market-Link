@@ -1,14 +1,14 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import adminApi from '../api/admin';
 
-export default function ManageMarkets({ onNavigate, showToast }) {
+export default function ManageMarkets({ onNavigate, showToast, autoOpenAddModal = false, onCloseAddModal }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all'); // 'all' | 'active' | 'inactive'
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
   // Modals state
-  const [isFormModalOpen, setIsFormModalOpen] = useState(false);
+  const [isFormModalOpen, setIsFormModalOpen] = useState(autoOpenAddModal);
   const [editingMarket, setEditingMarket] = useState(null); // null = Add, obj = Edit
   const [deleteModalMarket, setDeleteModalMarket] = useState(null);
 
@@ -27,89 +27,23 @@ export default function ManageMarkets({ onNavigate, showToast }) {
   };
   const [formData, setFormData] = useState(initialFormState);
 
-  // Initial Markets Dataset
-  const [markets, setMarkets] = useState([
-    {
-      id: 1,
-      name: 'Downtown Saturday Market',
-      area: 'South Park Blocks & Urban Plaza',
-      address: 'SW Park Ave & Montgomery St, Portland, OR 97201',
-      operatingDays: ['Saturday'],
-      timings: '8:00 AM – 1:00 PM',
-      startTime: '08:00 AM',
-      endTime: '01:00 PM',
-      farmersCount: 28,
-      status: 'Active',
-      lat: '45.5152',
-      lng: '-122.6784',
-      badgeClass: 'bg-primary-fixed text-on-primary-fixed',
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBBX6utvQ3xGaWuRHTzDH0bpvHJPPVXGKwmlRJkZclFyW9JmposXNsPIaGlKfbAYLjWlTj6kegD3xiXVcbwKrDbcXdl9om839D_OtCFGkQfGjruKFlwdMZbaHi9p6_fHEbYgdzibkaRDVAFTrVRiKOUa0XSheflTlbEV4iokdUWipIMFeVWXZIyaHSPRj3_a5AhBpPhI_-sqaX8mti0ZIC8RNAPRyTWVWTAz4sBygNArLrviP7I4kSL'
-    },
-    {
-      id: 2,
-      name: 'Oak Valley Community Organic Market',
-      area: 'North Oak Valley Historic Grounds',
-      address: 'Pioneer Park Pavilion, 412 Oak Valley Rd, OR 97034',
-      operatingDays: ['Sunday'],
-      timings: '9:00 AM – 2:00 PM',
-      startTime: '09:00 AM',
-      endTime: '02:00 PM',
-      farmersCount: 19,
-      status: 'Active',
-      lat: '45.5320',
-      lng: '-122.6950',
-      badgeClass: 'bg-primary-fixed text-on-primary-fixed',
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDM1BNwiasvOk6PCBQdnDuAsoLQBDrh103TT3dybKpUdiN6kDdKYVr_zaHFAylbx6yOu9JmcnXGvO_em5buUntA57uuJILMejl7yvAhL9yBbeyntF4VC15SmVwPq6ZV5omCcGgRwMEjTbeDGthb3Nkno-tl-meXs61aQJ3WdRBYGNR6y06kWAx_YGZwmpELf77FIOl3g5iQvPRcJiyoxEsAGLGLkQOE5XvT1BHVJECA3ERSC5tYtgqZ'
-    },
-    {
-      id: 3,
-      name: 'Riverside Twilight Farmers Market',
-      area: 'River District Waterfront',
-      address: '1020 Waterfront Esplanade, Pier 4, OR 97209',
-      operatingDays: ['Wednesday'],
-      timings: '4:00 PM – 8:00 PM',
-      startTime: '04:00 PM',
-      endTime: '08:00 PM',
-      farmersCount: 22,
-      status: 'Active',
-      lat: '45.5080',
-      lng: '-122.6680',
-      badgeClass: 'bg-primary-fixed text-on-primary-fixed',
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAq5bA9E3L9E1pPqyqHrkY_L3Z7PjX_1lJtF_Qz5c1dHfW8aLwUMJVHKo9lCs7s3TwLOtpGVX8sSjiObmOI5WNhoP2e1xPPZs5wu1uCJmvmB74F2tcpXrGgzHfVIZmuzzSViBWDVpK41SAs5HD0IAR5gSNf6BDZd_dmlJc4Gwr673FRLx3MRB4oHsUSbZR7gGSKtFvj4dkFUFJ4XT1oYBkrmMGHAN0xf7nIB4zZi_rEJD-dPQaonw'
-    },
-    {
-      id: 4,
-      name: 'Pioneer Pavilion Heritage Market',
-      area: 'Historic Plaza Square',
-      address: '700 SW 6th Avenue, Pavilion Hall, OR 97204',
-      operatingDays: ['Saturday', 'Sunday'],
-      timings: '8:30 AM – 2:30 PM',
-      startTime: '08:30 AM',
-      endTime: '02:30 PM',
-      farmersCount: 35,
-      status: 'Active',
-      lat: '45.5190',
-      lng: '-122.6795',
-      badgeClass: 'bg-primary-fixed text-on-primary-fixed',
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuC5r9n84_MegsorAvtL8LFeNQKwAvICYTZXDO2fBF1mfiPLmoVq1Ta8OpFGXSUkxXMqQgvaQyQ881mqUuUmEKbJNEtG5X8dZ1gnluHUvRPhIM0mXpv-Km4-fetXUUuDFT2Au2m3EMaAgJKvrHemEvwFhQb4CW8JsL-91uXLXopIthyMsh7W-YFn5bbfWlmd-YSE1_zALoINwkJjYN_Bv2FLdr5o_ZCRBFcuBiGK5h7TXg7Spipjxtud'
-    },
-    {
-      id: 5,
-      name: 'Eastside Sunset Greenway Hub',
-      area: 'Industrial Sanctuary Park',
-      address: '1540 SE Water Avenue, Pavilion B, OR 97214',
-      operatingDays: ['Thursday'],
-      timings: '3:00 PM – 7:30 PM',
-      startTime: '03:00 PM',
-      endTime: '07:30 PM',
-      farmersCount: 14,
-      status: 'Inactive',
-      lat: '45.5210',
-      lng: '-122.6520',
-      badgeClass: 'bg-surface-container-high text-on-surface-variant',
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCAGxWvIAEOciNeIpvXeS0o6ueKMVujWIo898fnUWfjodLLEsdvlYJeyAq0P_BIh4FSLnQ9-g0PNY4w7Oo0Ou1pmCQgjmHE20gK8vtchyOQzpCDUme7igITGjAxNMZ3ecokj62DY6lRU4l7RsM5Ot8xN8u-_bTEBIbtVcLegOKYyWkwzRUi9rgFDFC8mIFBtC8OuDmjkzT9Rq0f3N6aAALbzM51q0_s4DbSkH8ChO7cq1xZdKGcJSgs'
+  // Auto-open add modal if triggered externally
+  useEffect(() => {
+    if (autoOpenAddModal) {
+      setEditingMarket(null);
+      setFormData(initialFormState);
+      setIsFormModalOpen(true);
     }
-  ]);
+  }, [autoOpenAddModal]);
+
+  const handleCloseFormModal = () => {
+    setIsFormModalOpen(false);
+    setEditingMarket(null);
+    if (onCloseAddModal) onCloseAddModal();
+  };
+
+  // Initial Markets Dataset
+  const [markets, setMarkets] = useState([]);
 
   const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
@@ -182,7 +116,7 @@ export default function ManageMarkets({ onNavigate, showToast }) {
   useEffect(() => {
     adminApi.getMarkets()
       .then((res) => {
-        if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
+        if (res?.data && Array.isArray(res.data)) {
           const mapped = res.data.map((m) => ({
             id: m.id,
             name: m.market_name || m.name,
@@ -192,14 +126,16 @@ export default function ManageMarkets({ onNavigate, showToast }) {
             timings: m.timings || `${m.start_time || '08:00 AM'} – ${m.end_time || '02:00 PM'}`,
             startTime: m.start_time || '08:00 AM',
             endTime: m.end_time || '02:00 PM',
-            farmersCount: m.farmers_count || 20,
+            farmersCount: m.farmers_count ?? 0,
             status: m.status ? (m.status.charAt(0).toUpperCase() + m.status.slice(1)) : 'Active',
             lat: m.latitude ? String(m.latitude) : '45.5152',
             lng: m.longitude ? String(m.longitude) : '-122.6784',
             badgeClass: 'bg-primary-fixed text-on-primary-fixed',
-            image: m.image || 'https://lh3.googleusercontent.com/aida-public/AB6AXuBBX6utvQ3xGaWuRHTzDH0bpvHJPPVXGKwmlRJkZclFyW9JmposXNsPIaGlKfbAYLjWlTj6kegD3xiXVcbwKrDbcXdl9om839D_OtCFGkQfGjruKFlwdMZbaHi9p6_fHEbYgdzibkaRDVAFTrVRiKOUa0XSheflTlbEV4iokdUWipIMFeVWXZIyaHSPRj3_a5AhBpPhI_-sqaX8mti0ZIC8RNAPRyTWVWTAz4sBygNArLrviP7I4kSL'
+            image: m.image || 'https://images.unsplash.com/photo-1488459716781-31db52582fe9?auto=format&fit=crop&w=600&q=80'
           }));
           setMarkets(mapped);
+        } else {
+          setMarkets([]);
         }
       })
       .catch((err) => console.warn('Could not load live markets:', err));
@@ -281,7 +217,7 @@ export default function ManageMarkets({ onNavigate, showToast }) {
       showToast?.(`Market location "${formData.name}" added to registry!`);
     }
 
-    setIsFormModalOpen(false);
+    handleCloseFormModal();
   };
 
   // Toggle Activate / Deactivate
@@ -720,7 +656,7 @@ export default function ManageMarkets({ onNavigate, showToast }) {
 
               <button
                 type="button"
-                onClick={() => setIsFormModalOpen(false)}
+                onClick={handleCloseFormModal}
                 className="p-1 text-on-surface-variant hover:text-on-surface rounded-lg hover:bg-surface-container cursor-pointer"
               >
                 <span className="material-symbols-outlined text-[20px]">close</span>
@@ -920,7 +856,7 @@ export default function ManageMarkets({ onNavigate, showToast }) {
               <div className="flex items-center justify-end gap-space-sm pt-space-sm border-t border-outline-variant/20 mt-space-sm">
                 <button
                   type="button"
-                  onClick={() => setIsFormModalOpen(false)}
+                  onClick={handleCloseFormModal}
                   className="px-space-md py-2.5 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface font-bold transition-colors cursor-pointer"
                 >
                   Cancel

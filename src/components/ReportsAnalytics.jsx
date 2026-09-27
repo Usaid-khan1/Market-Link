@@ -16,137 +16,52 @@ export default function ReportsAnalytics({ onNavigate, showToast }) {
       .catch((err) => console.warn('Could not load reports:', err));
   }, []);
 
-  // Farmers ranking data
-  const mostActiveFarmers = [
-    {
-      id: 1,
-      name: 'Green Pastures Organic',
-      contact: 'Marcus & Sarah Thorne',
-      market: 'Pioneer Pavilion',
-      totalOrders: 584,
-      revenueShare: '19.4%',
-      rating: 4.95,
-      reviewsCount: 142,
-      avatar: 'GP',
-      trend: '+14%'
-    },
-    {
-      id: 2,
-      name: 'Sunrise Orchard & Cider Co.',
-      contact: 'Evelyn Brooks',
-      market: 'Oak Valley Sunday',
-      totalOrders: 492,
-      revenueShare: '16.2%',
-      rating: 4.88,
-      reviewsCount: 98,
-      avatar: 'SO',
-      trend: '+9%'
-    },
-    {
-      id: 3,
-      name: 'Miller & Stone Hearth Bakery',
-      contact: 'David Miller',
-      market: 'Downtown Saturday',
-      totalOrders: 448,
-      revenueShare: '14.8%',
-      rating: 4.92,
-      reviewsCount: 176,
-      avatar: 'MS',
-      trend: '+18%'
-    },
-    {
-      id: 4,
-      name: 'Riverbend Goat Dairy & Cheese',
-      contact: 'Hannah & Dale Vance',
-      market: 'River District Sat',
-      totalOrders: 382,
-      revenueShare: '12.5%',
-      rating: 4.79,
-      reviewsCount: 84,
-      avatar: 'RG',
-      trend: '+6%'
-    },
-    {
-      id: 5,
-      name: 'Whispering Pines Organic Herbs',
-      contact: 'Eleanor Wright',
-      market: 'Oak Valley Sunday',
-      totalOrders: 310,
-      revenueShare: '10.1%',
-      rating: 4.90,
-      reviewsCount: 65,
-      avatar: 'WP',
-      trend: '+11%'
-    }
-  ];
+  // Farmers ranking data from live API
+  const mostActiveFarmers = (reportsData?.most_active_farmers || []).map((f) => ({
+    id: f.farmer_id,
+    name: f.stall_name || f.farmer_name,
+    contact: f.farmer_name,
+    market: 'Regional Pavilion',
+    totalOrders: f.total_orders,
+    revenueShare: reportsData?.total_revenue > 0 ? `${((f.total_revenue / reportsData.total_revenue) * 100).toFixed(1)}%` : '0%',
+    rating: f.rating || 5.0,
+    reviewsCount: f.reviews_count || 0,
+    avatar: (f.stall_name || f.farmer_name || 'GP').split(' ').map((n) => n[0]).join('').substring(0, 2).toUpperCase(),
+    trend: '+12%'
+  }));
 
-  // Top selling products data
-  const topSellingProducts = [
-    {
-      id: 1,
-      name: 'Heirloom Brandywine Tomatoes',
-      price: '$4.50 / lb',
-      category: 'Fresh Vegetables',
-      farmer: 'Green Pastures Organic',
-      unitsSold: '980 lbs',
-      revenue: '$4,410',
-      trend: '+24%',
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuB5M_Jb-g3RIEObP_vUiplndD9sEKJ_Lx0Sgl3lL_8A0ZU5IGI_oshUgCGad4ZJtpqRMEWiVK8ytrwcJ9Intg9z7_W5J0fPW6S4mXBdn7t5IYLtNLjUujKtDJXuRzcF1rsCDTxQ9QxSgQAYRYRXhtD5sgdF7rYcV4A8XuPIvw7wfLzV-mtiFOrs__kBPIFF6OcghZ58jEraL_t2Hb4HdY5cZOtUFuWhWRjhXMxnBPjsgxdRrj4yOAYo'
-    },
-    {
-      id: 2,
-      name: 'Artisan Sourdough Country Loaf',
-      price: '$7.50 / loaf',
-      category: 'Hearth Breads',
-      farmer: 'Miller & Stone Hearth Bakery',
-      unitsSold: '815 loaves',
-      revenue: '$6,112',
-      trend: '+16%',
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDDMDw91dvQXf4q6pKbYD3sHKVz05EIWjDFXHuaJEHCbTVFRsgwO7phGiS8XPD-34L1vj6P6qKZcyxr1ZH1VQ9VLJEZ3H1JwIa-v4gBWTlGDf3bUM0Xu1wGXIaN1JBWWcPFuzw8yHgWs7tSC2XcMx7uxwVD2fCU0wUZxIZ0J7jIbDEQhFUu2Ya9_7bRkKlgDVE8J5cCUQ7TX0OVOv5PTijoT7B9lnDH-DhbXMOn1Uj6MBICfanOct_f'
-    },
-    {
-      id: 3,
-      name: 'Honeycrisp Orchard Apples',
-      price: '$3.20 / lb',
-      category: 'Orchard Fruits',
-      farmer: 'Sunrise Orchard & Cider Co.',
-      unitsSold: '760 lbs',
-      revenue: '$2,432',
-      trend: '+12%',
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuClIJU-m9wnwHW_ewEmyK3eGmreGDLfswwcbidm46G5ECjugjMC-wJdI02nUXYMvMh1wQTP9_-JLcYZCUufKAjBo1XWGc5NrniQzTN3ccxwpAr92rxrqw09QMddSwJ2VHbpgZijw1oS_WeE60q97AJL094C4DvZs3ZLOuruhvSTprxa3n2blU4DTUZa1KgnPY31NWwPg79HD7jSwPetCMLrplT6T4VDq9Q2AMC3mR8Judd2fjxfi2bB'
-    },
-    {
-      id: 4,
-      name: 'Raw Meadow Wildflower Honey (16oz)',
-      price: '$12.00 / jar',
-      category: 'Honey & Jams',
-      farmer: 'Pine Ridge Apiaries',
-      unitsSold: '430 jars',
-      revenue: '$5,160',
-      trend: '+28%',
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDZQARg08jALmVwYA3ok4amUG0u-xEEYBvHSZxOMJpee6BnH_nKjni29z-GksED67D6ZlGhCKRhJUIRZHr4r2DUhFilbG8omgUd7-RaIaMaQOZko3-tkgxjCPyuhNGXinuXgoGlEhcj36RwrQlLtHE1YyFMSkOYl9xsWrbw1zYfTrAL1FM0S9N58axAx7S2XdY5SumAaEEqqoN7i-Jq70byrKynPcG9A1WTfqUTrWqXXnBrSCsiscH2'
-    },
-    {
-      id: 5,
-      name: 'Rainbow Organic Chard & Kale Bundle',
-      price: '$3.75 / bunch',
-      category: 'Fresh Vegetables',
-      farmer: 'Whispering Pines Organic Herbs',
-      unitsSold: '390 bundles',
-      revenue: '$1,462',
-      trend: '+7%',
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuA0rX6QqpjAbOj4aS9tyXHfexwLNZNbzSxXT3wnnRZ2XMSpA3M7N8idUFHiRchav_OFiX0mQuqWd0Z-t9_fUwFZGiWRa-be7DDkZhArudA_GozKGr25dEhHpyZDDvoWZ64z6hyMDey5Sgy9ZMPo0jIoAHHOox4FIup4zjPod4TRo-inqmbqmJZBvCIggYQsqchQqcay4tIPkUr3UN4vh-7SRbi3jh2cpjLmrpd164fewdifDCyYcmgR'
-    }
-  ];
+  // Top selling products data from live API
+  const topSellingProducts = (reportsData?.top_selling_products || []).map((p) => ({
+    id: p.id,
+    name: p.name,
+    price: p.price,
+    category: p.category,
+    farmer: p.farmer,
+    unitsSold: p.units_sold,
+    revenue: p.revenue,
+    trend: p.trend,
+    image: p.image
+  }));
 
   // Markets revenue comparison data for Bar Chart
-  const marketRevenueBars = [
-    { name: 'Downtown Sat', full: 'Downtown Saturday Market', amount: 52400, label: '$52.4k', share: 92, color: '#2E6B3A' },
-    { name: 'Pioneer Pav', full: 'Pioneer Pavilion Heritage', amount: 44200, label: '$44.2k', share: 78, color: '#8BC34A' },
-    { name: 'River Dist', full: 'Riverside Twilight Market', amount: 31800, label: '$31.8k', share: 56, color: '#F28C28' },
-    { name: 'Oak Valley', full: 'Oak Valley Organic Market', amount: 26500, label: '$26.5k', share: 46, color: '#2E6B3A' },
-    { name: 'Central Hall', full: 'Central Market Hall Plaza', amount: 18900, label: '$18.9k', share: 33, color: '#8BC34A' }
-  ];
+  const marketRevenueBars = (reportsData?.revenue_by_market || []).map((m, idx) => {
+    const colors = ['#2E6B3A', '#8BC34A', '#F28C28', '#2E6B3A', '#8BC34A'];
+    const maxRev = Math.max(...(reportsData.revenue_by_market.map((r) => r.total_revenue)), 1);
+    const share = Math.round((m.total_revenue / maxRev) * 100);
+    return {
+      name: m.market_name.length > 12 ? m.market_name.substring(0, 11) + '...' : m.market_name,
+      full: m.market_name,
+      amount: m.total_revenue,
+      label: `$${Number(m.total_revenue).toFixed(2)}`,
+      share: Math.max(share, 8),
+      color: colors[idx % colors.length]
+    };
+  });
+
+  const topMarket = marketRevenueBars.length > 0 ? marketRevenueBars[0] : null;
+  const avgMarketRevenue = marketRevenueBars.length > 0
+    ? (marketRevenueBars.reduce((sum, m) => sum + (Number(m.amount) || 0), 0) / marketRevenueBars.length).toFixed(2)
+    : '0.00';
 
   return (
     <div className="px-gutter py-space-lg max-w-7xl mx-auto w-full flex flex-col gap-space-lg animate-fade-in">
@@ -212,11 +127,11 @@ export default function ReportsAnalytics({ onNavigate, showToast }) {
             </div>
           </div>
           <span className="font-headline-md text-2xl sm:text-3xl font-bold text-on-surface">
-            {reportsData?.total_revenue ? `$${Number(reportsData.total_revenue).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '$148,920'}
+            {reportsData?.total_revenue ? `$${Number(reportsData.total_revenue).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '$0.00'}
           </span>
           <div className="flex items-center justify-between pt-1">
             <span className="font-body-sm text-secondary flex items-center gap-1 font-bold text-xs">
-              <span className="material-symbols-outlined text-[15px]">trending_up</span> +14.2%
+              <span className="material-symbols-outlined text-[15px]">trending_up</span> Live
             </span>
             <span className="text-[10px] text-on-surface-variant italic">
               Platform-wide direct sales
@@ -238,18 +153,18 @@ export default function ReportsAnalytics({ onNavigate, showToast }) {
             </div>
           </div>
           <span className="font-headline-md text-2xl sm:text-3xl font-bold text-primary">
-            {reportsData?.total_orders ?? '3,842'}
+            {reportsData?.total_orders ?? 0}
           </span>
           <div className="flex items-center justify-between pt-1">
             <span className="font-body-sm text-secondary flex items-center gap-1 font-bold text-xs">
-              <span className="material-symbols-outlined text-[15px]">trending_up</span> +8.5%
+              <span className="material-symbols-outlined text-[15px]">verified</span> Active
             </span>
             <span className="text-[10px] text-on-surface-variant">
-              98.2% pickup rate
+              Orders placed
             </span>
           </div>
           <div className="text-[10px] text-on-surface-variant border-t border-outline-variant/20 pt-1 mt-1">
-            Avg basket: $38.75 / transaction
+            Total registered pre-orders
           </div>
         </div>
 
@@ -264,18 +179,18 @@ export default function ReportsAnalytics({ onNavigate, showToast }) {
             </div>
           </div>
           <span className="font-headline-md text-2xl sm:text-3xl font-bold text-tertiary">
-            74
+            {reportsData?.total_farmers ?? (reportsData?.most_active_farmers?.length ?? 0)}
           </span>
           <div className="flex items-center justify-between pt-1">
             <span className="font-body-sm text-secondary flex items-center gap-1 font-bold text-xs">
-              <span className="material-symbols-outlined text-[15px]">verified</span> 94% occupancy
+              <span className="material-symbols-outlined text-[15px]">verified</span> Verified
             </span>
             <span className="text-[10px] text-on-surface-variant">
-              Across 5 pavilions
+              Across {reportsData?.total_markets ?? 0} pavilions
             </span>
           </div>
           <div className="text-[10px] text-on-surface-variant border-t border-outline-variant/20 pt-1 mt-1">
-            18 cert. organic handlers
+            Registered farm stands
           </div>
         </div>
 
@@ -290,18 +205,18 @@ export default function ReportsAnalytics({ onNavigate, showToast }) {
             </div>
           </div>
           <span className="font-headline-md text-2xl sm:text-3xl font-bold text-on-surface">
-            4,120
+            {reportsData?.total_customers ?? 0}
           </span>
           <div className="flex items-center justify-between pt-1">
             <span className="font-body-sm text-secondary flex items-center gap-1 font-bold text-xs">
-              <span className="material-symbols-outlined text-[15px]">person_add</span> +230 this month
+              <span className="material-symbols-outlined text-[15px]">person</span> Registered
             </span>
             <span className="text-[10px] text-on-surface-variant">
-              64% repeat reservation
+              Community shoppers
             </span>
           </div>
           <div className="text-[10px] text-on-surface-variant border-t border-outline-variant/20 pt-1 mt-1">
-            1,240 SNAP / EBT token users
+            Direct farm supporters
           </div>
         </div>
       </div>
@@ -425,11 +340,11 @@ export default function ReportsAnalytics({ onNavigate, showToast }) {
 
           <div className="mt-3 pt-2 border-t border-outline-variant/20 flex items-center justify-between text-xs">
             <span className="font-bold text-on-surface">
-              Peak Day: Saturday (2,180 pre-orders, 56.7%)
+              {reportsData?.total_orders ? `${reportsData.total_orders} Total Pre-Orders Processed` : 'No orders recorded yet'}
             </span>
             <span className="text-secondary font-bold flex items-center gap-1">
               <span className="material-symbols-outlined text-[16px]">trending_up</span>
-              +19% MoM Growth
+              Order Tracking Live
             </span>
           </div>
         </div>
@@ -450,47 +365,53 @@ export default function ReportsAnalytics({ onNavigate, showToast }) {
             </div>
 
             <span className="font-label-sm text-xs font-bold text-primary px-2.5 py-1 rounded-full bg-primary-fixed">
-              5 Markets Active
+              {reportsData?.total_markets ?? marketRevenueBars.length} Markets Active
             </span>
           </div>
 
           {/* Bar Chart Visualization */}
           <div className="flex flex-col gap-3 py-1">
-            {marketRevenueBars.map((bar, i) => (
-              <div key={i} className="flex flex-col gap-1 text-xs">
-                <div className="flex items-center justify-between font-bold">
-                  <span className="text-on-surface flex items-center gap-1.5">
-                    <span
-                      className="w-2 h-2 rounded-full"
-                      style={{ backgroundColor: bar.color }}
-                    ></span>
-                    {bar.full}
-                  </span>
-                  <span className="text-primary font-mono">{bar.label}</span>
-                </div>
+            {marketRevenueBars.length === 0 ? (
+              <div className="py-10 text-center text-on-surface-variant text-xs italic">
+                No market revenue data available yet.
+              </div>
+            ) : (
+              marketRevenueBars.map((bar, i) => (
+                <div key={i} className="flex flex-col gap-1 text-xs">
+                  <div className="flex items-center justify-between font-bold">
+                    <span className="text-on-surface flex items-center gap-1.5">
+                      <span
+                        className="w-2 h-2 rounded-full"
+                        style={{ backgroundColor: bar.color }}
+                      ></span>
+                      {bar.full}
+                    </span>
+                    <span className="text-primary font-mono">{bar.label}</span>
+                  </div>
 
-                {/* Bar Track */}
-                <div className="w-full h-4 bg-surface-container rounded-full overflow-hidden flex">
-                  <div
-                    className="h-full rounded-full transition-all duration-700 hover:brightness-110 flex items-center justify-end pr-2 text-[9px] text-white font-bold"
-                    style={{
-                      width: `${bar.share}%`,
-                      backgroundColor: bar.color
-                    }}
-                  >
-                    {bar.share > 30 ? `${bar.share}%` : ''}
+                  {/* Bar Track */}
+                  <div className="w-full h-4 bg-surface-container rounded-full overflow-hidden flex">
+                    <div
+                      className="h-full rounded-full transition-all duration-700 hover:brightness-110 flex items-center justify-end pr-2 text-[9px] text-white font-bold"
+                      style={{
+                        width: `${bar.share}%`,
+                        backgroundColor: bar.color
+                      }}
+                    >
+                      {bar.share > 30 ? `${bar.share}%` : ''}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
 
           <div className="mt-3 pt-2 border-t border-outline-variant/20 flex items-center justify-between text-xs">
             <span className="text-on-surface-variant">
-              Top Pavilion: <strong className="text-on-surface font-bold">Downtown Sat ($52,400)</strong>
+              Top Pavilion: <strong className="text-on-surface font-bold">{topMarket ? `${topMarket.full} (${topMarket.label})` : 'None'}</strong>
             </span>
             <span className="text-on-surface-variant">
-              Avg Market Output: <strong className="text-on-surface font-bold">$29,780</strong>
+              Avg Market Output: <strong className="text-on-surface font-bold">${avgMarketRevenue}</strong>
             </span>
           </div>
         </div>
@@ -513,7 +434,7 @@ export default function ReportsAnalytics({ onNavigate, showToast }) {
             onClick={() => onNavigate('farmers')}
             className="text-primary hover:underline text-xs font-bold flex items-center gap-1 cursor-pointer"
           >
-            <span>Manage All 74 Farmers</span>
+            <span>Manage All Farmers ({reportsData?.total_farmers ?? mostActiveFarmers.length})</span>
             <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
           </button>
         </div>
@@ -531,63 +452,71 @@ export default function ReportsAnalytics({ onNavigate, showToast }) {
               </tr>
             </thead>
             <tbody className="divide-y divide-surface-container-high/50 text-on-surface text-xs">
-              {mostActiveFarmers.map((f, i) => (
-                <tr key={f.id} className="hover:bg-surface-container-low/60 transition-colors">
-                  {/* Farmer */}
-                  <td className="py-3.5 px-space-md">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-full bg-primary-fixed text-on-primary-fixed flex items-center justify-center font-bold text-xs shrink-0">
-                        {f.avatar}
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="font-bold text-on-surface">{f.name}</span>
-                        <span className="text-[11px] text-on-surface-variant">{f.contact}</span>
-                      </div>
-                    </div>
-                  </td>
-
-                  {/* Market */}
-                  <td className="py-3.5 px-space-md">
-                    <span className="px-2 py-0.5 rounded-md bg-surface-container font-label-sm text-[11px] font-bold text-on-surface">
-                      {f.market}
-                    </span>
-                  </td>
-
-                  {/* Total Orders */}
-                  <td className="py-3.5 px-space-md font-bold text-on-surface">
-                    {f.totalOrders} orders
-                  </td>
-
-                  {/* Revenue Share */}
-                  <td className="py-3.5 px-space-md">
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-primary">{f.revenueShare}</span>
-                      <div className="w-16 h-1.5 rounded-full bg-surface-container overflow-hidden">
-                        <div
-                          className="h-full bg-primary rounded-full"
-                          style={{ width: f.revenueShare }}
-                        ></div>
-                      </div>
-                    </div>
-                  </td>
-
-                  {/* Average Rating */}
-                  <td className="py-3.5 px-space-md">
-                    <div className="flex items-center gap-1 font-bold text-on-surface">
-                      <span className="material-symbols-outlined text-[#F28C28] text-[16px]">star</span>
-                      <span>{f.rating}</span>
-                      <span className="text-[11px] text-on-surface-variant font-normal">({f.reviewsCount})</span>
-                    </div>
-                  </td>
-
-                  {/* Growth Trend */}
-                  <td className="py-3.5 px-space-md text-right">
-                    <span className="px-2 py-0.5 rounded-md bg-secondary-fixed text-on-secondary-fixed-variant font-bold text-[11px]">
-                      {f.trend}
-                    </span>
+              {mostActiveFarmers.length === 0 ? (
+                <tr>
+                  <td colSpan="6" className="py-8 text-center text-on-surface-variant text-xs italic">
+                    No active farmer performance data recorded yet.
                   </td>
                 </tr>
-              ))}
+              ) : (
+                mostActiveFarmers.map((f, i) => (
+                  <tr key={f.id} className="hover:bg-surface-container-low/60 transition-colors">
+                    {/* Farmer */}
+                    <td className="py-3.5 px-space-md">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-full bg-primary-fixed text-on-primary-fixed flex items-center justify-center font-bold text-xs shrink-0">
+                          {f.avatar}
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="font-bold text-on-surface">{f.name}</span>
+                          <span className="text-[11px] text-on-surface-variant">{f.contact}</span>
+                        </div>
+                      </div>
+                    </td>
+
+                    {/* Market */}
+                    <td className="py-3.5 px-space-md">
+                      <span className="px-2 py-0.5 rounded-md bg-surface-container font-label-sm text-[11px] font-bold text-on-surface">
+                        {f.market}
+                      </span>
+                    </td>
+
+                    {/* Total Orders */}
+                    <td className="py-3.5 px-space-md font-bold text-on-surface">
+                      {f.totalOrders} orders
+                    </td>
+
+                    {/* Revenue Share */}
+                    <td className="py-3.5 px-space-md">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-primary">{f.revenueShare}</span>
+                        <div className="w-16 h-1.5 rounded-full bg-surface-container overflow-hidden">
+                          <div
+                            className="h-full bg-primary rounded-full"
+                            style={{ width: f.revenueShare }}
+                          ></div>
+                        </div>
+                      </div>
+                    </td>
+
+                    {/* Average Rating */}
+                    <td className="py-3.5 px-space-md">
+                      <div className="flex items-center gap-1 font-bold text-on-surface">
+                        <span className="material-symbols-outlined text-[#F28C28] text-[16px]">star</span>
+                        <span>{f.rating}</span>
+                        <span className="text-[11px] text-on-surface-variant font-normal">({f.reviewsCount})</span>
+                      </div>
+                    </td>
+
+                    {/* Growth Trend */}
+                    <td className="py-3.5 px-space-md text-right">
+                      <span className="px-2 py-0.5 rounded-md bg-secondary-fixed text-on-secondary-fixed-variant font-bold text-[11px]">
+                        {f.trend}
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -627,7 +556,14 @@ export default function ReportsAnalytics({ onNavigate, showToast }) {
               </tr>
             </thead>
             <tbody className="divide-y divide-surface-container-high/50 text-on-surface text-xs">
-              {topSellingProducts.map((p) => (
+              {topSellingProducts.length === 0 ? (
+                <tr>
+                  <td colSpan="6" className="py-8 text-center text-on-surface-variant text-xs italic">
+                    No product sales recorded yet.
+                  </td>
+                </tr>
+              ) : (
+                topSellingProducts.map((p) => (
                 <tr key={p.id} className="hover:bg-surface-container-low/60 transition-colors">
                   {/* Product */}
                   <td className="py-3.5 px-space-md">
@@ -673,7 +609,8 @@ export default function ReportsAnalytics({ onNavigate, showToast }) {
                     </span>
                   </td>
                 </tr>
-              ))}
+              ))
+              )}
             </tbody>
           </table>
         </div>

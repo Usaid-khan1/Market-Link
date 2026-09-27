@@ -43,11 +43,11 @@ export default function FarmerDashboard({ onNavigate, initialTab = 'dashboard' }
 
   // Farmer / Stall Profile
   const stallInfo = {
-    name: profile?.stall_name || 'Green Pastures Organic',
-    tagline: profile?.address ? `${profile.address}` : 'Stall #08 • Pioneer Pavilion & Downtown Sat',
-    owner: profile?.contact_person || 'Marcus Thorne',
-    initials: (profile?.stall_name || 'GP').split(' ').map((n) => n[0]).join('').substring(0, 2).toUpperCase(),
-    rating: profile?.rating ? `${profile.rating} ★` : '4.95 ★'
+    name: profile?.stall_name || profile?.user?.name || 'Local Farm Stand',
+    tagline: profile?.address ? `${profile.address}` : 'Farm Producer',
+    owner: profile?.contact_person || profile?.user?.name || 'Farmer',
+    initials: (profile?.stall_name || profile?.user?.name || 'FS').split(' ').map((n) => n[0]).join('').substring(0, 2).toUpperCase(),
+    rating: profile?.rating ? `${profile.rating} ★` : (insights?.avg_rating ? `${insights.avg_rating} ★` : 'New')
   };
 
   // Sidebar Navigation Items
@@ -60,23 +60,30 @@ export default function FarmerDashboard({ onNavigate, initialTab = 'dashboard' }
     { id: 'settings', label: 'Profile & Stall Settings', icon: 'storefront' }
   ];
 
-  // Mini Dashboard Home Data
-  const recentIncomingOrders = [
-    { id: '#ML-8920', customer: 'Elena Rostova', items: '4 lbs Tomatoes, 2 bunches Chard', slot: '9:30 AM – 11:00 AM', status: 'Placed' },
-    { id: '#ML-8919', customer: 'Claire Thompson', items: '2 Romanesco, 3 snap peas', slot: '8:00 AM – 9:30 AM', status: 'Accepted' },
-    { id: '#ML-8914', customer: 'David Reynolds', items: '6 lbs Tomatoes, 4 basil', slot: '8:00 AM – 9:30 AM', status: 'Ready for Pickup' }
-  ];
+  // Dynamic Mini Dashboard Home Data
+  const recentIncomingOrders = (insights?.recent_orders || []).map((o) => ({
+    id: o.order_number || `#ML-${o.id}`,
+    customer: o.customer?.name || 'Shopper',
+    items: o.items ? o.items.map((it) => `${it.quantity}x ${it.product?.name || 'Item'}`).join(', ') : `${o.items_count || 1} items`,
+    slot: o.pickup_slot || (o.pickup_time ? new Date(o.pickup_time).toLocaleDateString() : 'Morning Pickup'),
+    status: o.order_status ? o.order_status.charAt(0).toUpperCase() + o.order_status.slice(1) : 'Placed'
+  }));
 
-  const stockAlerts = [
-    { id: 'p-2', name: 'Rainbow Swiss Chard', qty: '4 bunches left', alertType: 'Low Stock', color: 'text-[#F28C28]' },
-    { id: 'p-4', name: 'Sweet Italian Genovese Basil', qty: '0 bunches (Sold Out)', alertType: 'Sold Out', color: 'text-error' },
-    { id: 'p-5', name: 'Japanese Sweet Bell Peppers', qty: 'Harvest in 10 days', alertType: 'Unavailable', color: 'text-on-surface-variant' }
-  ];
+  const stockAlerts = (insights?.stock_alerts || []).map((p) => ({
+    id: p.id,
+    name: p.name,
+    qty: p.status === 'sold_out' || p.stock_quantity <= 0 ? '0 (Sold Out)' : `${p.stock_quantity} ${p.unit || 'units'} left`,
+    alertType: p.status === 'sold_out' || p.stock_quantity <= 0 ? 'Sold Out' : 'Low Stock',
+    color: p.status === 'sold_out' || p.stock_quantity <= 0 ? 'text-error' : 'text-[#F28C28]'
+  }));
 
-  const recentReviewsMini = [
-    { id: 1, customer: 'Elena Rostova', rating: 5, excerpt: 'The absolute best tomatoes in Portland! Thin skin and rich sweetness.', time: '2 hrs ago' },
-    { id: 2, customer: 'Marcus Brody', rating: 5, excerpt: 'Romanesco was a work of art! Both aesthetically stunning and delicious.', time: 'Yesterday' }
-  ];
+  const recentReviewsMini = (insights?.recent_reviews || []).map((r) => ({
+    id: r.id,
+    customer: r.customer,
+    rating: r.rating,
+    excerpt: r.comment || 'Verified purchase review',
+    time: r.created_at || 'Recently'
+  }));
 
   const renderStatusBadgeMini = (status) => {
     switch (status) {
@@ -207,7 +214,7 @@ export default function FarmerDashboard({ onNavigate, initialTab = 'dashboard' }
               
               {/* Live Harvest Ticker */}
               <DashboardTickerBanner
-                text="Harvest Staging Active: 14 of 18 Saturday Pre-Orders packed and crates tagged • Pioneer Pavilion Stall #08 • Forecast: 68°F Sunny"
+                text={insights?.total_orders ? `Harvest Staging Active: ${insights?.ready_orders ?? 0} of ${insights?.total_orders ?? 0} Pre-Orders packed and tagged • ${stallInfo.tagline}` : 'Welcome to your Farm Stand dashboard • Set up produce catalog to receive weekly orders'}
                 badge="STALL STATUS"
                 icon="agriculture"
               />
@@ -220,10 +227,10 @@ export default function FarmerDashboard({ onNavigate, initialTab = 'dashboard' }
                   </div>
                   <div className="flex flex-col">
                     <span className="font-bold text-[#9a3412] text-xs sm:text-sm">
-                      ⏰ Order Cut-off Approaching: Friday 8:00 PM
+                      ⏰ Order Cut-off Approaching
                     </span>
                     <span className="text-[#c2410c] text-[11px]">
-                      Cut-off for Saturday Downtown Market pre-orders is approaching. 4 hours remaining to adjust stock limits before customers complete checkout.
+                      Cut-off for weekend market pre-orders is approaching. Keep stock limits adjusted before customers complete checkout.
                     </span>
                   </div>
                 </div>
@@ -245,9 +252,9 @@ export default function FarmerDashboard({ onNavigate, initialTab = 'dashboard' }
                   </h1>
                   <div className="flex items-center gap-2 text-on-surface-variant font-body-sm text-xs mt-0.5">
                     <span className="material-symbols-outlined text-[16px] text-primary">calendar_today</span>
-                    <span>Saturday, October 18, 2025</span>
+                    <span>{new Date().toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
                     <span>•</span>
-                    <span className="text-secondary font-bold">Saturday Downtown Market Stalls Open</span>
+                    <span className="text-secondary font-bold">{stallInfo.tagline}</span>
                   </div>
                 </div>
 
@@ -266,8 +273,8 @@ export default function FarmerDashboard({ onNavigate, initialTab = 'dashboard' }
                 <StatCard
                   icon="shopping_bag"
                   label="Total Pre-Orders"
-                  value={insights?.total_orders ?? 128}
-                  trend="+18% this month"
+                  value={insights?.total_orders ?? 0}
+                  trend={insights?.total_orders ? `${insights.total_orders} orders received` : 'No orders yet'}
                   trendUp={true}
                   iconBg="bg-primary/10"
                   iconColor="text-primary"
@@ -276,8 +283,8 @@ export default function FarmerDashboard({ onNavigate, initialTab = 'dashboard' }
                 <StatCard
                   icon="pending_actions"
                   label="Pending Packing"
-                  value={insights?.pending_orders ?? 6}
-                  trend="4 awaiting harvest"
+                  value={insights?.pending_orders ?? 0}
+                  trend={insights?.pending_orders ? `${insights.pending_orders} awaiting staging` : 'All packed'}
                   trendUp={false}
                   iconBg="bg-tertiary/10"
                   iconColor="text-tertiary"
@@ -285,9 +292,9 @@ export default function FarmerDashboard({ onNavigate, initialTab = 'dashboard' }
                 />
                 <StatCard
                   icon="payments"
-                  label="Est. Revenue (Week)"
-                  value={insights?.total_revenue ? `$${Number(insights.total_revenue).toFixed(2)}` : '$2,480.00'}
-                  trend="+14% vs last Sat"
+                  label="Est. Revenue"
+                  value={insights?.total_revenue ? `$${Number(insights.total_revenue).toFixed(2)}` : '$0.00'}
+                  trend={insights?.total_revenue ? 'Direct sales volume' : '$0.00 volume'}
                   trendUp={true}
                   iconBg="bg-primary/10"
                   iconColor="text-primary"
@@ -296,8 +303,8 @@ export default function FarmerDashboard({ onNavigate, initialTab = 'dashboard' }
                 <StatCard
                   icon="eco"
                   label="Best-Selling Harvest"
-                  value={insights?.best_seller?.name ? (insights.best_seller.name.length > 18 ? insights.best_seller.name.substring(0, 16) + '...' : insights.best_seller.name) : 'Brandywines'}
-                  trend={insights?.best_seller?.total_sold ? `${insights.best_seller.total_sold} units sold` : '980 lbs sold'}
+                  value={insights?.best_sellers?.[0]?.product_name ?? 'None yet'}
+                  trend={insights?.best_sellers?.[0]?.total_qty_sold ? `${insights.best_sellers[0].total_qty_sold} units sold` : '0 sold'}
                   trendUp={true}
                   iconBg="bg-secondary/10"
                   iconColor="text-secondary"
@@ -306,35 +313,42 @@ export default function FarmerDashboard({ onNavigate, initialTab = 'dashboard' }
               </div>
 
               {/* Harvest Staging & Packing Live Bar */}
-              <div className="p-4 sm:p-5 rounded-2xl bg-surface-container-lowest border border-outline-variant/30 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center font-bold shadow-xs flex-shrink-0">
-                    <span className="material-symbols-outlined text-[22px]">inventory_2</span>
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-on-surface">Saturday Downtown Market Staging</span>
-                      <span className="px-2 py-0.5 rounded-full bg-secondary-fixed text-[#0d3b1c] text-[10px] font-black">78% COMPLETE</span>
+              {(() => {
+                const staging = insights?.staging_progress || { total_orders: 0, packed_orders: 0, percentage: 0, market_name: 'Upcoming Market' };
+                return (
+                  <div className="p-4 sm:p-5 rounded-2xl bg-surface-container-lowest border border-outline-variant/30 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center font-bold shadow-xs flex-shrink-0">
+                        <span className="material-symbols-outlined text-[22px]">inventory_2</span>
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-bold text-on-surface">{staging.market_name} Staging</span>
+                          <span className="px-2 py-0.5 rounded-full bg-secondary-fixed text-[#0d3b1c] text-[10px] font-black">{staging.percentage}% COMPLETE</span>
+                        </div>
+                        <p className="text-[11px] text-on-surface-variant mt-0.5">
+                          {staging.total_orders > 0
+                            ? `${staging.packed_orders} of ${staging.total_orders} crates packed with customer voucher tags`
+                            : 'No pending orders scheduled for this harvest cycle'}
+                        </p>
+                      </div>
                     </div>
-                    <p className="text-[11px] text-on-surface-variant mt-0.5">
-                      14 of 18 crates washed, sorted, and packed with customer voucher tags for Booth 12
-                    </p>
-                  </div>
-                </div>
 
-                <div className="flex items-center gap-3 w-full md:w-64">
-                  <div className="flex-1 bg-surface-container-high h-2.5 rounded-full overflow-hidden">
-                    <div className="bg-primary h-full rounded-full transition-all duration-500" style={{ width: '78%' }} />
+                    <div className="flex items-center gap-3 w-full md:w-64">
+                      <div className="flex-1 bg-surface-container-high h-2.5 rounded-full overflow-hidden">
+                        <div className="bg-primary h-full rounded-full transition-all duration-500" style={{ width: `${staging.percentage}%` }} />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab('pre-orders')}
+                        className="px-3 py-1.5 rounded-xl bg-primary hover:bg-primary-container text-white text-xs font-bold transition-all shadow-xs shrink-0 cursor-pointer"
+                      >
+                        Pack Crates
+                      </button>
+                    </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab('pre-orders')}
-                    className="px-3 py-1.5 rounded-xl bg-primary hover:bg-primary-container text-white text-xs font-bold transition-all shadow-xs shrink-0 cursor-pointer"
-                  >
-                    Pack Crates
-                  </button>
-                </div>
-              </div>
+                );
+              })()}
 
               {/* Main Content Grid: Left (Widgets) & Right (Widgets + Chart) */}
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-space-lg">
@@ -372,23 +386,31 @@ export default function FarmerDashboard({ onNavigate, initialTab = 'dashboard' }
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-surface-container-high/50 text-on-surface">
-                          {recentIncomingOrders.map((o) => (
-                            <tr key={o.id} className="hover:bg-surface-container-low/60 transition-colors">
-                              <td className="py-3 px-3 font-mono font-bold text-primary">{o.id}</td>
-                              <td className="py-3 px-3 font-bold">{o.customer}</td>
-                              <td className="py-3 px-3 text-on-surface-variant text-[11px]">{o.slot}</td>
-                              <td className="py-3 px-3">{renderStatusBadgeMini(o.status)}</td>
-                              <td className="py-3 px-3 text-right">
-                                <button
-                                  type="button"
-                                  onClick={() => setActiveTab('pre-orders')}
-                                  className="px-2 py-1 rounded bg-surface-container hover:bg-surface-container-high text-primary font-bold text-[11px] cursor-pointer"
-                                >
-                                  View
-                                </button>
+                          {recentIncomingOrders.length === 0 ? (
+                            <tr>
+                              <td colSpan="5" className="py-8 text-center text-on-surface-variant text-xs italic">
+                                No incoming pre-orders yet.
                               </td>
                             </tr>
-                          ))}
+                          ) : (
+                            recentIncomingOrders.map((o) => (
+                              <tr key={o.id} className="hover:bg-surface-container-low/60 transition-colors">
+                                <td className="py-3 px-3 font-mono font-bold text-primary">{o.id}</td>
+                                <td className="py-3 px-3 font-bold">{o.customer}</td>
+                                <td className="py-3 px-3 text-on-surface-variant text-[11px]">{o.slot}</td>
+                                <td className="py-3 px-3">{renderStatusBadgeMini(o.status)}</td>
+                                <td className="py-3 px-3 text-right">
+                                  <button
+                                    type="button"
+                                    onClick={() => setActiveTab('pre-orders')}
+                                    className="px-2 py-1 rounded bg-surface-container hover:bg-surface-container-high text-primary font-bold text-[11px] cursor-pointer"
+                                  >
+                                    View
+                                  </button>
+                                </td>
+                              </tr>
+                            ))
+                          )}
                         </tbody>
                       </table>
                     </div>
@@ -401,7 +423,7 @@ export default function FarmerDashboard({ onNavigate, initialTab = 'dashboard' }
                       onClick={() => setActiveTab('pre-orders')}
                       className="text-primary font-bold hover:underline"
                     >
-                      Manage 128 Total Orders →
+                      Manage {insights?.total_orders ?? recentIncomingOrders.length} Total Orders →
                     </button>
                   </div>
                 </div>
@@ -428,28 +450,34 @@ export default function FarmerDashboard({ onNavigate, initialTab = 'dashboard' }
                     </div>
 
                     <div className="flex flex-col gap-2">
-                      {stockAlerts.map((it) => (
-                        <div
-                          key={it.id}
-                          className="p-2.5 rounded-xl bg-surface-container-low border border-outline-variant/20 flex items-center justify-between text-xs"
-                        >
-                          <div className="flex flex-col min-w-0">
-                            <span className="font-bold text-on-surface truncate">{it.name}</span>
-                            <span className={`text-[11px] font-bold ${it.color}`}>{it.qty}</span>
-                          </div>
-
-                          <button
-                            type="button"
-                            onClick={() => {
-                              showToast(`Restock modal opened for ${it.name}.`);
-                              setActiveTab('products');
-                            }}
-                            className="px-2.5 py-1 rounded-lg bg-surface-container hover:bg-surface-container-high text-primary font-bold text-xs cursor-pointer"
-                          >
-                            Restock
-                          </button>
+                      {stockAlerts.length === 0 ? (
+                        <div className="py-6 text-center text-on-surface-variant text-xs italic">
+                          All catalog inventory is currently well stocked.
                         </div>
-                      ))}
+                      ) : (
+                        stockAlerts.map((it) => (
+                          <div
+                            key={it.id}
+                            className="p-2.5 rounded-xl bg-surface-container-low border border-outline-variant/20 flex items-center justify-between text-xs"
+                          >
+                            <div className="flex flex-col min-w-0">
+                              <span className="font-bold text-on-surface truncate">{it.name}</span>
+                              <span className={`text-[11px] font-bold ${it.color}`}>{it.qty}</span>
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                showToast(`Restock modal opened for ${it.name}.`);
+                                setActiveTab('products');
+                              }}
+                              className="px-2.5 py-1 rounded-lg bg-surface-container hover:bg-surface-container-high text-primary font-bold text-xs cursor-pointer"
+                            >
+                              Restock
+                            </button>
+                          </div>
+                        ))
+                      )}
                     </div>
                   </div>
 
@@ -472,33 +500,39 @@ export default function FarmerDashboard({ onNavigate, initialTab = 'dashboard' }
                     </div>
 
                     <div className="flex flex-col gap-2">
-                      {recentReviewsMini.map((rev) => (
-                        <div
-                          key={rev.id}
-                          className="p-2.5 rounded-xl bg-surface-container-low border border-outline-variant/20 flex flex-col gap-1 text-xs"
-                        >
-                          <div className="flex items-center justify-between">
-                            <span className="font-bold text-on-surface">{rev.customer}</span>
-                            <div className="flex items-center gap-0.5 text-[#F28C28]">
-                              {[1, 2, 3, 4, 5].map((s) => (
-                                <span key={s} className="material-symbols-outlined text-[13px]">star</span>
-                              ))}
+                      {recentReviewsMini.length === 0 ? (
+                        <div className="py-6 text-center text-on-surface-variant text-xs italic">
+                          No customer reviews received yet.
+                        </div>
+                      ) : (
+                        recentReviewsMini.map((rev) => (
+                          <div
+                            key={rev.id}
+                            className="p-2.5 rounded-xl bg-surface-container-low border border-outline-variant/20 flex flex-col gap-1 text-xs"
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="font-bold text-on-surface">{rev.customer}</span>
+                              <div className="flex items-center gap-0.5 text-[#F28C28]">
+                                {[1, 2, 3, 4, 5].slice(0, rev.rating || 5).map((s) => (
+                                  <span key={s} className="material-symbols-outlined text-[13px]">star</span>
+                                ))}
+                              </div>
+                            </div>
+                            <p className="text-on-surface-variant text-[11px] italic line-clamp-1">
+                              "{rev.excerpt}"
+                            </p>
+                            <div className="flex justify-end pt-0.5">
+                              <button
+                                type="button"
+                                onClick={() => setActiveTab('reviews')}
+                                className="text-primary hover:underline text-[11px] font-bold cursor-pointer"
+                              >
+                                Reply →
+                              </button>
                             </div>
                           </div>
-                          <p className="text-on-surface-variant text-[11px] italic line-clamp-1">
-                            "{rev.excerpt}"
-                          </p>
-                          <div className="flex justify-end pt-0.5">
-                            <button
-                              type="button"
-                              onClick={() => setActiveTab('reviews')}
-                              className="text-primary hover:underline text-[11px] font-bold cursor-pointer"
-                            >
-                              Reply →
-                            </button>
-                          </div>
-                        </div>
-                      ))}
+                        ))
+                      )}
                     </div>
                   </div>
 
@@ -510,13 +544,15 @@ export default function FarmerDashboard({ onNavigate, initialTab = 'dashboard' }
                 <div className="flex items-center justify-between mb-space-sm">
                   <div>
                     <h3 className="font-headline-sm text-on-surface font-bold text-base">
-                      Sales This Week
+                      Sales Overview
                     </h3>
                     <p className="font-body-sm text-on-surface-variant text-xs">
-                      Daily pre-order dollar totals leading up to weekend market pickups
+                      Total pre-order revenue volume for this farm stand
                     </p>
                   </div>
-                  <span className="font-bold text-primary text-sm font-mono">$2,480.00 Total</span>
+                  <span className="font-bold text-primary text-sm font-mono">
+                    {insights?.total_revenue ? `$${Number(insights.total_revenue).toFixed(2)} Total` : '$0.00 Total'}
+                  </span>
                 </div>
 
                 {/* SVG Visual Chart */}

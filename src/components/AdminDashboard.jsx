@@ -8,18 +8,102 @@ import SystemConfiguration from './SystemConfiguration';
 import adminApi from '../api/admin';
 import { DashboardSidebar, DashboardHeader, DashboardToast, StatCard, StatusBadge, DashboardTickerBanner } from './DashboardShell';
 
+const CHART_CONFIGS = {
+  'Last 7 Days': {
+    area: 'M 0,125 C 60,125 90,85 140,85 C 190,85 230,115 280,115 C 330,115 370,60 420,60 C 470,60 510,90 560,90 C 610,90 635,35 670,35 L 700,38 L 700,160 L 0,160 Z',
+    line: 'M 0,125 C 60,125 90,85 140,85 C 190,85 230,115 280,115 C 330,115 370,60 420,60 C 470,60 510,90 560,90 C 610,90 635,35 670,35 L 700,38',
+    dots: [
+      { cx: 140, cy: 85, fill: '#125224', r: 5 },
+      { cx: 420, cy: 60, fill: '#125224', r: 5 },
+      { cx: 670, cy: 35, fill: '#F28C28', r: 6, isPeak: true },
+    ],
+    labels: [
+      { name: 'Mon', bold: false },
+      { name: 'Tue', bold: false },
+      { name: 'Wed', bold: false },
+      { name: 'Thu', bold: false },
+      { name: 'Fri (Surge)', bold: true, primary: true },
+      { name: 'Sat (Today - Peak)', bold: true, tertiary: true }
+    ],
+    window: 'Friday 4:30 PM – 8:00 PM',
+    basket: '$29.10 per patron',
+    fulfillment: '98.6%',
+  },
+  'This Month': {
+    area: 'M 0,130 C 60,130 110,60 160,60 C 210,60 240,120 290,120 C 340,120 370,45 420,45 C 470,45 490,95 540,95 C 590,95 620,30 660,30 C 675,30 690,32 700,32 L 700,160 L 0,160 Z',
+    line: 'M 0,130 C 60,130 110,60 160,60 C 210,60 240,120 290,120 C 340,120 370,45 420,45 C 470,45 490,95 540,95 C 590,95 620,30 660,30 C 675,30 690,32 700,32',
+    dots: [
+      { cx: 160, cy: 60, fill: '#125224', r: 5 },
+      { cx: 420, cy: 45, fill: '#125224', r: 5 },
+      { cx: 540, cy: 95, fill: '#125224', r: 4 },
+      { cx: 660, cy: 30, fill: '#F28C28', r: 6, isPeak: true },
+    ],
+    labels: [
+      { name: 'Oct 1 (Wed)', bold: false },
+      { name: 'Oct 4 (Sat)', bold: true, primary: true },
+      { name: 'Oct 8 (Wed)', bold: false },
+      { name: 'Oct 11 (Sat)', bold: true, primary: true },
+      { name: 'Oct 15 (Wed)', bold: false },
+      { name: 'Oct 18 (Today - Peak)', bold: true, tertiary: true }
+    ],
+    window: 'Friday 4:00 PM – 7:30 PM',
+    basket: '$28.40 per patron',
+    fulfillment: '98.2% (Historic High)',
+  },
+  'Last 30 Days': {
+    area: 'M 0,125 C 80,125 110,70 170,70 C 230,70 280,115 340,115 C 400,115 450,55 510,55 C 570,55 610,85 650,40 L 700,42 L 700,160 L 0,160 Z',
+    line: 'M 0,125 C 80,125 110,70 170,70 C 230,70 280,115 340,115 C 400,115 450,55 510,55 C 570,55 610,85 650,40 L 700,42',
+    dots: [
+      { cx: 170, cy: 70, fill: '#125224', r: 5 },
+      { cx: 510, cy: 55, fill: '#125224', r: 5 },
+      { cx: 650, cy: 40, fill: '#F28C28', r: 6, isPeak: true },
+    ],
+    labels: [
+      { name: 'Week 1', bold: false },
+      { name: 'Week 2', bold: true, primary: true },
+      { name: 'Week 3', bold: false },
+      { name: 'Week 4', bold: true, primary: true },
+      { name: 'Current Cycle (Peak)', bold: true, tertiary: true }
+    ],
+    window: 'Thursday–Friday Evenings',
+    basket: '$27.80 per patron',
+    fulfillment: '97.9%',
+  },
+  'Year-to-Date': {
+    area: 'M 0,135 C 70,135 120,105 180,105 C 240,105 280,80 350,80 C 420,80 470,50 530,50 C 590,50 620,30 670,30 L 700,32 L 700,160 L 0,160 Z',
+    line: 'M 0,135 C 70,135 120,105 180,105 C 240,105 280,80 350,80 C 420,80 470,50 530,50 C 590,50 620,30 670,30 L 700,32',
+    dots: [
+      { cx: 180, cy: 105, fill: '#125224', r: 5 },
+      { cx: 350, cy: 80, fill: '#125224', r: 5 },
+      { cx: 530, cy: 50, fill: '#125224', r: 5 },
+      { cx: 670, cy: 30, fill: '#F28C28', r: 6, isPeak: true },
+    ],
+    labels: [
+      { name: 'Spring Season', bold: false },
+      { name: 'Early Summer', bold: false },
+      { name: 'Mid-Summer Surge', bold: true, primary: true },
+      { name: 'Autumn Peak (Active)', bold: true, tertiary: true }
+    ],
+    window: 'Pre-Weekend Mornings',
+    basket: '$26.90 per patron',
+    fulfillment: '98.0%',
+  },
+};
+
 export default function AdminDashboard({ onNavigate, initialTab = 'dashboard' }) {
   const [activeTab, setActiveTab] = useState(initialTab);
   const [searchQuery, setSearchQuery] = useState('');
   const [orderFilter, setOrderFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('All Statuses');
   const [chartTimeframe, setChartTimeframe] = useState('This Month');
+  const activeChart = CHART_CONFIGS[chartTimeframe] || CHART_CONFIGS['This Month'];
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [summaryData, setSummaryData] = useState(null);
 
   // Modals state
   const [reviewModalData, setReviewModalData] = useState(null);
   const [announcementModalOpen, setAnnouncementModalOpen] = useState(false);
+  const [autoOpenMarketModal, setAutoOpenMarketModal] = useState(false);
   const [viewOrderData, setViewOrderData] = useState(null);
   const [toastMessage, setToastMessage] = useState(null);
 
@@ -31,164 +115,15 @@ export default function AdminDashboard({ onNavigate, initialTab = 'dashboard' })
   });
 
   // Announcements list state
-  const [announcements, setAnnouncements] = useState([
-    {
-      id: 1,
-      type: 'Weather Advisory',
-      icon: 'cloud',
-      color: 'text-tertiary',
-      time: '2 hrs ago',
-      title: 'Harvest Weekend Weather Alert',
-      desc: 'Rain anticipated in North River District for Saturday morning. Tents and rain guards mandatory for stalls 1–18.',
-      author: 'Hannah Vance',
-      audience: 'Farmers & Shoppers'
-    },
-    {
-      id: 2,
-      type: 'Token Program',
-      icon: 'toll',
-      color: 'text-primary',
-      time: 'Yesterday',
-      title: 'SNAP / Double Up Food Bucks Token Update',
-      desc: 'Booth #1 will have an additional $5,000 in wooden matching tokens available starting 7:30 AM.',
-      author: 'Central Admin',
-      audience: 'All Community'
-    },
-    {
-      id: 3,
-      type: 'Seasonal Event',
-      icon: 'festival',
-      color: 'text-secondary',
-      time: '3 days ago',
-      title: 'Fall Apple & Cider Festival Sign-Up',
-      desc: 'Growers can register extra square footage for the Oct 25 special harvest festival pavilion.',
-      author: 'Market Operations',
-      audience: 'Farmers Only'
-    }
-  ]);
+  const [announcements, setAnnouncements] = useState([]);
 
   // Pending farmers state
-  const [pendingFarmers, setPendingFarmers] = useState([
-    {
-      id: 1,
-      initials: 'RG',
-      name: 'Riverbend Goat Dairy & Fromagerie',
-      shortName: 'Riverbend Goat Dairy',
-      market: 'Downtown Saturday Market',
-      dateTag: 'Downtown Sat • Oct 16',
-      products: 'Artisan Raw Goat Cheeses, Cultured Butter, Yogurt',
-      owner: 'Elena & Marco Rossi',
-      permit: '100% Grass-fed Certified, Grade A State Dairy Permit #89201',
-      colorClass: 'bg-primary-fixed/50 text-primary'
-    },
-    {
-      id: 2,
-      initials: 'HB',
-      name: 'Highland Berry & Hazelnut Farm',
-      shortName: 'Highland Berry & Nut',
-      market: 'Oak Valley Sunday Bazaar',
-      dateTag: 'Oak Valley • Oct 15',
-      products: 'Heirloom Blackberries, Hazelnuts, Honey preserves',
-      owner: 'Douglas & Sarah Campbell',
-      permit: 'Organic Certified (USDA Regional), Water rights certified',
-      colorClass: 'bg-tertiary-fixed/50 text-tertiary'
-    },
-    {
-      id: 3,
-      initials: 'SM',
-      name: 'Sunspire Microgreens Co.',
-      shortName: 'Sunspire Microgreens',
-      market: 'Riverside Harvest Green',
-      dateTag: 'Riverside Harvest • Oct 14',
-      products: 'Hydroponic Pea Shoots, Radish Microgreens, Sunflower Greens',
-      owner: 'Talia Thorne',
-      permit: 'Commercial Kitchen & Soil-less Safety License #2203',
-      colorClass: 'bg-secondary-fixed/50 text-secondary'
-    },
-    {
-      id: 4,
-      initials: 'OO',
-      name: 'Old Oak Apiary & Meadery',
-      shortName: 'Old Oak Apiary',
-      market: 'Sunnybrook Community Stalls',
-      dateTag: 'Sunnybrook • Oct 13',
-      products: 'Raw Wildflower Honey, Beeswax candles, Propolis tinctures',
-      owner: 'Gareth Owens',
-      permit: 'State Apiary Registry #AP-44109, Cottage Food Exemption Verified',
-      colorClass: 'bg-primary-fixed/50 text-primary'
-    }
-  ]);
+  const [pendingFarmers, setPendingFarmers] = useState([]);
 
   // Pre-orders state
-  const [orders, setOrders] = useState([
-    {
-      id: '#ML-8921',
-      customer: 'Clara Vance',
-      neighborhood: 'Oak Valley',
-      farm: 'Green Pastures Organic',
-      market: 'Pioneer Pavilion',
-      itemsCount: 3,
-      amount: '$22.50',
-      status: 'Ready for Pickup',
-      statusColor: 'bg-primary-fixed text-on-primary-fixed',
-      dotColor: 'bg-primary',
-      pickupTime: '8:30 AM'
-    },
-    {
-      id: '#ML-8920',
-      customer: 'Marcus Thorne',
-      neighborhood: 'Downtown Core',
-      farm: 'Cedar Ridge Farm',
-      market: 'Saturday Downtown',
-      itemsCount: 5,
-      amount: '$38.00',
-      status: 'Pending Stall Pack',
-      statusColor: 'bg-tertiary-fixed text-on-tertiary-fixed',
-      dotColor: 'bg-tertiary',
-      pickupTime: '9:00 AM'
-    },
-    {
-      id: '#ML-8919',
-      customer: 'Eleanor Wright',
-      neighborhood: 'Sunnybrook',
-      farm: 'Whispering Pines Herbs',
-      market: 'Oak Valley Sunday',
-      itemsCount: 2,
-      amount: '$14.00',
-      status: 'Ready for Pickup',
-      statusColor: 'bg-primary-fixed text-on-primary-fixed',
-      dotColor: 'bg-primary',
-      pickupTime: '10:15 AM'
-    },
-    {
-      id: '#ML-8918',
-      customer: 'Samuel Chen',
-      neighborhood: 'East River',
-      farm: 'Mountain View Orchard',
-      market: 'Riverside Harvest',
-      itemsCount: 6,
-      amount: '$45.50',
-      status: 'Collected / Paid',
-      statusColor: 'bg-surface-container-high text-on-surface',
-      dotColor: 'bg-on-surface-variant',
-      pickupTime: '7:45 AM'
-    },
-    {
-      id: '#ML-8917',
-      customer: 'Maya Lin',
-      neighborhood: 'West Hills',
-      farm: 'Old Mill Hearth Bakery',
-      market: 'Pioneer Pavilion',
-      itemsCount: 4,
-      amount: '$27.00',
-      status: 'Pending Stall Pack',
-      statusColor: 'bg-tertiary-fixed text-on-tertiary-fixed',
-      dotColor: 'bg-tertiary',
-      pickupTime: '9:30 AM'
-    }
-  ]);
+  const [orders, setOrders] = useState([]);
 
-  // Load summary metrics & announcements from backend
+  // Load summary metrics, announcements, pending farmers & live orders from backend
   useEffect(() => {
     adminApi.getSummary()
       .then((res) => {
@@ -200,7 +135,7 @@ export default function AdminDashboard({ onNavigate, initialTab = 'dashboard' })
 
     adminApi.getAnnouncements()
       .then((res) => {
-        if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
+        if (res?.data && Array.isArray(res.data)) {
           const mapped = res.data.map((a) => ({
             id: a.id,
             type: a.type || 'Platform Notice',
@@ -213,9 +148,78 @@ export default function AdminDashboard({ onNavigate, initialTab = 'dashboard' })
             audience: a.audience || 'All Community'
           }));
           setAnnouncements(mapped);
+        } else {
+          setAnnouncements([]);
         }
       })
       .catch((err) => console.warn('Could not load announcements:', err));
+
+    adminApi.getFarmers({ status: 'pending' })
+      .then((res) => {
+        if (res?.data && Array.isArray(res.data)) {
+          const mapped = res.data.map((f) => ({
+            id: f.id,
+            initials: (f.farmer_profile?.farm_name || f.business_name || f.name || 'Vendor')
+              .split(' ')
+              .map((n) => n[0])
+              .join('')
+              .substring(0, 2)
+              .toUpperCase(),
+            name: f.farmer_profile?.farm_name || f.business_name || f.name,
+            shortName: f.farmer_profile?.farm_name || f.business_name || f.name,
+            market: f.markets?.[0]?.name || 'Regional Market Pavilion',
+            dateTag: `${f.markets?.[0]?.name || 'Regional'} • ${f.created_at ? new Date(f.created_at).toLocaleDateString() : 'Recent'}`,
+            products: f.farmer_profile?.farm_description || f.bio || 'Local farm produce',
+            owner: f.name,
+            permit: f.farmer_profile?.permit_number || `PERM-2025-${String(f.id).padStart(3, '0')}`,
+            colorClass: 'bg-primary-fixed/50 text-primary'
+          }));
+          setPendingFarmers(mapped);
+        } else {
+          setPendingFarmers([]);
+        }
+      })
+      .catch((err) => console.warn('Could not load pending farmers:', err));
+
+    adminApi.getOrders()
+      .then((res) => {
+        if (res?.data && Array.isArray(res.data)) {
+          const mapped = res.data.map((o) => {
+            let uiStatus = 'Pending Stall Pack';
+            let sColor = 'bg-tertiary-fixed text-on-tertiary-fixed';
+            let dColor = 'bg-tertiary';
+
+            if (o.status === 'ready' || o.order_status === 'ready') {
+              uiStatus = 'Ready for Pickup';
+              sColor = 'bg-primary-fixed text-on-primary-fixed';
+              dColor = 'bg-primary';
+            } else if (o.status === 'completed' || o.order_status === 'completed') {
+              uiStatus = 'Collected / Paid';
+              sColor = 'bg-surface-container-high text-on-surface';
+              dColor = 'bg-on-surface-variant';
+            }
+
+            return {
+              id: `#ML-${o.order_number || o.id}`,
+              numericId: o.id,
+              customer: o.customer?.name || o.user?.name || 'Customer',
+              neighborhood: o.customer?.address || o.user?.address || 'Portland Metro',
+              farm: o.farmer?.farmer_profile?.stall_name || o.farmer?.business_name || o.farmer?.name || 'Local Farm',
+              market: o.market?.name || o.market?.market_name || 'Market Pavilion',
+              itemsCount: (o.items || o.order_items || []).length || 1,
+              amount: `$${Number(o.total_amount || 0).toFixed(2)}`,
+              status: uiStatus,
+              statusColor: sColor,
+              dotColor: dColor,
+              pickupTime: o.pickup_window || (o.pickup_date ? new Date(o.pickup_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Today')
+            };
+          });
+          setOrders(mapped);
+        } else {
+          setOrders([]);
+        }
+      })
+      .catch((err) => console.warn('Could not load admin orders:', err));
   }, []);
 
   const showToast = (msg) => {
@@ -279,6 +283,39 @@ export default function AdminDashboard({ onNavigate, initialTab = 'dashboard' })
       content: ''
     });
   };
+
+  const handleAddNewMarket = () => {
+    setAutoOpenMarketModal(true);
+    setActiveTab('markets');
+  };
+
+  const handleExportWeeklySummary = () => {
+    try {
+      const csvHeader = 'Order ID,Customer,Neighborhood,Farm Stall,Market Pavilion,Items,Amount,Status,Pickup Time\n';
+      const csvRows = orders.map((o) =>
+        `"${o.id}","${o.customer}","${o.neighborhood}","${o.farm}","${o.market}",${o.itemsCount},"${o.amount}","${o.status}","${o.pickupTime}"`
+      ).join('\n');
+      const blob = new Blob([csvHeader + csvRows], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `marketlink_weekly_harvest_summary_${new Date().toISOString().slice(0, 10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      console.warn('CSV export download error:', e);
+    }
+    showToast('Weekly harvest settlement & vendor summary exported to CSV.');
+  };
+
+  const formattedToday = new Date().toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric'
+  });
 
   // Filtered orders
   const filteredOrders = orders.filter((order) => {
@@ -400,7 +437,12 @@ export default function AdminDashboard({ onNavigate, initialTab = 'dashboard' })
           )}
 
           {activeTab === 'markets' && (
-            <ManageMarkets onNavigate={onNavigate} showToast={showToast} />
+            <ManageMarkets
+              onNavigate={onNavigate}
+              showToast={showToast}
+              autoOpenAddModal={autoOpenMarketModal}
+              onCloseAddModal={() => setAutoOpenMarketModal(false)}
+            />
           )}
 
           {activeTab === 'moderation' && (
@@ -427,55 +469,78 @@ export default function AdminDashboard({ onNavigate, initialTab = 'dashboard' })
                 icon="health_and_safety"
               />
 
-              {/* Welcome Header & Live Market Status Pill */}
-              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-space-md">
-                <div className="flex flex-col gap-1">
-                  <div className="flex items-center gap-space-sm flex-wrap">
-                    <h1 className="font-headline-lg text-headline-lg sm:text-2xl text-on-surface font-bold tracking-tight">
-                      Welcome back, Admin
+              {/* Welcome Header & Action Command Card */}
+              <div className="bg-surface-container-lowest border border-outline-variant/30 rounded-2xl p-5 sm:p-6 shadow-sm relative overflow-hidden flex flex-col xl:flex-row xl:items-center justify-between gap-5 transition-all">
+                {/* Ambient soft glow accents */}
+                <div className="absolute -right-16 -top-16 w-64 h-64 rounded-full bg-primary/5 blur-3xl pointer-events-none" />
+                <div className="absolute -left-16 -bottom-16 w-64 h-64 rounded-full bg-secondary-fixed/15 blur-3xl pointer-events-none" />
+
+                {/* Left: Greeting, Live Status Pill & Metadata */}
+                <div className="relative z-10 flex flex-col gap-2">
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <h1 className="text-xl sm:text-2xl lg:text-[26px] text-on-surface font-extrabold tracking-tight flex items-center gap-2">
+                      <span>Welcome back, Admin</span>
+                      <span className="inline-block hover:rotate-12 transition-transform duration-200 cursor-default">👋</span>
                     </h1>
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary-fixed text-on-primary-fixed font-label-sm text-xs font-bold">
-                      <span className="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
-                      14 Weekend Markets Live
-                    </span>
+
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200/80 text-xs font-bold shadow-xs">
+                      <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-600"></span>
+                      </span>
+                      <span>14 Weekend Markets Live</span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 text-on-surface-variant font-body-sm text-xs">
-                    <span className="material-symbols-outlined text-[16px] text-primary">calendar_today</span>
-                    <span>Saturday, October 18, 2025</span>
-                    <span className="text-outline-variant">•</span>
-                    <span className="text-tertiary-container font-label-sm font-bold">
-                      Peak Morning Harvest Flow (07:00 – 13:00)
-                    </span>
+
+                  <div className="flex items-center gap-2.5 sm:gap-3 text-on-surface-variant text-xs flex-wrap font-medium">
+                    <div className="flex items-center gap-1.5 text-on-surface-variant font-medium">
+                      <span className="material-symbols-outlined text-[17px] text-primary">calendar_today</span>
+                      <span>{formattedToday}</span>
+                    </div>
+
+                    <span className="text-outline-variant/80 hidden sm:inline">•</span>
+
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-800 border border-amber-500/20 text-[11px] font-semibold">
+                      <span className="material-symbols-outlined text-[14px] text-amber-600">schedule</span>
+                      <span>Peak Morning Harvest Flow (07:00 – 13:00)</span>
+                    </div>
                   </div>
                 </div>
 
-                {/* Quick Action Buttons */}
-                <div className="flex items-center gap-space-sm flex-wrap">
+                {/* Right: Quick Action Buttons */}
+                <div className="relative z-10 grid grid-cols-1 sm:grid-cols-3 xl:flex xl:items-center gap-2.5 sm:gap-3 w-full xl:w-auto">
                   <button
                     type="button"
                     onClick={() => setAnnouncementModalOpen(true)}
-                    className="px-space-md py-2 rounded-xl bg-surface-container-lowest text-on-surface hover:bg-surface-container transition-all shadow-sm font-label-md text-xs font-bold flex items-center gap-1.5 border border-outline-variant/30 cursor-pointer"
+                    className="h-10 px-3.5 sm:px-4 rounded-xl bg-surface-container-lowest hover:bg-surface-container text-on-surface hover:text-primary transition-all shadow-xs hover:shadow-sm font-semibold text-xs flex items-center justify-center gap-2 border border-outline-variant/40 hover:border-primary/40 cursor-pointer active:scale-95 group"
+                    title="Broadcast an announcement or alert to the community"
                   >
-                    <span className="material-symbols-outlined text-tertiary text-[18px]">campaign</span>
-                    <span>+ Quick Announcement</span>
+                    <div className="w-6 h-6 rounded-lg bg-amber-500/10 text-amber-700 flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <span className="material-symbols-outlined text-[16px]">campaign</span>
+                    </div>
+                    <span>Quick Announcement</span>
                   </button>
 
                   <button
                     type="button"
-                    onClick={() => showToast('Weekly harvest settlement & vendor summary exported to CSV.')}
-                    className="px-space-md py-2 rounded-xl bg-surface-container-lowest text-primary hover:bg-surface-container transition-all shadow-sm font-label-md text-xs font-bold flex items-center gap-1.5 border border-outline-variant/30 cursor-pointer"
+                    onClick={handleExportWeeklySummary}
+                    className="h-10 px-3.5 sm:px-4 rounded-xl bg-surface-container-lowest hover:bg-surface-container text-on-surface hover:text-primary transition-all shadow-xs hover:shadow-sm font-semibold text-xs flex items-center justify-center gap-2 border border-outline-variant/40 hover:border-primary/40 cursor-pointer active:scale-95 group"
+                    title="Export harvest orders and settlement summary to CSV"
                   >
-                    <span className="material-symbols-outlined text-[18px]">file_download</span>
-                    <span>Export Weekly Summary</span>
+                    <div className="w-6 h-6 rounded-lg bg-primary/10 text-primary flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <span className="material-symbols-outlined text-[16px]">file_download</span>
+                    </div>
+                    <span>Export Summary</span>
                   </button>
 
                   <button
                     type="button"
-                    onClick={() => onNavigate('markets')}
-                    className="px-space-lg py-2.5 rounded-xl bg-primary text-on-primary hover:bg-primary-container hover:text-on-primary-container shadow-md transition-all font-label-md text-xs font-bold flex items-center gap-2 cursor-pointer active:scale-95"
+                    onClick={handleAddNewMarket}
+                    className="h-10 px-4 sm:px-5 rounded-xl bg-primary hover:bg-primary-container text-white transition-all shadow-sm hover:shadow-md font-semibold text-xs flex items-center justify-center gap-2 cursor-pointer active:scale-95 group"
+                    title="Register a new regional market pavilion"
                   >
-                    <span className="material-symbols-outlined text-[20px]">add_business</span>
-                    <span>+ Add New Market</span>
+                    <span className="material-symbols-outlined text-[19px] group-hover:rotate-90 transition-transform duration-200">add_business</span>
+                    <span>Add New Market</span>
                   </button>
                 </div>
               </div>
@@ -492,7 +557,7 @@ export default function AdminDashboard({ onNavigate, initialTab = 'dashboard' })
                         Registered Farmers
                       </span>
                       <span className="font-headline-lg text-2xl sm:text-3xl text-on-surface mt-1 font-bold">
-                        {summaryData?.total_farmers ?? (54 + pendingFarmers.length)}
+                        {summaryData?.total_farmers ?? 0}
                       </span>
                     </div>
                     <div className="w-12 h-12 rounded-xl bg-primary-fixed/40 flex items-center justify-center text-primary">
@@ -503,14 +568,14 @@ export default function AdminDashboard({ onNavigate, initialTab = 'dashboard' })
                     <div className="flex items-center gap-1.5">
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed font-label-sm font-bold text-[11px]">
                         <span className="material-symbols-outlined text-[14px]">trending_up</span>
-                        {summaryData?.approved_farmers ? `${summaryData.approved_farmers} approved` : '+4 this week'}
+                        {`${summaryData?.approved_farmers ?? 0} approved`}
                       </span>
                       <span className="text-tertiary-container font-label-sm font-bold text-[11px]">
                         ({summaryData?.pending_farmers ?? pendingFarmers.length} pending)
                       </span>
                     </div>
                     <span className="font-body-sm text-on-surface-variant text-[11px]">
-                      {summaryData ? 'Live registered growers' : '48 active stalls this Saturday'}
+                      Live registered growers
                     </span>
                   </div>
                 </div>
@@ -524,7 +589,7 @@ export default function AdminDashboard({ onNavigate, initialTab = 'dashboard' })
                         Shopper Community
                       </span>
                       <span className="font-headline-lg text-2xl sm:text-3xl text-on-surface mt-1 font-bold">
-                        {summaryData?.total_customers ?? '3,420'}
+                        {summaryData?.total_customers ?? 0}
                       </span>
                     </div>
                     <div className="w-12 h-12 rounded-xl bg-tertiary-fixed/50 flex items-center justify-center text-tertiary">
@@ -535,7 +600,7 @@ export default function AdminDashboard({ onNavigate, initialTab = 'dashboard' })
                     <div className="flex items-center gap-1.5">
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed font-label-sm font-bold text-[11px]">
                         <span className="material-symbols-outlined text-[14px]">arrow_upward</span>
-                        {summaryData?.active_customers ? `${summaryData.active_customers} active accounts` : '+142 this week (+12%)'}
+                        {`${summaryData?.active_customers ?? 0} active accounts`}
                       </span>
                     </div>
                     <span className="font-body-sm text-on-surface-variant text-[11px]">
@@ -553,7 +618,7 @@ export default function AdminDashboard({ onNavigate, initialTab = 'dashboard' })
                         Active Pavilions
                       </span>
                       <span className="font-headline-lg text-2xl sm:text-3xl text-on-surface mt-1 font-bold">
-                        {summaryData?.total_markets ?? 14}
+                        {summaryData?.total_markets ?? 0}
                       </span>
                     </div>
                     <div className="w-12 h-12 rounded-xl bg-secondary-container/60 flex items-center justify-center text-secondary">
@@ -582,7 +647,7 @@ export default function AdminDashboard({ onNavigate, initialTab = 'dashboard' })
                         Pickup Pre-Orders
                       </span>
                       <span className="font-headline-lg text-2xl sm:text-3xl text-on-surface mt-1 font-bold">
-                        {summaryData?.total_orders ?? '2,845'}
+                        {summaryData?.total_orders ?? 0}
                       </span>
                     </div>
                     <div className="w-12 h-12 rounded-xl bg-tertiary-fixed/60 flex items-center justify-center text-tertiary">
@@ -593,11 +658,11 @@ export default function AdminDashboard({ onNavigate, initialTab = 'dashboard' })
                     <div className="flex items-center gap-1.5">
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-tertiary-fixed text-on-tertiary-fixed font-label-sm font-bold text-[11px]">
                         <span className="material-symbols-outlined text-[14px]">check_circle</span>
-                        {summaryData?.total_revenue ? `$${Number(summaryData.total_revenue).toFixed(2)} Vol` : '+386 this week (98.4%)'}
+                        {summaryData?.total_revenue ? `$${Number(summaryData.total_revenue).toFixed(2)} Vol` : '$0.00 Vol'}
                       </span>
                     </div>
                     <span className="font-body-sm text-on-surface-variant text-[11px]">
-                      $34,120 estimated stall volume
+                      {summaryData?.total_revenue ? `$${Number(summaryData.total_revenue).toFixed(2)} recorded platform volume` : 'Live preorder volume'}
                     </span>
                   </div>
                 </div>
@@ -638,7 +703,7 @@ export default function AdminDashboard({ onNavigate, initialTab = 'dashboard' })
                   </div>
 
                   {/* SVG Visual Progression Chart */}
-                  <div className="mt-space-lg relative w-full h-64 flex flex-col justify-end">
+                  <div className="mt-space-lg relative w-full h-64 flex flex-col justify-end overflow-hidden">
                     {/* Background Grid Lines */}
                     <div className="absolute inset-0 flex flex-col justify-between pointer-events-none opacity-40">
                       <div className="w-full h-px bg-surface-container-highest"></div>
@@ -648,41 +713,74 @@ export default function AdminDashboard({ onNavigate, initialTab = 'dashboard' })
                     </div>
 
                     {/* SVG Spark Area & Line */}
-                    <svg className="w-full h-48 overflow-visible" preserveAspectRatio="none" viewBox="0 0 700 160">
-                      <defs>
-                        <linearGradient id="forestGlow" x1="0%" x2="0%" y1="0%" y2="100%">
-                          <stop offset="0%" stopColor="#2e6b3a" stopOpacity="0.32" />
-                          <stop offset="100%" stopColor="#2e6b3a" stopOpacity="0.0" />
-                        </linearGradient>
-                      </defs>
-                      {/* Area Fill */}
-                      <path
-                        d="M 0,140 Q 50,135 100,120 T 200,45 T 300,130 T 400,35 T 500,125 T 600,20 L 700,10 L 700,160 L 0,160 Z"
-                        fill="url(#forestGlow)"
-                      />
-                      {/* Line Stroke */}
-                      <path
-                        d="M 0,140 Q 50,135 100,120 T 200,45 T 300,130 T 400,35 T 500,125 T 600,20 L 700,10"
-                        fill="none"
-                        stroke="#2e6b3a"
-                        strokeLinecap="round"
-                        strokeWidth="3"
-                      />
-                      {/* Data Spike Dots */}
-                      <circle cx="200" cy="45" fill="#125224" r="5" stroke="#ffffff" strokeWidth="2" />
-                      <circle cx="400" cy="35" fill="#125224" r="5" stroke="#ffffff" strokeWidth="2" />
-                      <circle cx="600" cy="20" fill="#125224" r="5" stroke="#ffffff" strokeWidth="2" />
-                      <circle cx="700" cy="10" fill="#914d00" r="6" stroke="#ffffff" strokeWidth="2" />
-                    </svg>
+                    <div className="relative w-full h-48 overflow-hidden rounded-lg">
+                      <svg className="w-full h-full overflow-hidden" preserveAspectRatio="none" viewBox="0 0 700 160">
+                        <defs>
+                          <linearGradient id="forestGlow" x1="0%" x2="0%" y1="0%" y2="100%">
+                            <stop offset="0%" stopColor="#2e6b3a" stopOpacity="0.32" />
+                            <stop offset="100%" stopColor="#2e6b3a" stopOpacity="0.0" />
+                          </linearGradient>
+                        </defs>
+                        {/* Area Fill */}
+                        <path
+                          d={activeChart.area}
+                          fill="url(#forestGlow)"
+                          className="transition-all duration-500 ease-out"
+                        />
+                        {/* Line Stroke */}
+                        <path
+                          d={activeChart.line}
+                          fill="none"
+                          stroke="#2e6b3a"
+                          strokeLinecap="round"
+                          strokeWidth="3"
+                          className="transition-all duration-500 ease-out"
+                        />
+                        {/* Data Spike Dots */}
+                        {activeChart.dots.map((dot, idx) => (
+                          <g key={idx}>
+                            {dot.isPeak && (
+                              <circle
+                                cx={dot.cx}
+                                cy={dot.cy}
+                                fill="#F28C28"
+                                opacity="0.35"
+                                r="11"
+                                className="animate-ping"
+                              />
+                            )}
+                            <circle
+                              cx={dot.cx}
+                              cy={dot.cy}
+                              fill={dot.fill}
+                              r={dot.r}
+                              stroke="#ffffff"
+                              strokeWidth="2"
+                              className="transition-all duration-300"
+                            />
+                          </g>
+                        ))}
+                      </svg>
+                    </div>
 
-                    {/* Day Labels */}
-                    <div className="flex justify-between text-on-surface-variant font-label-sm text-[11px] pt-2">
-                      <span>Oct 1 (Wed)</span>
-                      <span className="text-primary font-bold">Oct 4 (Sat)</span>
-                      <span>Oct 8 (Wed)</span>
-                      <span className="text-primary font-bold">Oct 11 (Sat)</span>
-                      <span>Oct 15 (Wed)</span>
-                      <span className="text-tertiary font-bold">Oct 18 (Today - Peak)</span>
+                    {/* Day / Period Labels */}
+                    <div className="flex justify-between text-on-surface-variant font-label-sm text-[11px] pt-3">
+                      {activeChart.labels.map((lbl, idx) => (
+                        <span
+                          key={idx}
+                          className={
+                            lbl.tertiary
+                              ? 'text-tertiary font-bold'
+                              : lbl.primary
+                              ? 'text-primary font-bold'
+                              : lbl.bold
+                              ? 'font-bold text-on-surface'
+                              : ''
+                          }
+                        >
+                          {lbl.name}
+                        </span>
+                      ))}
                     </div>
                   </div>
 
@@ -692,21 +790,21 @@ export default function AdminDashboard({ onNavigate, initialTab = 'dashboard' })
                       <span className="material-symbols-outlined text-primary text-[20px]">schedule</span>
                       <div className="flex flex-col">
                         <span className="font-label-sm text-on-surface-variant text-[11px]">Peak Reservation Window</span>
-                        <span className="font-label-md text-on-surface text-xs font-bold">Friday 4:00 PM – 7:30 PM</span>
+                        <span className="font-label-md text-on-surface text-xs font-bold">{activeChart.window}</span>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="material-symbols-outlined text-tertiary text-[20px]">shopping_bag</span>
                       <div className="flex flex-col">
                         <span className="font-label-sm text-on-surface-variant text-[11px]">Avg Stand Basket</span>
-                        <span className="font-label-md text-on-surface text-xs font-bold">$28.40 per patron</span>
+                        <span className="font-label-md text-on-surface text-xs font-bold">{activeChart.basket}</span>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="material-symbols-outlined text-primary text-[20px]">task_alt</span>
                       <div className="flex flex-col">
                         <span className="font-label-sm text-on-surface-variant text-[11px]">Pickup Fulfilled Rate</span>
-                        <span className="font-label-md text-primary text-xs font-bold">98.2% (Historic High)</span>
+                        <span className="font-label-md text-primary text-xs font-bold">{activeChart.fulfillment}</span>
                       </div>
                     </div>
                   </div>
@@ -853,8 +951,10 @@ export default function AdminDashboard({ onNavigate, initialTab = 'dashboard' })
                         <tbody className="divide-y divide-surface-container">
                           {filteredOrders.length === 0 ? (
                             <tr>
-                              <td colSpan={8} className="py-6 text-center text-on-surface-variant text-xs">
-                                No orders matching current filter.
+                              <td colSpan={8} className="py-8 text-center text-on-surface-variant text-xs">
+                                <span className="material-symbols-outlined text-[28px] text-on-surface-variant/40 mb-1">receipt_long</span>
+                                <p className="font-bold">{orders.length === 0 ? 'No pre-orders placed yet' : 'No orders matching current filter'}</p>
+                                <p className="text-[11px] mt-0.5">{orders.length === 0 ? 'Reservations placed by shoppers will appear here in real time.' : 'Try adjusting the search query or status filter.'}</p>
                               </td>
                             </tr>
                           ) : (
@@ -899,7 +999,7 @@ export default function AdminDashboard({ onNavigate, initialTab = 'dashboard' })
                   {/* Table Footer Pagination */}
                   <div className="mt-space-md pt-space-sm flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm text-xs border-t border-outline-variant/20">
                     <span className="font-body-sm text-on-surface-variant">
-                      Showing <span className="font-bold text-on-surface">1 to {filteredOrders.length}</span> of 386 orders today
+                      Showing <span className="font-bold text-on-surface">1 to {filteredOrders.length}</span> of {summaryData?.total_orders ?? filteredOrders.length} orders total
                     </span>
                     <div className="flex items-center gap-1 font-bold">
                       <button
@@ -911,16 +1011,6 @@ export default function AdminDashboard({ onNavigate, initialTab = 'dashboard' })
                       </button>
                       <button type="button" className="w-7 h-7 rounded-lg bg-primary text-on-primary flex items-center justify-center">
                         1
-                      </button>
-                      <button type="button" className="w-7 h-7 rounded-lg bg-surface-container-low text-on-surface hover:bg-surface-container flex items-center justify-center cursor-pointer">
-                        2
-                      </button>
-                      <button type="button" className="w-7 h-7 rounded-lg bg-surface-container-low text-on-surface hover:bg-surface-container flex items-center justify-center cursor-pointer">
-                        3
-                      </button>
-                      <span className="px-1 text-on-surface-variant">...</span>
-                      <button type="button" className="w-7 h-7 rounded-lg bg-surface-container-low text-on-surface hover:bg-surface-container flex items-center justify-center cursor-pointer">
-                        78
                       </button>
                       <button type="button" className="px-2.5 py-1 rounded-lg bg-surface-container-low text-on-surface-variant hover:bg-surface-container cursor-pointer">
                         Next
@@ -952,32 +1042,40 @@ export default function AdminDashboard({ onNavigate, initialTab = 'dashboard' })
 
                     {/* Announcement Cards Feed */}
                     <div className="flex flex-col gap-space-md">
-                      {announcements.map((post) => (
-                        <div
-                          key={post.id}
-                          className="p-3.5 rounded-xl bg-surface-container-low flex flex-col gap-2 relative overflow-hidden border border-outline-variant/20"
-                        >
-                          <div className="flex items-center justify-between">
-                            <span className={`inline-flex items-center gap-1 font-label-sm text-xs font-bold ${post.color}`}>
-                              <span className="material-symbols-outlined text-[16px]">{post.icon}</span>
-                              {post.type}
-                            </span>
-                            <span className="text-[11px] text-on-surface-variant">{post.time}</span>
-                          </div>
-                          <h3 className="font-label-md text-on-surface font-bold leading-snug text-xs">
-                            {post.title}
-                          </h3>
-                          <p className="font-body-sm text-on-surface-variant text-[11px] leading-relaxed">
-                            {post.desc}
-                          </p>
-                          <div className="flex items-center justify-between pt-1 text-[11px] text-on-surface-variant border-t border-outline-variant/20">
-                            <span>By {post.author}</span>
-                            <span className="px-2 py-0.5 rounded-full bg-surface-container font-label-sm text-[10px] font-semibold">
-                              {post.audience}
-                            </span>
-                          </div>
+                      {announcements.length === 0 ? (
+                        <div className="p-5 text-center text-on-surface-variant text-xs bg-surface-container-low/50 rounded-xl border border-outline-variant/20">
+                          <span className="material-symbols-outlined text-primary text-[32px] mb-1">campaign</span>
+                          <p className="font-bold">No announcements published yet</p>
+                          <p className="text-[11px] mt-0.5">Use the "+ Post" button to broadcast updates to the market community.</p>
                         </div>
-                      ))}
+                      ) : (
+                        announcements.map((post) => (
+                          <div
+                            key={post.id}
+                            className="p-3.5 rounded-xl bg-surface-container-low flex flex-col gap-2 relative overflow-hidden border border-outline-variant/20"
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className={`inline-flex items-center gap-1 font-label-sm text-xs font-bold ${post.color}`}>
+                                <span className="material-symbols-outlined text-[16px]">{post.icon}</span>
+                                {post.type}
+                              </span>
+                              <span className="text-[11px] text-on-surface-variant">{post.time}</span>
+                            </div>
+                            <h3 className="font-label-md text-on-surface font-bold leading-snug text-xs">
+                              {post.title}
+                            </h3>
+                            <p className="font-body-sm text-on-surface-variant text-[11px] leading-relaxed">
+                              {post.desc}
+                            </p>
+                            <div className="flex items-center justify-between pt-1 text-[11px] text-on-surface-variant border-t border-outline-variant/20">
+                              <span>By {post.author}</span>
+                              <span className="px-2 py-0.5 rounded-full bg-surface-container font-label-sm text-[10px] font-semibold">
+                                {post.audience}
+                              </span>
+                            </div>
+                          </div>
+                        ))
+                      )}
                     </div>
                   </div>
 

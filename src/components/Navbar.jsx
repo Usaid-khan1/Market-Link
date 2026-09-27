@@ -105,14 +105,14 @@ export default function Navbar({ currentView, onNavigate, onOpenAuth, onFocusSea
         {/* RIGHT: Search + Circular Action + ADMIN Pill */}
         <div className="flex items-center gap-2 sm:gap-3">
           {/* Search Icon */}
-          <button
+          {/* <button
             aria-label="Search"
             onClick={onFocusSearch}
             className="w-9 h-9 rounded-full flex items-center justify-center text-[#2e3d30] hover:text-[#0b3d20] hover:bg-black/5 transition-all cursor-pointer"
             title="Search markets and produce"
           >
             <span className="material-symbols-outlined text-[20px]">search</span>
-          </button>
+          </button> */}
 
           {/* Circular Sprout / Produce shortcut button */}
           <button

@@ -175,9 +175,9 @@ export function DashboardSidebar({
         <div className="mx-3 my-2 px-3 py-2 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between text-[10px] text-primary-fixed-dim">
           <span className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-secondary-fixed animate-pulse" />
-            <span className="font-semibold text-white/90">Market Mesh Active</span>
+            <span className="font-semibold text-white/90">Market Mesh</span>
           </span>
-          <span className="text-secondary-fixed font-bold font-mono">14 Markets</span>
+          <span className="text-secondary-fixed font-bold font-mono">Live</span>
         </div>
 
         {/* Footer Actions */}
@@ -210,16 +210,11 @@ export function DashboardHeader({
   onOpenMobileSidebar,
   breadcrumb,
   headerRight,
-  activeMarketName = 'Downtown Saturday Market',
+  activeMarketName = 'Regional Farmers Market',
+  notifications = [],
 }) {
   const [notificationOpen, setNotificationOpen] = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);
-
-  const notifications = [
-    { id: 1, title: 'Harvest Reservation Placed', desc: 'Order #ML-8920 confirmed for Saturday 9:30 AM', time: '10m ago', icon: 'shopping_bag', color: 'text-primary' },
-    { id: 2, title: 'Weather & Setup Advisory', desc: 'Rain guard mandate active for outdoor stalls 1-18', time: '1h ago', icon: 'rainy', color: 'text-blue-500' },
-    { id: 3, title: 'Market Pavilion Synchronized', desc: 'Pioneer Pavilion updated inventory allocation', time: '3h ago', icon: 'verified', color: 'text-secondary' },
-  ];
 
   return (
     <header
@@ -290,9 +285,11 @@ export function DashboardHeader({
             className="relative w-9 h-9 rounded-xl bg-surface-container flex items-center justify-center text-on-surface-variant hover:bg-primary/8 hover:text-primary transition-all cursor-pointer border border-outline-variant/20"
           >
             <span className="material-symbols-outlined text-[20px]">notifications</span>
-            <span className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-secondary-fixed text-[#0d3b1c] text-[9px] font-black flex items-center justify-center shadow-xs">
-              3
-            </span>
+            {notifications.length > 0 && (
+              <span className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-secondary-fixed text-[#0d3b1c] text-[9px] font-black flex items-center justify-center shadow-xs">
+                {notifications.length}
+              </span>
+            )}
           </button>
 
           {notificationOpen && (
@@ -301,19 +298,27 @@ export function DashboardHeader({
             >
               <div className="px-4 py-2.5 border-b border-outline-variant/15 flex items-center justify-between">
                 <span className="text-xs font-black text-on-surface uppercase tracking-wider">Harvest Notifications</span>
-                <span className="text-[10px] text-primary font-bold">Mark all read</span>
+                {notifications.length > 0 && (
+                  <span className="text-[10px] text-primary font-bold">Mark all read</span>
+                )}
               </div>
               <div className="divide-y divide-outline-variant/10 max-h-72 overflow-y-auto">
-                {notifications.map((n) => (
-                  <div key={n.id} className="p-3 hover:bg-surface-container/60 transition-colors flex items-start gap-2.5 cursor-pointer">
-                    <span className={`material-symbols-outlined text-[18px] ${n.color} mt-0.5`}>{n.icon}</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-bold text-on-surface truncate">{n.title}</p>
-                      <p className="text-[11px] text-on-surface-variant line-clamp-1">{n.desc}</p>
-                      <span className="text-[9px] text-on-surface-variant/60 font-semibold">{n.time}</span>
-                    </div>
+                {notifications.length === 0 ? (
+                  <div className="py-6 px-4 text-center text-on-surface-variant text-xs italic">
+                    No new alerts or notifications.
                   </div>
-                ))}
+                ) : (
+                  notifications.map((n) => (
+                    <div key={n.id} className="p-3 hover:bg-surface-container/60 transition-colors flex items-start gap-2.5 cursor-pointer">
+                      <span className={`material-symbols-outlined text-[18px] ${n.color || 'text-primary'} mt-0.5`}>{n.icon || 'notifications'}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-bold text-on-surface truncate">{n.title}</p>
+                        <p className="text-[11px] text-on-surface-variant line-clamp-1">{n.desc}</p>
+                        <span className="text-[9px] text-on-surface-variant/60 font-semibold">{n.time}</span>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
               <div className="p-2 border-t border-outline-variant/15 text-center">
                 <button

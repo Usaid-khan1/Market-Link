@@ -3,44 +3,10 @@ import adminApi from '../api/admin';
 
 export default function SystemConfiguration({ onNavigate, showToast }) {
   // Categories State
-  const [categories, setCategories] = useState([
-    { id: 1, name: 'Fresh Vegetables', icon: 'eco', count: 48, active: true },
-    { id: 2, name: 'Orchard Fruits', icon: 'nutrition', count: 32, active: true },
-    { id: 3, name: 'Artisan Dairy & Cheese', icon: 'egg', count: 18, active: true },
-    { id: 4, name: 'Hearth Breads & Baked Goods', icon: 'bakery_dining', count: 24, active: true },
-    { id: 5, name: 'Medicinal & Culinary Herbs', icon: 'spa', count: 16, active: true },
-    { id: 6, name: 'Raw Honey & Fruit Preserves', icon: 'hive', count: 14, active: true },
-    { id: 7, name: 'Foraged Wild Mushrooms', icon: 'psychiatry', count: 9, active: true },
-    { id: 8, name: 'Artisan Pantry & Ferments', icon: 'soup_kitchen', count: 22, active: true }
-  ]);
+  const [categories, setCategories] = useState([]);
 
   // Announcements State
-  const [announcements, setAnnouncements] = useState([
-    {
-      id: 1,
-      title: 'Harvest Weekend Inclement Weather Advisory',
-      message: 'Light rain anticipated in North River District for Saturday morning. Tents and rain guards mandatory for stalls 1–18.',
-      date: 'Oct 18, 2025',
-      audience: 'Farmers & Shoppers',
-      active: true
-    },
-    {
-      id: 2,
-      title: 'Double Up Food Bucks (SNAP) Matching Tokens Expanded',
-      message: 'Central token pavilion #1 will have an additional $5,000 in wooden matching currency available starting at 7:30 AM.',
-      date: 'Oct 16, 2025',
-      audience: 'All Community',
-      active: true
-    },
-    {
-      id: 3,
-      title: 'Annual Fall Apple & Sweet Cider Festival Sign-Up',
-      message: 'Growers can register extra square footage for the Oct 25 special harvest festival pavilion. Applications close Wednesday.',
-      date: 'Oct 14, 2025',
-      audience: 'Farmers Only',
-      active: false
-    }
-  ]);
+  const [announcements, setAnnouncements] = useState([]);
 
   // Category Modals
   const [categoryModalOpen, setCategoryModalOpen] = useState(false);
@@ -63,7 +29,7 @@ export default function SystemConfiguration({ onNavigate, showToast }) {
   useEffect(() => {
     adminApi.getCategories()
       .then((res) => {
-        if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
+        if (res?.data && Array.isArray(res.data)) {
           const mapped = res.data.map((c) => ({
             id: c.id,
             name: c.name,
@@ -72,13 +38,15 @@ export default function SystemConfiguration({ onNavigate, showToast }) {
             active: c.is_active ?? true
           }));
           setCategories(mapped);
+        } else {
+          setCategories([]);
         }
       })
       .catch((err) => console.warn('Could not load categories:', err));
 
     adminApi.getAnnouncements()
       .then((res) => {
-        if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
+        if (res?.data && Array.isArray(res.data)) {
           const mapped = res.data.map((a) => ({
             id: a.id,
             title: a.title,
@@ -88,6 +56,8 @@ export default function SystemConfiguration({ onNavigate, showToast }) {
             active: a.is_active ?? true
           }));
           setAnnouncements(mapped);
+        } else {
+          setAnnouncements([]);
         }
       })
       .catch((err) => console.warn('Could not load announcements:', err));
@@ -335,10 +305,17 @@ export default function SystemConfiguration({ onNavigate, showToast }) {
               </tr>
             </thead>
             <tbody className="divide-y divide-surface-container-high/50 text-on-surface text-xs">
-              {categories.map((cat) => (
-                <tr key={cat.id} className="hover:bg-surface-container-low/60 transition-colors">
-                  {/* Category Name */}
-                  <td className="py-3.5 px-space-md">
+              {categories.length === 0 ? (
+                <tr>
+                  <td colSpan="5" className="py-8 text-center text-on-surface-variant text-xs italic">
+                    No produce categories configured yet. Click "+ Add Category" above to create one.
+                  </td>
+                </tr>
+              ) : (
+                categories.map((cat) => (
+                  <tr key={cat.id} className="hover:bg-surface-container-low/60 transition-colors">
+                    {/* Category Name */}
+                    <td className="py-3.5 px-space-md">
                     <div className="flex items-center gap-2.5">
                       <div className="w-8 h-8 rounded-lg bg-surface-container flex items-center justify-center text-primary">
                         <span className="material-symbols-outlined text-[18px]">{cat.icon}</span>
@@ -389,7 +366,7 @@ export default function SystemConfiguration({ onNavigate, showToast }) {
                     </div>
                   </td>
                 </tr>
-              ))}
+              )))}
             </tbody>
           </table>
         </div>

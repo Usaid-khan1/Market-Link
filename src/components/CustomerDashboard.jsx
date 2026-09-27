@@ -11,130 +11,6 @@ import browseApi from '../api/browse';
 import { useAuth } from '../context/AuthContext';
 import { DashboardSidebar, DashboardHeader, DashboardToast, StatCard, DashboardTickerBanner } from './DashboardShell';
 
-// Fallback stalls with precise numeric coordinates if API is loading/offline
-const FALLBACK_STALLS = [
-  {
-    id: 1,
-    farmer_id: 2,
-    farmer_name: 'John Farmer',
-    stall_name: 'Green Valley Organics',
-    contact_person: 'John Farmer',
-    address: 'Stall #12, Riverside Green Market',
-    latitude: 37.774929,
-    longitude: -122.419416,
-    operating_days: ['Monday', 'Wednesday', 'Saturday'],
-    pickup_time_start: '08:00',
-    pickup_time_end: '14:00',
-    market_name: 'Riverside Green Market',
-    market_id: 2,
-    rating: 4.95,
-    reviews_count: 148,
-    total_stock: 42,
-    products: [
-      {
-        id: 1,
-        farmer_id: 2,
-        name: 'Heirloom Brandywine Tomatoes',
-        price: 4.50,
-        unit: 'lb',
-        stock_quantity: 24,
-        category_name: 'Fresh Vegetables',
-        image: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?auto=format&fit=crop&w=600&q=80',
-      },
-      {
-        id: 2,
-        farmer_id: 2,
-        name: 'Rainbow Chard & Kale Bundle',
-        price: 3.75,
-        unit: 'bunch',
-        stock_quantity: 18,
-        category_name: 'Fresh Vegetables',
-        image: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=600&q=80',
-      },
-    ],
-  },
-  {
-    id: 2,
-    farmer_id: 3,
-    farmer_name: 'Sarah Miller',
-    stall_name: 'Sunny Acres Farm',
-    contact_person: 'Sarah Miller',
-    address: 'Stall #5, Central City Farmers Market',
-    latitude: 37.783333,
-    longitude: -122.416667,
-    operating_days: ['Tuesday', 'Thursday', 'Sunday'],
-    pickup_time_start: '09:00',
-    pickup_time_end: '15:00',
-    market_name: 'Central City Farmers Market',
-    market_id: 1,
-    rating: 4.88,
-    reviews_count: 94,
-    total_stock: 42,
-    products: [
-      {
-        id: 3,
-        farmer_id: 3,
-        name: 'Honeycrisp Orchard Apples',
-        price: 3.20,
-        unit: 'lb',
-        stock_quantity: 30,
-        category_name: 'Orchard Fruits',
-        image: 'https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?auto=format&fit=crop&w=600&q=80',
-      },
-      {
-        id: 4,
-        farmer_id: 3,
-        name: 'Wildflower Raw Honey (16oz)',
-        price: 12.00,
-        unit: 'jar',
-        stock_quantity: 12,
-        category_name: 'Honey & Jams',
-        image: 'https://images.unsplash.com/photo-1587049352846-4a222e784d38?auto=format&fit=crop&w=600&q=80',
-      },
-    ],
-  },
-  {
-    id: 3,
-    farmer_id: 4,
-    farmer_name: 'Elena Rostova',
-    stall_name: 'Heritage Hearth & Dairy',
-    contact_person: 'Elena Rostova',
-    address: 'Stall #8, Pioneer Pavilion Heritage Market',
-    latitude: 37.7792,
-    longitude: -122.4220,
-    operating_days: ['Wednesday', 'Saturday'],
-    pickup_time_start: '08:30',
-    pickup_time_end: '13:30',
-    market_name: 'Pioneer Pavilion Heritage Market',
-    market_id: 1,
-    rating: 4.98,
-    reviews_count: 210,
-    total_stock: 35,
-    products: [
-      {
-        id: 5,
-        farmer_id: 4,
-        name: 'Artisan Herbed Goat Chèvre',
-        price: 9.00,
-        unit: 'tub',
-        stock_quantity: 15,
-        category_name: 'Farmstead Dairy',
-        image: 'https://images.unsplash.com/photo-1452195100486-9cc805987862?auto=format&fit=crop&w=400&q=80',
-      },
-      {
-        id: 6,
-        farmer_id: 4,
-        name: 'Rustic Seeded Miche Sourdough',
-        price: 8.00,
-        unit: 'boule',
-        stock_quantity: 20,
-        category_name: 'Hearth Breads',
-        image: 'https://images.unsplash.com/photo-1589367920969-ab8e050bbb04?auto=format&fit=crop&w=400&q=80',
-      },
-    ],
-  },
-];
-
 export default function CustomerDashboard({ onNavigate, initialTab = 'dashboard' }) {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState(initialTab);
@@ -143,10 +19,14 @@ export default function CustomerDashboard({ onNavigate, initialTab = 'dashboard'
   const [toastMessage, setToastMessage] = useState(null);
 
   // Stalls & Booking state for the interactive map
-  const [stalls, setStalls] = useState(FALLBACK_STALLS);
+  const [stalls, setStalls] = useState([]);
   const [activeBooking, setActiveBooking] = useState(null);
   const [bookingModalProduct, setBookingModalProduct] = useState(null);
   const [bookingTargetStall, setBookingTargetStall] = useState(null);
+
+  // Dashboard summary data from backend
+  const [dashboardSummary, setDashboardSummary] = useState(null);
+  const [activeOrdersMini, setActiveOrdersMini] = useState([]);
 
   // Quick Toast Notification helper
   const showToast = (msg) => {
@@ -158,11 +38,11 @@ export default function CustomerDashboard({ onNavigate, initialTab = 'dashboard'
 
   // Customer Profile Info
   const customerProfile = {
-    name: user?.name || 'Elena Rostova',
-    initials: (user?.name || 'ER').split(' ').map((n) => n[0]).join('').substring(0, 2).toUpperCase(),
-    email: user?.email || 'elena.rostova@gmail.com',
-    location: user?.address || 'South Park Blocks, Portland',
-    memberSince: 'Member since 2024'
+    name: user?.name || 'Customer',
+    initials: (user?.name || 'C').split(' ').map((n) => n[0]).join('').substring(0, 2).toUpperCase(),
+    email: user?.email || '',
+    location: user?.address || 'Community Shopper',
+    memberSince: user?.created_at ? `Member since ${new Date(user.created_at).getFullYear()}` : 'Community Member'
   };
 
   // Sidebar Nav Items (Matching Customer Dashboard Layout Rules)
@@ -176,134 +56,56 @@ export default function CustomerDashboard({ onNavigate, initialTab = 'dashboard'
     { id: 'settings', label: 'Profile & Settings', icon: 'settings' }
   ];
 
-  // Load stalls from backend API with fallback
+  // Load stalls from backend API
   useEffect(() => {
     browseApi.getStalls()
       .then((res) => {
-        if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
+        if (res?.data && Array.isArray(res.data)) {
           setStalls(res.data);
+        } else {
+          setStalls([]);
         }
       })
       .catch((err) => {
-        console.warn('Using fallback stall directory:', err);
+        console.warn('Could not load stalls directory:', err);
+        setStalls([]);
       });
-  }, []);
 
-  // Active Orders Mini Table Data for Dashboard Home
-  const [activeOrdersMini, setActiveOrdersMini] = useState([
-    {
-      id: '#ML-8920',
-      farmer: 'Green Pastures Organic',
-      items: '4 lbs Brandywine Tomatoes, 2 Chard, Basil',
-      pickupSlot: 'Sat, Oct 18 • 9:30 AM – 11:00 AM',
-      market: 'Pioneer Pavilion Heritage Market',
-      status: 'Placed'
-    },
-    {
-      id: '#ML-8918',
-      farmer: 'Mountain View Orchard & Cider',
-      items: '1 gal Apple Cider, 4 lbs Honeycrisp',
-      pickupSlot: 'Sat, Oct 18 • 10:00 AM – 11:30 AM',
-      market: 'Riverside Twilight Market',
-      status: 'Ready for Pickup'
-    }
-  ]);
-
-  // Load live active customer orders
-  useEffect(() => {
-    customerApi.getOrders({ status: 'active' })
+    customerApi.getDashboardSummary()
       .then((res) => {
-        if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
-          const mapped = res.data.map((o) => {
-            let uiStatus = 'Placed';
-            if (o.order_status === 'accepted') uiStatus = 'Accepted';
-            else if (o.order_status === 'ready' || o.order_status === 'ready_for_pickup') uiStatus = 'Ready for Pickup';
-            else if (o.order_status === 'completed') uiStatus = 'Completed';
+        if (res?.data) {
+          setDashboardSummary(res.data);
+          if (res.data.recent_orders && Array.isArray(res.data.recent_orders)) {
+            const mapped = res.data.recent_orders.map((o) => {
+              let uiStatus = 'Placed';
+              if (o.order_status === 'accepted') uiStatus = 'Accepted';
+              else if (o.order_status === 'ready' || o.order_status === 'ready_for_pickup') uiStatus = 'Ready for Pickup';
+              else if (o.order_status === 'completed') uiStatus = 'Completed';
+              else if (o.order_status === 'cancelled') uiStatus = 'Cancelled';
 
-            const itemsStr = (o.items || []).map((it) => `${it.quantity} ${it.product_name || it.product?.name || 'Item'}`).join(', ');
+              const itemsStr = (o.items || []).map((it) => `${it.quantity} ${it.product_name || it.product?.name || 'Item'}`).join(', ');
 
-            return {
-              id: `#ML-${o.id}`,
-              farmer: o.farmer?.farmer_profile?.stall_name || o.farmer?.name || 'Local Farm',
-              items: itemsStr || 'Fresh farm harvest',
-              pickupSlot: `${o.pickup_date || 'Weekend'} • ${o.pickup_time || 'Morning'}`,
-              market: o.market?.market_name || 'Downtown Saturday Market',
-              status: uiStatus
-            };
-          });
-          setActiveOrdersMini(mapped);
+              return {
+                id: o.order_number || `#ML-${o.id}`,
+                farmer: o.farmer?.farmer_profile?.stall_name || o.farmer?.name || 'Local Farm',
+                items: itemsStr || 'Fresh farm harvest',
+                pickupSlot: `${o.pickup_date || 'Weekend'} • ${o.pickup_time || 'Morning'}`,
+                market: o.market?.market_name || 'Farmers Market Pavilion',
+                status: uiStatus
+              };
+            });
+            setActiveOrdersMini(mapped);
+          }
         }
       })
-      .catch((err) => console.warn('Could not load active orders:', err));
+      .catch((err) => console.warn('Could not load dashboard summary:', err));
   }, []);
 
-  // Recommended Products for Dashboard Home
-  const recommendedProducts = [
-    {
-      id: 'rec-1',
-      name: 'Organic Sweet Bell Peppers',
-      farmer: 'Green Pastures Organic',
-      price: '$3.50',
-      unit: '/ lb',
-      image: 'https://images.unsplash.com/photo-1563565375-f3fdfdbefa83?auto=format&fit=crop&w=400&q=80',
-      badge: 'Pairs with your order'
-    },
-    {
-      id: 'rec-2',
-      name: 'Rustic Seeded Miche Sourdough',
-      farmer: 'Miller & Stone Hearth Bakery',
-      price: '$8.00',
-      unit: '/ boule',
-      image: 'https://images.unsplash.com/photo-1589367920969-ab8e050bbb04?auto=format&fit=crop&w=400&q=80',
-      badge: 'Popular at Downtown Market'
-    },
-    {
-      id: 'rec-3',
-      name: 'Wild Blackberry Blossom Raw Honey',
-      farmer: 'Cascade Apiaries & Botanicals',
-      price: '$14.00',
-      unit: '/ 16oz jar',
-      image: 'https://images.unsplash.com/photo-1587049352846-4a222e784d38?auto=format&fit=crop&w=400&q=80',
-      badge: 'Back in stock!'
-    },
-    {
-      id: 'rec-4',
-      name: 'Artisan Herbed Goat Chèvre',
-      farmer: 'Riverbend Goat Dairy',
-      price: '$9.00',
-      unit: '/ 8oz tub',
-      image: 'https://images.unsplash.com/photo-1452195100486-9cc805987862?auto=format&fit=crop&w=400&q=80',
-      badge: 'Farmstead Fresh'
-    }
-  ];
+  // Recommended Products for Dashboard Home (Dynamic)
+  const recommendedProducts = dashboardSummary?.recommended_products || [];
 
-  // Favorite Farmers Mini List
-  const favoriteFarmersMini = [
-    {
-      id: 'ff-1',
-      name: 'Green Pastures Organic',
-      market: 'Pioneer Pavilion • Stall #08',
-      rating: '4.95',
-      reviewCount: 148,
-      harvest: 'Heirloom Tomatoes & Baby Greens'
-    },
-    {
-      id: 'ff-2',
-      name: 'Mountain View Orchard & Cider',
-      market: 'Riverside Twilight Market • Pier 4',
-      rating: '4.88',
-      reviewCount: 94,
-      harvest: 'Fresh Cider & Honeycrisp Apples'
-    },
-    {
-      id: 'ff-3',
-      name: 'Miller & Stone Hearth Bakery',
-      market: 'Downtown Saturday Market • Space 19',
-      rating: '4.92',
-      reviewCount: 210,
-      harvest: 'Naturally Leavened Sourdough'
-    }
-  ];
+  // Favorite Farmers Mini List (Dynamic)
+  const favoriteFarmersMini = dashboardSummary?.favorite_farmers || [];
 
   // Status Badge Helper
   const renderStatusBadge = (status) => {
@@ -536,7 +338,7 @@ export default function CustomerDashboard({ onNavigate, initialTab = 'dashboard'
                         year: 'numeric'
                       })}
                     </span>
-                    . You have 2 harvest pickups scheduled for this weekend.
+                    . {dashboardSummary?.active_orders_count ? `You have ${dashboardSummary.active_orders_count} harvest pickup${dashboardSummary.active_orders_count > 1 ? 's' : ''} scheduled.` : 'Explore local stalls and reserve fresh produce for weekend pickup.'}
                   </p>
                 </div>
 
@@ -547,7 +349,7 @@ export default function CustomerDashboard({ onNavigate, initialTab = 'dashboard'
                     className="px-4 py-2 rounded-xl bg-primary hover:bg-primary/95 text-on-primary text-xs font-bold shadow-sm transition-all flex items-center gap-1.5 cursor-pointer"
                   >
                     <span className="material-symbols-outlined text-[17px]">shopping_cart</span>
-                    <span>View Cart (5 items)</span>
+                    <span>View Cart</span>
                   </button>
                 </div>
               </div>
@@ -557,8 +359,8 @@ export default function CustomerDashboard({ onNavigate, initialTab = 'dashboard'
                 <StatCard
                   icon="receipt_long"
                   label="Active Orders"
-                  value={activeOrdersMini.length}
-                  trend="1 ready for pickup"
+                  value={dashboardSummary?.active_orders_count ?? activeOrdersMini.length}
+                  trend={dashboardSummary?.active_orders_count ? `${dashboardSummary.active_orders_count} awaiting pickup` : '0 active orders'}
                   trendUp={true}
                   iconBg="bg-blue-50"
                   iconColor="text-[#0369a1]"
@@ -567,8 +369,8 @@ export default function CustomerDashboard({ onNavigate, initialTab = 'dashboard'
                 <StatCard
                   icon="check_circle"
                   label="Completed Pickups"
-                  value="14"
-                  trend="+4 this season"
+                  value={dashboardSummary?.completed_pickups_count ?? 0}
+                  trend={dashboardSummary?.completed_pickups_count ? `${dashboardSummary.completed_pickups_count} fulfilled` : '0 pickups'}
                   trendUp={true}
                   iconBg="bg-emerald-50"
                   iconColor="text-emerald-700"
@@ -577,8 +379,8 @@ export default function CustomerDashboard({ onNavigate, initialTab = 'dashboard'
                 <StatCard
                   icon="favorite"
                   label="Saved Favorites"
-                  value="10"
-                  trend="4 Growers • 6 Items"
+                  value={dashboardSummary?.saved_favorites_count ?? favoriteFarmersMini.length}
+                  trend={dashboardSummary?.saved_favorites_count ? `${dashboardSummary.saved_favorites_count} saved growers & items` : '0 saved items'}
                   trendUp={true}
                   iconBg="bg-amber-50"
                   iconColor="text-[#F28C28]"
@@ -586,59 +388,66 @@ export default function CustomerDashboard({ onNavigate, initialTab = 'dashboard'
                 />
               </div>
 
-              {/* Ready for Pickup Digital Pass Card */}
-              <div className="bg-gradient-to-r from-primary-fixed/40 via-surface-container-lowest to-surface-container-lowest border border-primary/20 rounded-3xl p-5 sm:p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-5 relative overflow-hidden">
-                <div className="flex items-start gap-4">
-                  <div className="w-14 h-14 rounded-2xl bg-primary text-white flex items-center justify-center flex-shrink-0 shadow-md">
-                    <span className="material-symbols-outlined text-[32px]">qr_code_scanner</span>
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="px-2 py-0.5 rounded-full bg-primary text-white font-black text-[9px] uppercase tracking-wider">
-                        READY THIS SATURDAY
-                      </span>
-                      <span className="text-xs font-mono font-bold text-on-surface-variant">#ML-8918</span>
+              {/* Ready for Pickup Digital Pass Card (Shown only if customer has an active ready/placed order) */}
+              {dashboardSummary?.ready_order && (
+                <div className="bg-gradient-to-r from-primary-fixed/40 via-surface-container-lowest to-surface-container-lowest border border-primary/20 rounded-3xl p-5 sm:p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-5 relative overflow-hidden">
+                  <div className="flex items-start gap-4">
+                    <div className="w-14 h-14 rounded-2xl bg-primary text-white flex items-center justify-center flex-shrink-0 shadow-md">
+                      <span className="material-symbols-outlined text-[32px]">qr_code_scanner</span>
                     </div>
-                    <h3 className="font-bold text-on-surface text-base sm:text-lg">
-                      Mountain View Orchard &bull; Riverside Twilight Market
-                    </h3>
-                    <p className="text-xs text-on-surface-variant mt-0.5">
-                      Pickup Window: <strong>Sat, Oct 18 &bull; 10:00 AM – 11:30 AM</strong> at Pier 4 &bull; 1 gal Apple Cider, 4 lbs Honeycrisp
-                    </p>
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="px-2 py-0.5 rounded-full bg-primary text-white font-black text-[9px] uppercase tracking-wider">
+                          READY FOR PICKUP
+                        </span>
+                        <span className="text-xs font-mono font-bold text-on-surface-variant">
+                          {dashboardSummary.ready_order.order_number || `#ML-${dashboardSummary.ready_order.id}`}
+                        </span>
+                      </div>
+                      <h3 className="font-bold text-on-surface text-base sm:text-lg">
+                        {dashboardSummary.ready_order.farmer?.farmer_profile?.stall_name || dashboardSummary.ready_order.farmer?.name || 'Local Farm'} &bull; {dashboardSummary.ready_order.market?.market_name || 'Market Pavilion'}
+                      </h3>
+                      <p className="text-xs text-on-surface-variant mt-0.5">
+                        Pickup: <strong>{dashboardSummary.ready_order.pickup_date || 'Weekend'} &bull; {dashboardSummary.ready_order.pickup_time || 'Morning'}</strong>
+                        {dashboardSummary.ready_order.items && dashboardSummary.ready_order.items.length > 0 && (
+                          <span> &bull; {dashboardSummary.ready_order.items.map((it) => `${it.quantity} ${it.product_name || it.product?.name || 'Item'}`).join(', ')}</span>
+                        )}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 self-end md:self-auto">
+                    <div className="hidden sm:flex flex-col items-center bg-white p-2 rounded-xl border border-outline-variant/30 shadow-2xs">
+                      <span className="font-mono text-[9px] text-on-surface-variant tracking-widest font-black">||| | || |||| |</span>
+                      <span className="text-[8px] text-on-surface-variant/70 font-mono">PASS-{dashboardSummary.ready_order.id}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const match = stalls.find(s => s.id === dashboardSummary.ready_order.farmer_id || s.farmer_id === dashboardSummary.ready_order.farmer_id) || stalls[0];
+                        if (match) {
+                          setActiveBooking({ stallId: match.id, farmerId: match.farmer_id, farmer: match.stall_name, voucherId: dashboardSummary.ready_order.order_number || `#ML-${dashboardSummary.ready_order.id}` });
+                          document.getElementById('farmer-stalls-map')?.scrollIntoView({ behavior: 'smooth' });
+                          showToast(`🚗 Plotting pickup route to ${match.stall_name}...`);
+                        }
+                      }}
+                      className="px-3.5 py-2.5 rounded-xl border border-primary/40 bg-white hover:bg-primary/5 text-primary text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">navigation</span>
+                      <span>Route to Stall</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('orders')}
+                      className="px-4 py-2.5 rounded-xl bg-primary hover:bg-primary-container text-white text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">receipt_long</span>
+                      <span>View Pickup Slip</span>
+                    </button>
                   </div>
                 </div>
-
-                <div className="flex items-center gap-3 self-end md:self-auto">
-                  <div className="hidden sm:flex flex-col items-center bg-white p-2 rounded-xl border border-outline-variant/30 shadow-2xs">
-                    <span className="font-mono text-[9px] text-on-surface-variant tracking-widest font-black">||| | || |||| |</span>
-                    <span className="text-[8px] text-on-surface-variant/70 font-mono">PASS-8918-OR</span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const match = stalls.find(s => s.stall_name.toLowerCase().includes('riverside') || s.stall_name.toLowerCase().includes('green') || s.stall_name.toLowerCase().includes('mountain') || s.stall_name.toLowerCase().includes('sunny')) || stalls[0];
-                      if (match) {
-                        setActiveBooking({ stallId: match.id, farmerId: match.farmer_id, farmer: match.stall_name, voucherId: 'ML-8918' });
-                        document.getElementById('farmer-stalls-map')?.scrollIntoView({ behavior: 'smooth' });
-                        showToast(`🚗 Plotting pickup route to ${match.stall_name}...`);
-                      }
-                    }}
-                    className="px-3.5 py-2.5 rounded-xl border border-primary/40 bg-white hover:bg-primary/5 text-primary text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <span className="material-symbols-outlined text-[16px]">navigation</span>
-                    <span>Route to Stall</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab('orders')}
-                    className="px-4 py-2.5 rounded-xl bg-primary hover:bg-primary-container text-white text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <span className="material-symbols-outlined text-[16px]">receipt_long</span>
-                    <span>View Pickup Slip</span>
-                  </button>
-                </div>
-              </div>
+              )}
 
               {/* ======================================================== */}
               {/* AVAILABLE FARMER STALLS & INTERACTIVE PICKUP MAP        */}
@@ -692,7 +501,14 @@ export default function CustomerDashboard({ onNavigate, initialTab = 'dashboard'
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-outline-variant/20 font-body-sm">
-                      {activeOrdersMini.map((ord) => (
+                      {activeOrdersMini.length === 0 ? (
+                        <tr>
+                          <td colSpan="6" className="py-10 text-center text-on-surface-variant text-xs italic">
+                            No active pre-orders found. Browse local markets to reserve fresh harvest items!
+                          </td>
+                        </tr>
+                      ) : (
+                        activeOrdersMini.map((ord) => (
                         <tr key={ord.id} className="hover:bg-surface-container-low/40 transition-colors">
                           <td className="py-3.5 px-4 font-bold text-on-surface whitespace-nowrap">
                             {ord.id}
@@ -738,7 +554,8 @@ export default function CustomerDashboard({ onNavigate, initialTab = 'dashboard'
                             </div>
                           </td>
                         </tr>
-                      ))}
+                      ))
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -780,7 +597,12 @@ export default function CustomerDashboard({ onNavigate, initialTab = 'dashboard'
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {recommendedProducts.map((prod) => (
+                    {recommendedProducts.length === 0 ? (
+                      <div className="col-span-full py-8 text-center text-on-surface-variant text-xs italic">
+                        No seasonal recommendations available right now.
+                      </div>
+                    ) : (
+                      recommendedProducts.map((prod) => (
                       <div
                         key={prod.id}
                         className="p-3.5 rounded-xl border border-outline-variant/40 hover:border-primary/40 bg-surface flex gap-3.5 transition-all group"
@@ -818,7 +640,8 @@ export default function CustomerDashboard({ onNavigate, initialTab = 'dashboard'
                           </div>
                         </div>
                       </div>
-                    ))}
+                    ))
+                    )}
                   </div>
                 </div>
 
@@ -836,12 +659,17 @@ export default function CustomerDashboard({ onNavigate, initialTab = 'dashboard'
                       onClick={() => setActiveTab('favorites')}
                       className="text-xs font-bold text-primary hover:underline cursor-pointer"
                     >
-                      All (4)
+                      All ({favoriteFarmersMini.length})
                     </button>
                   </div>
 
                   <div className="space-y-3">
-                    {favoriteFarmersMini.map((farmer) => (
+                    {favoriteFarmersMini.length === 0 ? (
+                      <div className="py-8 text-center text-on-surface-variant text-xs italic">
+                        You haven't saved any favorite farm stands yet.
+                      </div>
+                    ) : (
+                      favoriteFarmersMini.map((farmer) => (
                       <div
                         key={farmer.id}
                         className="p-3 rounded-xl bg-surface-container-low/60 border border-outline-variant/30 space-y-2 hover:border-outline-variant transition-colors"
@@ -874,7 +702,8 @@ export default function CustomerDashboard({ onNavigate, initialTab = 'dashboard'
                           </button>
                         </div>
                       </div>
-                    ))}
+                    ))
+                    )}
                   </div>
                 </div>
               </div>

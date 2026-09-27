@@ -33,7 +33,17 @@ class AdminUserController extends Controller
             });
         }
 
-        $farmers = $query->latest()->get();
+        $farmers = $query->withCount(['ordersAsFarmer', 'products'])
+            ->latest()
+            ->get()
+            ->map(function ($farmer) {
+                $farmer->orders_count = $farmer->orders_as_farmer_count;
+                $farmer->total_revenue = (float) $farmer->ordersAsFarmer()
+                    ->whereIn('order_status', ['completed', 'accepted', 'ready'])
+                    ->sum('total_amount');
+                $farmer->products_count = $farmer->products_count;
+                return $farmer;
+            });
 
         return $this->success(UserResource::collection($farmers), 'Farmers retrieved successfully');
     }
@@ -105,7 +115,22 @@ class AdminUserController extends Controller
             });
         }
 
-        $customers = $query->latest()->get();
+        $customers = $query->withCount('ordersAsCustomer')
+            ->latest()
+            ->get()
+            ->map(function ($customer) {
+                $totalSpent = (float) $customer->ordersAsCustomer()
+                    ->whereIn('order_status', ['completed', 'accepted', 'ready'])
+                    ->sum('total_amount');
+                $customer->orders_count = $customer->orders_as_customer_count;
+                $customer->total_spent = $totalSpent;
+                $tier = 'Regular Shopper';
+                if ($totalSpent >= 200) {
+                    $tier = 'VIP Harvest Club';
+                }
+                $customer->tier = $tier;
+                return $customer;
+            });
 
         return $this->success(UserResource::collection($customers), 'Customers retrieved successfully');
     }

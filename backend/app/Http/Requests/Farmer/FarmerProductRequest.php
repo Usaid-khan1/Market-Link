@@ -24,7 +24,7 @@ class FarmerProductRequest extends FormRequest
             'unit' => [$isPost ? 'required' : 'sometimes', 'string', 'max:30'],
             'stock_quantity' => [$isPost ? 'required' : 'sometimes', 'integer', 'min:0'],
             'description' => ['nullable', 'string', 'max:3000'],
-            'image' => ['nullable', 'string'],
+            'image' => ['nullable'],
             'status' => ['nullable', Rule::in(['available', 'sold_out'])],
         ];
     }

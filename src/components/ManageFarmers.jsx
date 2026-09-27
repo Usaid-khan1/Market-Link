@@ -23,111 +23,14 @@ export default function ManageFarmers({ onNavigate, showToast }) {
   });
 
   // Farmers Dataset
-  const [farmers, setFarmers] = useState([
-    {
-      id: 1,
-      name: 'Riverbend Goat Dairy',
-      location: 'River District • Lot 14-B',
-      contact: 'Hannah & Dale Vance',
-      role: 'Owner / Lead Herder',
-      email: 'dale@riverbenddairy.local',
-      phone: '(503) 555-0192',
-      markets: ['River District Sat'],
-      marketKey: 'River District Market',
-      registered: 'Oct 16, 2025',
-      registeredDate: new Date('2025-10-16'),
-      status: 'pending',
-      permit: 'PERM-2025-089',
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuC-b2tyzO-wRNjqUSNU5FkHWNWYmzeq0RpogYXq_XW0Tska6bHZoULqYiRIjqb-f1bh83DXrUHkUIy3X3kCB92HSDDXevyIkQXchLQ73sKofJENZmILGvq-u0fJzUzSCKj14RqUVLs413DXwdOPd370W_wqZmNVEF0Avfacy-EAtLOx87rDffRZ23lrRG9mp1tQZCHcXC_sb3J_1gBv15LR98yyrLj_iCMhJZWPw-BU7EbGSbA0SpMf'
-    },
-    {
-      id: 2,
-      name: 'Sunspire Microgreens',
-      location: 'East Valley Ridge',
-      contact: 'Lila Chen',
-      role: 'Urban Farm Director',
-      email: 'lila@sunspiregreens.org',
-      phone: '(503) 555-0834',
-      markets: ['Downtown Sat', 'Pioneer Pav'],
-      marketKey: 'Saturday Downtown',
-      registered: 'Oct 18, 2025',
-      registeredDate: new Date('2025-10-18'),
-      status: 'pending',
-      permit: 'PERM-2025-094',
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBCquoPg0yi78P7qTB24IUjOHUxmGNNT3xqn1sx0X4k7uCHChJVDeJoTXYhLF4JZ7rCVX6owMZMAvVses65cLYHpq8D_JSnCx6_n5SuBR_cN9Ig7e6Pzyx8UtDduNIcejXg_yQfQSpKq4AarEkMrquJU_fOCQ-X15j3SO--rDRaodW-OQX2PVWRUjIOjle9GTAhrzzk5huyq7iSSukMQo10eGweK-e0lUrcad1ZNMSQh7eDorA-LKfT'
-    },
-    {
-      id: 3,
-      name: 'Green Pastures Organic',
-      location: 'Pioneer Pavilion • Stall #08',
-      contact: 'Marcus & Sarah Thorne',
-      role: 'Master Growers',
-      email: 'info@greenpastures.bio',
-      phone: '(503) 555-0471',
-      markets: ['Pioneer Pavilion', 'Downtown Sat'],
-      marketKey: 'Pioneer Pavilion',
-      registered: 'Jul 12, 2024',
-      registeredDate: new Date('2024-07-12'),
-      status: 'approved',
-      permit: 'PERM-2024-041',
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAQIVndwY6KiYUSQMD2yK4gZjwGqK7C-IrX-yA-8C5c0dHfW8aLwUMJVHKo9lCs7s3TwLOtpGVX8sSjiObmOI5WNhoP2e1xPPZs5wu1uCJmvmB74F2tcpXrGgzHfVIZmuzzSViBWDVpK41SAs5HD0IAR5gSNf6BDZd_dmlJc4Gwr673FRLx3MRB4oHsUSbZR7gGSKtFvj4dkFUFJ4XT1oYBkrmMGHAN0xf7nIB4zZi_rEJD-dPQaonw'
-    },
-    {
-      id: 4,
-      name: 'Whispering Pines Herbs',
-      location: 'Oak Valley • Space 3',
-      contact: 'Eleanor Wright',
-      role: 'Herbalist & Founder',
-      email: 'eleanor@whisperingpines.farms',
-      phone: '(503) 555-0912',
-      markets: ['Oak Valley Sun'],
-      marketKey: 'Oak Valley Sunday',
-      registered: 'May 03, 2024',
-      registeredDate: new Date('2024-05-03'),
-      status: 'approved',
-      permit: 'PERM-2024-029',
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAXHd2qeZZyVt24nGx_Xq1Fy2jmny8L32l94sE8JNxGmwxuopCRVhCsYq_iOfR3qTflEDvlE2SmboghlxiowRxiL6NqML_zvVy5d5SS6KR2u0sGvIK5y9utLfepMYCQTGEv3UdVgZb27cuaIgV7AdP3a2WnfWhkhbwK_W8O0Dp3m-npCw8uFePYK-Qe6hkJYf7KOcUl-eoPuE7PeRtQ-0JsG7Ehk7txuZuAk_u_hdo37rhmMfE6Lo0N'
-    },
-    {
-      id: 5,
-      name: 'Miller & Stone Hearth',
-      location: 'Central Market Hall • Stall 19',
-      contact: 'David Miller',
-      role: 'Head Baker & Miller',
-      email: 'david@stonehearthbreads.com',
-      phone: '(503) 555-0211',
-      markets: ['Pioneer Pavilion', 'River District'],
-      marketKey: 'Pioneer Pavilion',
-      registered: 'Jan 14, 2024',
-      registeredDate: new Date('2024-01-14'),
-      status: 'approved',
-      permit: 'PERM-2024-006',
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCil_CRCnatjrhBT7RkESm1e-cyNNSLITHItwEwNOn5KnUW7KBXM4mi4sGBXDFF6pkMun33S-PbWqhAXF057EtH9jBT7lbvohRBf8BFuClRF5pR0VlY32L8v6Re7JAgkAddKBasoas6g1fYgvPrZM4HX2iLF1zyRi6zpQQ5TkO_jPVgpCqfHUjWGydt_mSiIfNASWvqRVHzuVd4S2K7f0bgow92JosndO92q-f0vst8EAwaLHF6PeRB'
-    },
-    {
-      id: 6,
-      name: 'Highland Berry & Nut Co.',
-      location: 'Permit Renewal Required',
-      contact: 'Robert MacLeod',
-      role: 'Orchardist',
-      email: 'robert@highlandberries.net',
-      phone: '(503) 555-0789',
-      markets: ['Oak Valley Sun'],
-      marketKey: 'Oak Valley Sunday',
-      registered: 'Nov 11, 2023',
-      registeredDate: new Date('2023-11-11'),
-      status: 'suspended',
-      permit: 'PERM-2023-112',
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBLpWDajpaHJ54w2NphFxAWvIBYEtyU6PiE1JoAhX4BlzDAS-RRY4OqpMTQP1BPwrNu56SqAyp6yQwXrWZXsB6SYGRNhJdvLYCiojwu3oOw4qYM8dmzxzXJcfxtj6vdtcoDZKVJxFzbe8RX80IY6cR3jguTvRGfaRifBxmiB9AIW3R0cqBUcSFlThm8PdTTxdz3aTsXgs7ZN8_4zei0juCbzi6jysZxQLgksSN0iqv6MFJkPg6OUXZR'
-    }
-  ]);
+  const [farmers, setFarmers] = useState([]);
 
   // Counts
   const counts = useMemo(() => {
-    const total = farmers.length + 52; // 58 total
-    const pending = farmers.filter((f) => f.status === 'pending').length + 2;
-    const approved = farmers.filter((f) => f.status === 'approved').length + 46;
-    const suspended = farmers.filter((f) => f.status === 'suspended').length + 4;
+    const total = farmers.length;
+    const pending = farmers.filter((f) => f.status === 'pending').length;
+    const approved = farmers.filter((f) => f.status === 'approved').length;
+    const suspended = farmers.filter((f) => f.status === 'suspended').length;
     return { total, pending, approved, suspended };
   }, [farmers]);
 
@@ -181,24 +84,26 @@ export default function ManageFarmers({ onNavigate, showToast }) {
   useEffect(() => {
     adminApi.getFarmers()
       .then((res) => {
-        if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
+        if (res?.data && Array.isArray(res.data)) {
           const mapped = res.data.map((f) => ({
             id: f.id,
-            name: f.farmer_profile?.stall_name || f.name,
-            location: f.farmer_profile?.address || f.address || 'Regional Stall',
+            name: f.farmer_profile?.farm_name || f.business_name || f.name,
+            location: f.farmer_profile?.city || f.address || 'Regional Stall',
             contact: f.farmer_profile?.contact_person || f.name,
             role: 'Stallholder / Grower',
             email: f.email,
             phone: f.phone || '(503) 555-0192',
-            markets: f.farmer_profile?.operating_days || ['Downtown Saturday Market'],
-            marketKey: 'Saturday Downtown',
-            registered: f.created_at ? new Date(f.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Oct 18, 2025',
+            markets: f.farmer_profile?.operating_days || [f.markets?.[0]?.name || 'Downtown Saturday Market'],
+            marketKey: f.markets?.[0]?.name || 'Saturday Downtown',
+            registered: f.created_at ? new Date(f.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Recent',
             registeredDate: f.created_at ? new Date(f.created_at) : new Date(),
             status: f.farmer_profile?.status || (f.status === 'active' ? 'approved' : f.status) || 'pending',
-            permit: `PERM-2025-${String(f.id).padStart(3, '0')}`,
-            image: f.farmer_profile?.image || 'https://lh3.googleusercontent.com/aida-public/AB6AXuC-b2tyzO-wRNjqUSNU5FkHWNWYmzeq0RpogYXq_XW0Tska6bHZoULqYiRIjqb-f1bh83DXrUHkUIy3X3kCB92HSDDXevyIkQXchLQ73sKofJENZmILGvq-u0fJzUzSCKj14RqUVLs413DXwdOPd370W_wqZmNVEF0Avfacy-EAtLOx87rDffRZ23lrRG9mp1tQZCHcXC_sb3J_1gBv15LR98yyrLj_iCMhJZWPw-BU7EbGSbA0SpMf'
+            permit: f.farmer_profile?.permit_number || `PERM-2025-${String(f.id).padStart(3, '0')}`,
+            image: f.avatar || 'https://images.unsplash.com/photo-1595273670150-bd0c3c392e46?auto=format&fit=crop&w=400&q=80'
           }));
           setFarmers(mapped);
+        } else {
+          setFarmers([]);
         }
       })
       .catch((err) => console.warn('Could not load live farmers:', err));

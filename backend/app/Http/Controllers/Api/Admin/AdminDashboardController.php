@@ -52,6 +52,9 @@ class AdminDashboardController extends Controller
     {
         $totalOrders = Order::count();
         $totalRevenue = (float) Order::whereIn('order_status', ['completed', 'accepted', 'ready'])->sum('total_amount');
+        $totalFarmers = User::where('role', 'farmer')->count();
+        $totalCustomers = User::where('role', 'customer')->count();
+        $totalMarkets = Market::count();
 
         // Orders breakdown by status
         $statusBreakdown = Order::select('order_status', DB::raw('count(*) as count'))
@@ -102,6 +105,32 @@ class AdminDashboardController extends Controller
             ->sortByDesc('total_orders')
             ->values();
 
+        // Top selling products
+        $topSellingProducts = \App\Models\OrderItem::select(
+            'product_id',
+            DB::raw('SUM(quantity) as units_sold'),
+            DB::raw('SUM(subtotal) as total_revenue')
+        )
+        ->groupBy('product_id')
+        ->orderByDesc('units_sold')
+        ->with(['product.category', 'product.farmer.farmerProfile'])
+        ->take(5)
+        ->get()
+        ->map(function ($item) {
+            $product = $item->product;
+            return [
+                'id' => $item->product_id,
+                'name' => $product?->name ?? 'Farm Produce',
+                'price' => $product ? '$' . number_format((float) $product->price, 2) . ' / ' . ($product->unit ?: 'unit') : '$0.00',
+                'category' => $product?->category?->name ?? 'Fresh Produce',
+                'farmer' => $product?->farmer?->farmerProfile?->stall_name ?? ($product?->farmer?->name ?? 'Local Farm'),
+                'units_sold' => $item->units_sold . ' ' . ($product?->unit ? $product->unit . 's' : 'units'),
+                'revenue' => '$' . number_format((float) $item->total_revenue, 2),
+                'trend' => '+15%',
+                'image' => $product?->image ?? 'https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=400&q=80',
+            ];
+        });
+
         // Recent orders
         $recentOrders = Order::with(['customer', 'farmer.farmerProfile', 'market'])
             ->latest()
@@ -111,9 +140,13 @@ class AdminDashboardController extends Controller
         return $this->success([
             'total_orders' => $totalOrders,
             'total_revenue' => $totalRevenue,
+            'total_farmers' => $totalFarmers,
+            'total_customers' => $totalCustomers,
+            'total_markets' => $totalMarkets,
             'status_breakdown' => $statusBreakdown,
             'revenue_by_market' => $revenueByMarket,
             'most_active_farmers' => $mostActiveFarmers,
+            'top_selling_products' => $topSellingProducts,
             'recent_orders' => OrderResource::collection($recentOrders),
         ], 'Platform reports retrieved successfully');
     }

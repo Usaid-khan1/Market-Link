@@ -6,165 +6,22 @@ export default function CustomerFavorites({ onNavigate, showToast, onAddToCart }
   const [loading, setLoading] = useState(false);
 
   // Farmers Dataset
-  const [favoriteFarmers, setFavoriteFarmers] = useState([
-    {
-      id: 'f-1',
-      targetId: 2,
-      name: 'Green Pastures Organic',
-      specialty: 'Heirloom Solanaceae & Specialty Greens',
-      market: 'Pioneer Pavilion • Stall #08',
-      location: 'Portland, OR (12 miles away)',
-      rating: 4.95,
-      reviewCount: 148,
-      verified: true,
-      image: 'https://images.unsplash.com/photo-1595974482597-4b8da8879bc5?auto=format&fit=crop&w=600&q=80',
-      tags: ['Certified USDA Organic', 'No Spray', 'Family Run since 1984'],
-      featuredHarvest: 'Brandywine Heirloom Tomatoes, Lacinato Kale'
-    },
-    {
-      id: 'f-2',
-      targetId: 3,
-      name: 'Mountain View Orchard & Cider',
-      specialty: 'Cideries, Honeycrisp & Asian Pears',
-      market: 'Riverside Twilight Market • Pier 4',
-      location: 'Hood River Valley, OR (45 miles away)',
-      rating: 4.88,
-      reviewCount: 94,
-      verified: true,
-      image: 'https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=600&q=80',
-      tags: ['Cold-Pressed Cider', 'Heritage Apples', 'Non-GMO'],
-      featuredHarvest: 'Sweet Apple Cider, Honeycrisp Apples'
-    },
-    {
-      id: 'f-3',
-      targetId: 4,
-      name: 'Miller & Stone Hearth Bakery',
-      specialty: 'Naturally Leavened Sourdough & Ancient Grains',
-      market: 'Downtown Saturday Market • Space 19',
-      location: 'SE Portland, OR (3 miles away)',
-      rating: 4.92,
-      reviewCount: 210,
-      verified: true,
-      image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=600&q=80',
-      tags: ['100% Stoneground Flours', 'Wild Ferment', 'Baked Daily 4 AM'],
-      featuredHarvest: 'Rustic Country Loaves, Seeded Miche'
-    },
-    {
-      id: 'f-4',
-      targetId: 5,
-      name: 'Riverbend Goat Dairy',
-      specialty: 'Farmstead Artisan Chèvre & Aged Tommes',
-      market: 'River District Sat • Lot 14-B',
-      location: 'Willamette Valley, OR (28 miles away)',
-      rating: 4.85,
-      reviewCount: 67,
-      verified: true,
-      image: 'https://images.unsplash.com/photo-1516467508483-a7212febe31a?auto=format&fit=crop&w=600&q=80',
-      tags: ['Pasture Raised', 'Raw Goat Milk', 'Artisan Chèvre'],
-      featuredHarvest: 'Herbed Chèvre, Raw Jersey Milk'
-    }
-  ]);
+  const [favoriteFarmers, setFavoriteFarmers] = useState([]);
 
   // Products Dataset
-  const [favoriteProducts, setFavoriteProducts] = useState([
-    {
-      id: 'p-1',
-      targetId: 1,
-      name: 'Heirloom Brandywine Tomatoes',
-      farmer: 'Green Pastures Organic',
-      stall: 'Stall #08',
-      price: '$4.50',
-      unit: '/ lb',
-      availability: 'Available this Saturday',
-      badgeStatus: 'active',
-      isBackInStock: false,
-      rating: 4.9,
-      image: 'https://images.unsplash.com/photo-1592841200221-a6898f307baa?auto=format&fit=crop&w=500&q=80',
-      stockRemaining: '28 lbs remaining'
-    },
-    {
-      id: 'p-2',
-      targetId: 2,
-      name: 'Artisan Sourdough Country Loaf',
-      farmer: 'Miller & Stone Hearth Bakery',
-      stall: 'Space 19',
-      price: '$7.50',
-      unit: '/ loaf',
-      availability: 'Pre-order Open',
-      badgeStatus: 'active',
-      isBackInStock: true, // Special Requirement: "Back in stock" badge on items that were previously sold out!
-      rating: 5.0,
-      image: 'https://images.unsplash.com/photo-1589367920969-ab8e050bbb04?auto=format&fit=crop&w=500&q=80',
-      stockRemaining: '12 loaves left'
-    },
-    {
-      id: 'p-3',
-      targetId: 3,
-      name: 'Cold-Pressed Sweet Apple Cider (1 Gal)',
-      farmer: 'Mountain View Orchard & Cider',
-      stall: 'Pier 4',
-      price: '$11.00',
-      unit: '/ jug',
-      availability: 'Fresh Press Saturday',
-      badgeStatus: 'active',
-      isBackInStock: false,
-      rating: 4.9,
-      image: 'https://images.unsplash.com/photo-1576673442511-7e39b6545c87?auto=format&fit=crop&w=500&q=80',
-      stockRemaining: '8 jugs remaining'
-    },
-    {
-      id: 'p-4',
-      targetId: 4,
-      name: 'Artisan Herbed Goat Chèvre (8oz)',
-      farmer: 'Riverbend Goat Dairy',
-      stall: 'Lot 14-B',
-      price: '$9.00',
-      unit: '/ tub',
-      availability: 'Back in Stock Today',
-      badgeStatus: 'active',
-      isBackInStock: true, // Special Requirement: "Back in stock" badge!
-      rating: 4.8,
-      image: 'https://images.unsplash.com/photo-1452195100486-9cc805987862?auto=format&fit=crop&w=500&q=80',
-      stockRemaining: '15 tubs in cooler'
-    },
-    {
-      id: 'p-5',
-      targetId: 5,
-      name: 'Rainbow Swiss Chard & Lacinato Kale',
-      farmer: 'Green Pastures Organic',
-      stall: 'Stall #08',
-      price: '$3.75',
-      unit: '/ bunch',
-      availability: 'Harvesting Friday PM',
-      badgeStatus: 'active',
-      isBackInStock: false,
-      rating: 4.8,
-      image: 'https://images.unsplash.com/photo-1524179091875-bf99a9a6fa57?auto=format&fit=crop&w=500&q=80',
-      stockRemaining: '15 bunches'
-    },
-    {
-      id: 'p-6',
-      targetId: 6,
-      name: 'Wild Blackberry Blossom Raw Honey (16oz)',
-      farmer: 'Cascade Apiaries & Botanicals',
-      stall: 'Stall #14',
-      price: '$14.00',
-      unit: '/ jar',
-      availability: 'Limited Batch',
-      badgeStatus: 'active',
-      isBackInStock: true, // Special Requirement: "Back in stock" badge!
-      rating: 5.0,
-      image: 'https://images.unsplash.com/photo-1587049352846-4a222e784d38?auto=format&fit=crop&w=500&q=80',
-      stockRemaining: '6 jars left'
-    }
-  ]);
+  const [favoriteProducts, setFavoriteProducts] = useState([]);
 
   // Load live favorites from backend API
   useEffect(() => {
     let isMounted = true;
     customerApi.getFavorites()
       .then((res) => {
-        if (!isMounted || !res?.data || !Array.isArray(res.data) || res.data.length === 0) return;
+        if (!isMounted) return;
+        if (!res?.data || !Array.isArray(res.data)) {
+          setFavoriteFarmers([]);
+          setFavoriteProducts([]);
+          return;
+        }
         
         const liveFarmers = [];
         const liveProducts = [];
@@ -206,10 +63,16 @@ export default function CustomerFavorites({ onNavigate, showToast, onAddToCart }
           }
         });
 
-        if (liveFarmers.length > 0) setFavoriteFarmers(liveFarmers);
-        if (liveProducts.length > 0) setFavoriteProducts(liveProducts);
+        setFavoriteFarmers(liveFarmers);
+        setFavoriteProducts(liveProducts);
       })
-      .catch((err) => console.warn('Could not load favorites from API:', err));
+      .catch((err) => {
+        console.warn('Could not load favorites from API:', err);
+        if (isMounted) {
+          setFavoriteFarmers([]);
+          setFavoriteProducts([]);
+        }
+      });
 
     return () => { isMounted = false; };
   }, []);

@@ -1,87 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import customerApi from '../api/customer';
 
 export default function CustomerCart({ onNavigate, showToast, onCartUpdated }) {
-  // Realistic initial cart items grouped across two local farm stalls
-  const [cartItems, setCartItems] = useState([
-    {
-      id: 'c-1',
-      farmerId: 'f-green-pastures',
-      farmerName: 'Green Pastures Organic',
-      stallLocation: 'Pioneer Pavilion • Stall #08',
-      pickupSlots: [
-        'Saturday, Oct 18 • 9:30 AM – 11:00 AM',
-        'Saturday, Oct 18 • 11:00 AM – 12:30 PM',
-        'Sunday, Oct 19 • 10:00 AM – 11:30 AM'
-      ],
-      selectedSlot: 'Saturday, Oct 18 • 9:30 AM – 11:00 AM',
-      items: [
-        {
-          id: 'p-1',
-          name: 'Heirloom Brandywine Tomatoes',
-          category: 'Vine Vegetables',
-          unitPrice: 4.50,
-          unitLabel: 'per lb',
-          quantity: 3,
-          image: 'https://images.unsplash.com/photo-1592841200221-a6898f307baa?auto=format&fit=crop&w=400&q=80',
-          stockAvailable: 28
-        },
-        {
-          id: 'p-2',
-          name: 'Rainbow Swiss Chard & Lacinato Kale',
-          category: 'Leafy Greens',
-          unitPrice: 3.75,
-          unitLabel: 'per bunch',
-          quantity: 2,
-          image: 'https://images.unsplash.com/photo-1524179091875-bf99a9a6fa57?auto=format&fit=crop&w=400&q=80',
-          stockAvailable: 15
-        },
-        {
-          id: 'p-3',
-          name: 'Sweet Italian Genovese Basil',
-          category: 'Herbs & Aromatics',
-          unitPrice: 2.50,
-          unitLabel: 'per bunch',
-          quantity: 2,
-          image: 'https://images.unsplash.com/photo-1608686207856-001b95cf60ca?auto=format&fit=crop&w=400&q=80',
-          stockAvailable: 10
-        }
-      ]
-    },
-    {
-      id: 'c-2',
-      farmerId: 'f-mountain-view',
-      farmerName: 'Mountain View Orchard & Cider',
-      stallLocation: 'Riverside Twilight Market • Pier 4',
-      pickupSlots: [
-        'Saturday, Oct 18 • 10:00 AM – 11:30 AM',
-        'Saturday, Oct 18 • 1:00 PM – 2:30 PM'
-      ],
-      selectedSlot: 'Saturday, Oct 18 • 10:00 AM – 11:30 AM',
-      items: [
-        {
-          id: 'p-4',
-          name: 'Cold-Pressed Sweet Apple Cider (1 Gal)',
-          category: 'Orchard Beverages',
-          unitPrice: 11.00,
-          unitLabel: 'per jug',
-          quantity: 1,
-          image: 'https://images.unsplash.com/photo-1576673442511-7e39b6545c87?auto=format&fit=crop&w=400&q=80',
-          stockAvailable: 8
-        },
-        {
-          id: 'p-5',
-          name: 'Honeycrisp Crisp Orchard Apples',
-          category: 'Apples & Pears',
-          unitPrice: 3.20,
-          unitLabel: 'per lb',
-          quantity: 4,
-          image: 'https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?auto=format&fit=crop&w=400&q=80',
-          stockAvailable: 45
-        }
-      ]
+  // Dynamic cart items grouped across local farm stalls
+  const [cartItems, setCartItems] = useState(() => {
+    try {
+      const saved = localStorage.getItem('marketlink_cart');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
     }
-  ]);
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('marketlink_cart', JSON.stringify(cartItems));
+    } catch {
+      // ignore
+    }
+  }, [cartItems]);
 
   // Order Placement Modal State
   const [checkoutModalOpen, setCheckoutModalOpen] = useState(false);

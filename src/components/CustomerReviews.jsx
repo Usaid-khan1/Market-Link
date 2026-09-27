@@ -2,83 +2,19 @@ import React, { useState, useEffect } from 'react';
 import customerApi from '../api/customer';
 
 export default function CustomerReviews({ onNavigate, showToast }) {
-  // Realistic Customer Reviews written by Elena Rostova
-  const [reviews, setReviews] = useState([
-    {
-      id: 1,
-      targetType: 'product',
-      targetName: 'Heirloom Brandywine Tomatoes',
-      farmerName: 'Green Pastures Organic',
-      stallLocation: 'Pioneer Pavilion • Stall #08',
-      rating: 5,
-      date: 'October 12, 2025',
-      orderRef: '#ML-8841',
-      comment:
-        'These are hands down the finest heirloom tomatoes in the Pacific Northwest. Delicate thin skins, deeply aromatic, and with that perfect balance of old-fashioned acidity and rich sweetness. Picked up on Saturday morning and they were still sun-warmed. Will pre-order every week!',
-      farmerReply: {
-        farmerName: 'Marcus Thorne (Green Pastures Organic)',
-        date: 'October 13, 2025',
-        replyText:
-          'Thank you so much, Elena! Our south-facing hillside crop had optimal sunlight this autumn. We have reserved two heirloom boxes for you for this upcoming weekend as well!'
-      }
-    },
-    {
-      id: 2,
-      targetType: 'farmer',
-      targetName: 'Miller & Stone Hearth Bakery',
-      farmerName: 'Miller & Stone Hearth Bakery',
-      stallLocation: 'Downtown Saturday Market • Space 19',
-      rating: 5,
-      date: 'October 05, 2025',
-      orderRef: '#ML-8712',
-      comment:
-        'The sourdough country loaf crust crackles when sliced, with an open custardy crumb and deep caramelized blistered crust. Being able to reserve before Saturday 8 AM rush guarantees I never leave empty-handed. Thank you David and team!',
-      farmerReply: {
-        farmerName: 'David Miller (Head Baker)',
-        date: 'October 06, 2025',
-        replyText:
-          'We appreciate the review, Elena! We mix our 48-hour levain every Thursday night specifically for the Saturday market reservations. See you next weekend.'
-      }
-    },
-    {
-      id: 3,
-      targetType: 'product',
-      targetName: 'Cold-Pressed Sweet Apple Cider (1 Gal)',
-      farmerName: 'Mountain View Orchard & Cider',
-      stallLocation: 'Riverside Twilight Market • Pier 4',
-      rating: 5,
-      date: 'September 28, 2025',
-      orderRef: '#ML-8650',
-      comment:
-        'Freshly pressed without pasteurization or added sugars. You can taste the crisp blend of Honeycrisp and Gravenstein apples. Our family finished the jug in two days!',
-      farmerReply: null
-    },
-    {
-      id: 4,
-      targetType: 'product',
-      targetName: 'Artisan Herbed Goat Chèvre (8oz)',
-      farmerName: 'Riverbend Goat Dairy',
-      stallLocation: 'River District Sat • Lot 14-B',
-      rating: 4,
-      date: 'September 20, 2025',
-      orderRef: '#ML-8530',
-      comment:
-        'Silky smooth and fragrant with fresh thyme and rosemary. Just slightly lighter on sea salt than their previous batch, but wonderful paired with local sourdough.',
-      farmerReply: {
-        farmerName: 'Dale Vance (Riverbend Dairy)',
-        date: 'September 22, 2025',
-        replyText:
-          'Good catch, Elena! We experimented with a lighter salt wash to let the fresh autumn pasture clover notes shine through. We value your keen palate!'
-      }
-    }
-  ]);
+  // Customer Reviews
+  const [reviews, setReviews] = useState([]);
 
   // Load reviews from backend
   useEffect(() => {
     let isMounted = true;
     customerApi.getReviews()
       .then((res) => {
-        if (!isMounted || !res?.data || !Array.isArray(res.data) || res.data.length === 0) return;
+        if (!isMounted) return;
+        if (!res?.data || !Array.isArray(res.data)) {
+          setReviews([]);
+          return;
+        }
         const liveReviews = res.data.map((r) => ({
           id: r.id,
           targetType: r.product_id ? 'product' : 'farmer',
@@ -97,7 +33,10 @@ export default function CustomerReviews({ onNavigate, showToast }) {
         }));
         setReviews(liveReviews);
       })
-      .catch((err) => console.warn('Could not load live customer reviews:', err));
+      .catch((err) => {
+        console.warn('Could not load live customer reviews:', err);
+        if (isMounted) setReviews([]);
+      });
 
     return () => { isMounted = false; };
   }, []);

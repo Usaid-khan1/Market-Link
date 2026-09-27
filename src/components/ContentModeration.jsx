@@ -10,89 +10,11 @@ export default function ContentModeration({ onNavigate, showToast }) {
   const [viewReviewModal, setViewReviewModal] = useState(null);
   const [removeConfirmation, setRemoveConfirmation] = useState(null); // { type: 'product' | 'review', item: obj }
 
-  // Sample Reported Products Dataset
-  const [reportedProducts, setReportedProducts] = useState([
-    {
-      id: 'rp-1',
-      name: 'Uncertified "Wild" Honeycomb Cappings',
-      category: 'Honey & Jams',
-      price: '$18.50',
-      farmer: 'Highland Pine Apiaries',
-      farmerContact: 'Caleb Morgan',
-      market: 'Downtown Saturday Market',
-      reportedBy: 'Dr. Evelyn Reed (Shopper & Food Inspector)',
-      reportedEmail: 'evelyn.reed@oregonag.gov',
-      reason: 'Misleading Organic Claim',
-      reasonDetails: 'Vendor is advertising this batch as "Certified Organic USDA" on the product listing, but lacks state organic handler certification records on file for the 2025 harvest.',
-      date: 'Oct 18, 2025',
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDZQARg08jALmVwYA3ok4amUG0u-xEEYBvHSZxOMJpee6BnH_nKjni29z-GksED67D6ZlGhCKRhJUIRZHr4r2DUhFilbG8omgUd7-RaIaMaQOZko3-tkgxjCPyuhNGXinuXgoGlEhcj36RwrQlLtHE1YyFMSkOYl9xsWrbw1zYfTrAL1FM0S9N58axAx7S2XdY5SumAaEEqqoN7i-Jq70byrKynPcG9A1WTfqUTrWqXXnBrSCsiscH2',
-      description: 'Raw, unpasteurized honey comb chunks cut fresh from deep hive boxes. Packaged in unsealed plastic jars without tamper labels.'
-    },
-    {
-      id: 'rp-2',
-      name: 'Imported Hass Avocados (Non-Regional)',
-      category: 'Fresh Fruits',
-      price: '$2.50 ea',
-      farmer: 'Sunspire Wholesale Resellers',
-      farmerContact: 'Lila Chen',
-      market: 'Riverside Twilight Market',
-      reportedBy: 'Marcus Thorne (Pioneer Pavilion Vendor)',
-      reportedEmail: 'marcus@greenpastures.bio',
-      reason: 'Prohibited Non-Local Goods',
-      reasonDetails: 'MarketLink bylaws strictly forbid wholesale re-selling of non-Pacific Northwest subtropical fruit. Avocados were shipped in cartons with Mexican commercial import stickers.',
-      date: 'Oct 17, 2025',
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuClIJU-m9wnwHW_ewEmyK3eGmreGDLfswwcbidm46G5ECjugjMC-wJdI02nUXYMvMh1wQTP9_-JLcYZCUufKAjBo1XWGc5NrniQzTN3ccxwpAr92rxrqw09QMddSwJ2VHbpgZijw1oS_WeE60q97AJL094C4DvZs3ZLOuruhvSTprxa3n2blU4DTUZa1KgnPY31NWwPg79HD7jSwPetCMLrplT6T4VDq9Q2AMC3mR8Judd2fjxfi2bB',
-      description: 'Bulk avocados offered at discount during twilight market hours. Not grown on local member farms.'
-    },
-    {
-      id: 'rp-3',
-      name: 'Unpasteurized Chèvre Goat Curd',
-      category: 'Artisan Dairy',
-      price: '$9.00 / 8oz',
-      farmer: 'Riverbend Goat Dairy',
-      farmerContact: 'Hannah & Dale Vance',
-      market: 'River District Sat',
-      reportedBy: 'Sarah Jenkins (Shopper)',
-      reportedEmail: 'sjenkins99@gmail.com',
-      reason: 'Safety & Label Compliance',
-      reasonDetails: 'Product container does not include state mandatory warning label for raw unpasteurized goat dairy products.',
-      date: 'Oct 16, 2025',
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuA0rX6QqpjAbOj4aS9tyXHfexwLNZNbzSxXT3wnnRZ2XMSpA3M7N8idUFHiRchav_OFiX0mQuqWd0Z-t9_fUwFZGiWRa-be7DDkZhArudA_GozKGr25dEhHpyZDDvoWZ64z6hyMDey5Sgy9ZMPo0jIoAHHOox4FIup4zjPod4TRo-inqmbqmJZBvCIggYQsqchQqcay4tIPkUr3UN4vh-7SRbi3jh2cpjLmrpd164fewdifDCyYcmgR',
-      description: 'Fresh artisanal soft chèvre curd rolled in garden herbs. Produced under small-farm domestic kitchen permit.'
-    }
-  ]);
+  // Reported Products Dataset
+  const [reportedProducts, setReportedProducts] = useState([]);
 
-  // Sample Reported Reviews Dataset
-  const [reportedReviews, setReportedReviews] = useState([
-    {
-      id: 'rr-1',
-      reviewerName: 'Brett "AngryShopper" K.',
-      reviewerEmail: 'brett_k_pdx@outlook.com',
-      target: 'Green Pastures Organic',
-      targetType: 'Farmer',
-      rating: 1,
-      excerpt: 'TOTAL SCAM ARTISTS! DO NOT BUY! Rotten tomatoes and the farmer yelled profanities at my dog...',
-      fullReview: 'TOTAL SCAM ARTISTS! DO NOT BUY! Rotten tomatoes and the farmer yelled profanities at my dog when we walked past booth 12. These people are crooks and should be arrested by the police. Avoid this horrible place at all costs!',
-      reason: 'Profanity & False Slander',
-      reasonDetails: 'Stallholder disputes event. Footage from Pioneer Pavilion security confirms customer dog was off-leash knocking over fruit boxes; no shouting took place. Contains defamatory claims.',
-      date: 'Oct 17, 2025',
-      flaggedBy: 'Marcus Thorne (Farm Manager)'
-    },
-    {
-      id: 'rr-2',
-      reviewerName: 'CryptoDeals_Bot',
-      reviewerEmail: 'bot774@quickrich.cc',
-      target: 'Artisan Sourdough Country Loaf',
-      targetType: 'Product',
-      rating: 5,
-      excerpt: 'Great bread but better gains! Earn $500 daily automated crypto arbitrage visit bit-link-now.biz...',
-      fullReview: 'Great bread but better gains! Earn $500 daily automated crypto arbitrage visit bit-link-now.biz/signup for 100% free bonus tokens! Valid today only!',
-      reason: 'Spam & Automated Promotion',
-      reasonDetails: 'Automated spam bot injecting external referral links into product review forms.',
-      date: 'Oct 16, 2025',
-      flaggedBy: 'Automated Spam Filter'
-    }
-  ]);
+  // Reported Reviews Dataset
+  const [reportedReviews, setReportedReviews] = useState([]);
 
   // Metrics
   const metrics = useMemo(() => {
@@ -100,7 +22,7 @@ export default function ContentModeration({ onNavigate, showToast }) {
       openTotal: reportedProducts.length + reportedReviews.length,
       prodCount: reportedProducts.length,
       revCount: reportedReviews.length,
-      resolvedToday: 6
+      resolvedToday: 0
     };
   }, [reportedProducts, reportedReviews]);
 
@@ -130,7 +52,7 @@ export default function ContentModeration({ onNavigate, showToast }) {
   useEffect(() => {
     adminApi.getModerationProducts()
       .then((res) => {
-        if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
+        if (res?.data && Array.isArray(res.data)) {
           const mapped = res.data.map((p) => ({
             id: p.id,
             name: p.name,
@@ -144,17 +66,19 @@ export default function ContentModeration({ onNavigate, showToast }) {
             reason: p.status === 'sold_out' ? 'Stock Depleted Listing' : 'Active Catalog Audit',
             reasonDetails: p.description || 'Listing reviewed under platform catalog standards.',
             date: p.created_at ? new Date(p.created_at).toLocaleDateString() : 'Recent',
-            image: p.image || 'https://lh3.googleusercontent.com/aida-public/AB6AXuDZQARg08jALmVwYA3ok4amUG0u-xEEYBvHSZxOMJpee6BnH_nKjni29z-GksED67D6ZlGhCKRhJUIRZHr4r2DUhFilbG8omgUd7-RaIaMaQOZko3-tkgxjCPyuhNGXinuXgoGlEhcj36RwrQlLtHE1YyFMSkOYl9xsWrbw1zYfTrAL1FM0S9N58axAx7S2XdY5SumAaEEqqoN7i-Jq70byrKynPcG9A1WTfqUTrWqXXnBrSCsiscH2',
+            image: p.image || 'https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=400&q=80',
             description: p.description || ''
           }));
           setReportedProducts(mapped);
+        } else {
+          setReportedProducts([]);
         }
       })
       .catch((err) => console.warn('Could not load moderation products:', err));
 
     adminApi.getModerationReviews()
       .then((res) => {
-        if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
+        if (res?.data && Array.isArray(res.data)) {
           const mapped = res.data.map((r) => ({
             id: r.id,
             reviewerName: r.customer_name || 'Customer',
@@ -170,6 +94,8 @@ export default function ContentModeration({ onNavigate, showToast }) {
             flaggedBy: 'Automated Review Filter'
           }));
           setReportedReviews(mapped);
+        } else {
+          setReportedReviews([]);
         }
       })
       .catch((err) => console.warn('Could not load moderation reviews:', err));

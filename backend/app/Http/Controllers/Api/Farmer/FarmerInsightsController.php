@@ -64,6 +64,20 @@ class FarmerInsightsController extends Controller
         // Reviews metrics
         $avgRating = (float) Review::where('farmer_id', $farmerId)->avg('rating');
         $totalReviews = Review::where('farmer_id', $farmerId)->count();
+        $recentReviews = Review::where('farmer_id', $farmerId)
+            ->with('customer')
+            ->latest()
+            ->take(3)
+            ->get()
+            ->map(function ($rev) {
+                return [
+                    'id' => $rev->id,
+                    'customer' => $rev->customer?->name ?? 'Community Shopper',
+                    'rating' => (int) $rev->rating,
+                    'comment' => $rev->comment,
+                    'created_at' => $rev->created_at?->diffForHumans() ?? 'Recently',
+                ];
+            });
 
         // Recent orders
         $recentOrders = Order::where('farmer_id', $farmerId)
@@ -71,6 +85,19 @@ class FarmerInsightsController extends Controller
             ->latest()
             ->take(5)
             ->get();
+
+        // Staging / Packing Progress calculation
+        $stagingTotal = $pendingOrders + $readyOrders;
+        $stagingPacked = $readyOrders;
+        $stagingPercentage = $stagingTotal > 0 ? (int) round(($stagingPacked / $stagingTotal) * 100) : 0;
+        $upcomingMarket = $recentOrders->first()?->market?->market_name ?? $request->user()->farmerProfile?->address ?? 'Weekend Farmers Market';
+
+        $stagingProgress = [
+            'total_orders' => $stagingTotal,
+            'packed_orders' => $stagingPacked,
+            'percentage' => $stagingPercentage,
+            'market_name' => $upcomingMarket,
+        ];
 
         return $this->success([
             'total_orders' => $totalOrders,
@@ -80,9 +107,11 @@ class FarmerInsightsController extends Controller
             'total_revenue' => $totalRevenue,
             'avg_rating' => round($avgRating, 2),
             'total_reviews' => $totalReviews,
+            'recent_reviews' => $recentReviews,
             'best_sellers' => $bestSellers,
             'stock_alerts' => $stockAlerts,
             'recent_orders' => OrderResource::collection($recentOrders),
+            'staging_progress' => $stagingProgress,
         ], 'Farmer insights retrieved successfully');
     }
 }

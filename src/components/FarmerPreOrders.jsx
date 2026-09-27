@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import farmerApi from '../api/farmer';
 
 export default function FarmerPreOrders({ showToast }) {
@@ -19,117 +20,8 @@ export default function FarmerPreOrders({ showToast }) {
   ]);
   const [newSlotInput, setNewSlotInput] = useState('');
 
-  // Pre-Orders Dataset for Green Pastures Organic
-  const [orders, setOrders] = useState([
-    {
-      id: '#ML-8920',
-      customer: 'Elena Rostova',
-      email: 'elena.rostova@gmail.com',
-      phone: '(503) 555-0144',
-      itemsSummary: '4 lbs Brandywine Tomatoes, 2 bunches Chard',
-      itemsList: [
-        { name: 'Heirloom Brandywine Tomatoes', qty: '4 lbs', price: '$4.50/lb', total: '$18.00' },
-        { name: 'Rainbow Swiss Chard & Lacinato Kale', qty: '2 bunches', price: '$3.75/bunch', total: '$7.50' },
-        { name: 'Sweet Italian Genovese Basil', qty: '2 bunches', price: '$2.50/bunch', total: '$5.00' },
-        { name: 'Stall Packing & Crate Deposit', qty: '1 unit', price: '$3.50', total: '$3.50' }
-      ],
-      pickupDate: 'Saturday, Oct 18',
-      pickupSlot: '9:30 AM – 11:00 AM',
-      market: 'Pioneer Pavilion • Stall #08',
-      totalAmount: '$34.00',
-      status: 'Placed',
-      specialNotes: 'Please pack firm tomatoes for slicing; will pick up with baby stroller.',
-      timeline: [
-        { time: 'Friday 6:15 PM', text: 'Reservation submitted by Elena via MarketLink storefront' },
-        { time: 'Pending', text: 'Stallholder confirmation awaiting harvest pack' }
-      ]
-    },
-    {
-      id: '#ML-8919',
-      customer: 'Claire Thompson',
-      email: 'claire.t@portlandgrow.org',
-      phone: '(503) 555-0722',
-      itemsSummary: '2 Romanesco Cauliflowers, 3 baskets Sugar Snap Peas',
-      itemsList: [
-        { name: 'Organic Romanesco Cauliflower', qty: '2 pieces', price: '$5.00/ea', total: '$10.00' },
-        { name: 'Baby Sugar Snap Peas', qty: '3 baskets', price: '$4.25/ea', total: '$12.75' }
-      ],
-      pickupDate: 'Saturday, Oct 18',
-      pickupSlot: '8:00 AM – 9:30 AM',
-      market: 'Downtown Saturday Market • Booth 12',
-      totalAmount: '$22.75',
-      status: 'Accepted',
-      specialNotes: 'None',
-      timeline: [
-        { time: 'Friday 4:20 PM', text: 'Order placed by customer' },
-        { time: 'Friday 5:00 PM', text: 'Stall confirmed & accepted for morning harvest' }
-      ]
-    },
-    {
-      id: '#ML-8914',
-      customer: 'David Reynolds',
-      email: 'david.r@cascadialabs.com',
-      phone: '(503) 555-0931',
-      itemsSummary: '6 lbs Brandywine Tomatoes, 4 bunches Basil',
-      itemsList: [
-        { name: 'Heirloom Brandywine Tomatoes', qty: '6 lbs', price: '$4.50/lb', total: '$27.00' },
-        { name: 'Sweet Italian Genovese Basil', qty: '4 bunches', price: '$2.50/bunch', total: '$10.00' }
-      ],
-      pickupDate: 'Saturday, Oct 18',
-      pickupSlot: '8:00 AM – 9:30 AM',
-      market: 'Pioneer Pavilion • Stall #08',
-      totalAmount: '$37.00',
-      status: 'Ready for Pickup',
-      specialNotes: 'Paying in cash with exact change at stall counter.',
-      timeline: [
-        { time: 'Friday 3:10 PM', text: 'Order placed by David' },
-        { time: 'Friday 4:15 PM', text: 'Accepted by Green Pastures' },
-        { time: 'Saturday 7:30 AM', text: 'Crate packed and tagged with voucher #ML-8914' }
-      ]
-    },
-    {
-      id: '#ML-8902',
-      customer: 'Hannah Sterling',
-      email: 'hannah.s@gmail.com',
-      phone: '(503) 555-0311',
-      itemsSummary: '3 lbs Tomatoes, 1 Romanesco Cauliflower',
-      itemsList: [
-        { name: 'Heirloom Brandywine Tomatoes', qty: '3 lbs', price: '$4.50/lb', total: '$13.50' },
-        { name: 'Organic Romanesco Cauliflower', qty: '1 piece', price: '$5.00/ea', total: '$5.00' }
-      ],
-      pickupDate: 'Wednesday, Oct 15',
-      pickupSlot: '4:30 PM – 6:00 PM',
-      market: 'Riverside Twilight Market',
-      totalAmount: '$18.50',
-      status: 'Completed',
-      specialNotes: 'Collected and paid via SNAP matching tokens.',
-      timeline: [
-        { time: 'Wednesday 2:10 PM', text: 'Order placed' },
-        { time: 'Wednesday 3:00 PM', text: 'Packed & Ready' },
-        { time: 'Wednesday 5:15 PM', text: 'Voucher claimed at stall. Settle completed.' }
-      ]
-    },
-    {
-      id: '#ML-8889',
-      customer: 'Lucas Meyer',
-      email: 'lucas.m@outlook.com',
-      phone: '(503) 555-0849',
-      itemsSummary: '5 baskets Snap Peas',
-      itemsList: [
-        { name: 'Baby Sugar Snap Peas', qty: '5 baskets', price: '$4.25/ea', total: '$21.25' }
-      ],
-      pickupDate: 'Wednesday, Oct 15',
-      pickupSlot: '6:00 PM – 7:30 PM',
-      market: 'Riverside Twilight Market',
-      totalAmount: '$21.25',
-      status: 'Cancelled',
-      specialNotes: 'Customer texted unable to attend due to work travel.',
-      timeline: [
-        { time: 'Wednesday 1:00 PM', text: 'Order placed' },
-        { time: 'Wednesday 3:30 PM', text: 'Cancelled by customer' }
-      ]
-    }
-  ]);
+  // Pre-Orders Dataset
+  const [orders, setOrders] = useState([]);
 
   // Tab definitions
   const tabs = ['All', 'Placed', 'Accepted', 'Ready for Pickup', 'Completed', 'Cancelled'];
@@ -153,6 +45,7 @@ export default function FarmerPreOrders({ showToast }) {
         o.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
         o.customer.toLowerCase().includes(searchQuery.toLowerCase()) ||
         o.itemsSummary.toLowerCase().includes(searchQuery.toLowerCase());
+
       return matchTab && matchSearch;
     });
   }, [orders, activeTab, searchQuery]);
@@ -203,7 +96,7 @@ export default function FarmerPreOrders({ showToast }) {
   useEffect(() => {
     farmerApi.getOrders()
       .then((res) => {
-        if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
+        if (res?.data && Array.isArray(res.data)) {
           const mapped = res.data.map((o) => {
             let uiStatus = 'Placed';
             if (o.order_status === 'accepted') uiStatus = 'Accepted';
@@ -221,15 +114,15 @@ export default function FarmerPreOrders({ showToast }) {
             const itemsSummary = itemsList.map((it) => `${it.qty} ${it.name}`).join(', ') || 'Custom harvest pack';
 
             return {
-              id: `#ML-${o.id}`,
+              id: o.order_number || `#ML-${o.id}`,
               numericId: o.id,
               customer: o.customer?.name || o.customer_name || 'Customer',
               email: o.customer?.email || 'customer@marketlink.test',
               phone: o.customer?.phone || '(503) 555-0100',
               itemsSummary,
               itemsList,
-              pickupDate: o.pickup_date || 'Saturday',
-              pickupSlot: o.pickup_time || '9:30 AM – 11:00 AM',
+              pickupDate: o.pickup_date || (o.pickup_time ? new Date(o.pickup_time).toLocaleDateString() : 'Upcoming Market Day'),
+              pickupSlot: o.pickup_slot || o.pickup_time || 'Morning Pickup',
               market: o.market?.market_name || o.market_name || 'Downtown Saturday Market',
               totalAmount: `$${Number(o.total_amount).toFixed(2)}`,
               status: uiStatus,
@@ -240,9 +133,14 @@ export default function FarmerPreOrders({ showToast }) {
             };
           });
           setOrders(mapped);
+        } else {
+          setOrders([]);
         }
       })
-      .catch((err) => console.warn('Could not load farmer orders:', err));
+      .catch((err) => {
+        console.warn('Could not load farmer orders:', err);
+        setOrders([]);
+      });
   }, []);
 
   // Status Transition Trigger
@@ -617,12 +515,12 @@ export default function FarmerPreOrders({ showToast }) {
       {/* ======================================================== */}
       {/* MODAL: ORDER DETAILS & TIMELINE PANEL                   */}
       {/* ======================================================== */}
-      {detailModalOrder && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto animate-fade-in">
-          <div className="bg-surface-container-lowest rounded-2xl max-w-lg w-full p-space-lg shadow-2xl flex flex-col gap-space-md border border-outline-variant/40 my-8 text-xs">
+      {detailModalOrder && createPortal(
+        <div className="fixed inset-0 z-[9999] bg-black/70 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-surface-container-lowest rounded-2xl max-w-lg w-full max-h-[90vh] shadow-[0_24px_64px_rgba(0,0,0,0.35)] flex flex-col border border-outline-variant/40 overflow-hidden text-xs animate-fade-in">
             
             {/* Header */}
-            <div className="flex items-start justify-between border-b border-outline-variant/20 pb-space-sm">
+            <div className="flex items-start justify-between border-b border-outline-variant/20 p-5 shrink-0">
               <div>
                 <div className="flex items-center gap-2">
                   <h3 className="font-headline-sm text-on-surface font-bold text-lg">
@@ -637,70 +535,73 @@ export default function FarmerPreOrders({ showToast }) {
               <button
                 type="button"
                 onClick={() => setDetailModalOrder(null)}
-                className="p-1 text-on-surface-variant hover:text-on-surface rounded-lg cursor-pointer"
+                className="p-1 text-on-surface-variant hover:text-on-surface rounded-lg cursor-pointer transition-colors"
               >
                 <span className="material-symbols-outlined text-[20px]">close</span>
               </button>
             </div>
 
-            {/* Customer Contact */}
-            <div className="p-3 bg-surface-container-low rounded-xl flex flex-col gap-1 border border-outline-variant/20">
-              <span className="text-[10px] uppercase font-bold text-on-surface-variant">Customer Details</span>
-              <div className="flex justify-between font-bold">
-                <span className="text-on-surface">{detailModalOrder.customer}</span>
-                <span className="text-primary">{detailModalOrder.phone}</span>
-              </div>
-              <span className="text-on-surface-variant">{detailModalOrder.email}</span>
-              {detailModalOrder.specialNotes && (
-                <div className="mt-1 pt-1 border-t border-outline-variant/20 text-[11px] text-on-surface italic">
-                  Note: "{detailModalOrder.specialNotes}"
+            {/* Scrollable Body */}
+            <div className="flex-1 min-h-0 overflow-y-auto p-5 space-y-4">
+              {/* Customer Contact */}
+              <div className="p-3 bg-surface-container-low rounded-xl flex flex-col gap-1 border border-outline-variant/20">
+                <span className="text-[10px] uppercase font-bold text-on-surface-variant">Customer Details</span>
+                <div className="flex justify-between font-bold">
+                  <span className="text-on-surface">{detailModalOrder.customer}</span>
+                  <span className="text-primary">{detailModalOrder.phone}</span>
                 </div>
-              )}
-            </div>
+                <span className="text-on-surface-variant">{detailModalOrder.email}</span>
+                {detailModalOrder.specialNotes && (
+                  <div className="mt-1 pt-1 border-t border-outline-variant/20 text-[11px] text-on-surface italic">
+                    Note: "{detailModalOrder.specialNotes}"
+                  </div>
+                )}
+              </div>
 
-            {/* Full Item List */}
-            <div className="flex flex-col gap-1.5">
-              <span className="text-[10px] uppercase font-bold text-on-surface-variant">Packed Items</span>
-              <div className="border border-outline-variant/30 rounded-xl overflow-hidden divide-y divide-surface-container-high/60">
-                {detailModalOrder.itemsList.map((it, idx) => (
-                  <div key={idx} className="p-2.5 flex items-center justify-between">
-                    <div>
-                      <span className="font-bold text-on-surface">{it.name}</span>
-                      <span className="text-on-surface-variant text-[11px] block">
-                        {it.qty} @ {it.price}
-                      </span>
+              {/* Full Item List */}
+              <div className="flex flex-col gap-1.5">
+                <span className="text-[10px] uppercase font-bold text-on-surface-variant">Packed Items</span>
+                <div className="border border-outline-variant/30 rounded-xl overflow-hidden divide-y divide-surface-container-high/60">
+                  {detailModalOrder.itemsList.map((it, idx) => (
+                    <div key={idx} className="p-2.5 flex items-center justify-between">
+                      <div>
+                        <span className="font-bold text-on-surface">{it.name}</span>
+                        <span className="text-on-surface-variant text-[11px] block">
+                          {it.qty} @ {it.price}
+                        </span>
+                      </div>
+                      <span className="font-mono font-bold text-primary">{it.total}</span>
                     </div>
-                    <span className="font-mono font-bold text-primary">{it.total}</span>
+                  ))}
+                  <div className="p-2.5 bg-surface-container/40 flex items-center justify-between font-bold">
+                    <span>Total Order Due at Stall</span>
+                    <span className="font-mono text-base text-primary">{detailModalOrder.totalAmount}</span>
                   </div>
-                ))}
-                <div className="p-2.5 bg-surface-container/40 flex items-center justify-between font-bold">
-                  <span>Total Order Due at Stall</span>
-                  <span className="font-mono text-base text-primary">{detailModalOrder.totalAmount}</span>
                 </div>
               </div>
-            </div>
 
-            {/* Status History Timeline */}
-            <div className="flex flex-col gap-1.5">
-              <span className="text-[10px] uppercase font-bold text-on-surface-variant">Audit Timeline</span>
-              <div className="flex flex-col gap-2 pl-2 border-l-2 border-primary/30">
-                {detailModalOrder.timeline.map((event, idx) => (
-                  <div key={idx} className="flex flex-col text-[11px]">
-                    <span className="font-bold text-on-surface">{event.text}</span>
-                    <span className="text-on-surface-variant">{event.time}</span>
-                  </div>
-                ))}
+              {/* Status History Timeline */}
+              <div className="flex flex-col gap-1.5">
+                <span className="text-[10px] uppercase font-bold text-on-surface-variant">Audit Timeline</span>
+                <div className="flex flex-col gap-2 pl-2 border-l-2 border-primary/30">
+                  {detailModalOrder.timeline.map((event, idx) => (
+                    <div key={idx} className="flex flex-col text-[11px]">
+                      <span className="font-bold text-on-surface">{event.text}</span>
+                      <span className="text-on-surface-variant">{event.time}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
 
             {/* Actions */}
-            <div className="flex items-center justify-between pt-2 border-t border-outline-variant/20">
+            <div className="flex items-center justify-between p-4 border-t border-outline-variant/20 bg-surface-container-low/40 shrink-0">
               <button
                 type="button"
                 onClick={() => {
                   showToast?.(`Packing slip for ${detailModalOrder.id} printed.`);
                 }}
-                className="px-space-md py-2 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface font-bold cursor-pointer flex items-center gap-1"
+                className="px-space-md py-2 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface font-bold cursor-pointer flex items-center gap-1 transition-colors"
               >
                 <span className="material-symbols-outlined text-[16px]">print</span>
                 <span>Print Slip</span>
@@ -709,21 +610,22 @@ export default function FarmerPreOrders({ showToast }) {
               <button
                 type="button"
                 onClick={() => setDetailModalOrder(null)}
-                className="px-space-md py-2 rounded-xl bg-primary text-on-primary font-bold cursor-pointer"
+                className="px-space-md py-2 rounded-xl bg-primary hover:bg-primary/90 text-on-primary font-bold cursor-pointer transition-colors"
               >
                 Close
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* ======================================================== */}
       {/* MODAL: ACTION CONFIRMATION                               */}
       {/* ======================================================== */}
-      {actionConfirm && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-surface-container-lowest rounded-2xl max-w-sm w-full p-space-lg shadow-2xl flex flex-col gap-space-md border border-outline-variant/40 text-xs">
+      {actionConfirm && createPortal(
+        <div className="fixed inset-0 z-[9999] bg-black/70 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-surface-container-lowest rounded-2xl max-w-sm w-full p-space-lg shadow-[0_24px_64px_rgba(0,0,0,0.35)] flex flex-col gap-space-md border border-outline-variant/40 text-xs animate-fade-in">
             <div className="flex items-center gap-2.5 text-primary">
               <span className="material-symbols-outlined text-[24px]">verified</span>
               <h3 className="font-headline-sm text-on-surface font-bold text-base">
@@ -742,20 +644,21 @@ export default function FarmerPreOrders({ showToast }) {
               <button
                 type="button"
                 onClick={() => setActionConfirm(null)}
-                className="px-3.5 py-1.5 rounded-lg bg-surface-container font-bold cursor-pointer"
+                className="px-3.5 py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high font-bold cursor-pointer transition-colors"
               >
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={executeStatusChange}
-                className="px-4 py-1.5 rounded-lg bg-primary text-on-primary font-bold cursor-pointer shadow-sm"
+                className="px-4 py-1.5 rounded-lg bg-primary hover:bg-primary/90 text-on-primary font-bold cursor-pointer shadow-sm transition-colors"
               >
                 Confirm
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
     </div>

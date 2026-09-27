@@ -463,10 +463,26 @@ export default function RegisterPage({ onNavigate, onRegisterSuccess, initialRol
 
           {/* Right Column: Rich Community Benefits Panel (approx 38%) */}
           <div className="lg:col-span-5 xl:col-span-4 bg-primary text-on-primary relative overflow-hidden p-space-md sm:p-space-lg lg:p-space-xl flex flex-col justify-between">
+            {/* Background Video */}
+            <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+              <video
+                autoPlay
+                loop
+                muted
+                playsInline
+                className="w-full h-full object-cover opacity-45 scale-105"
+              >
+                <source
+                  src="https://res.cloudinary.com/dkscvg8pg/video/upload/v1790504468/Untitled_design_fvyhvl.mp4"
+                  type="video/mp4"
+                />
+              </video>
+              <div className="absolute inset-0 bg-gradient-to-b from-[#092813]/90 via-[#125224]/75 to-[#092813]/95" />
+            </div>
+
             {/* Ambient Decorative Foliage Gradient & Pattern */}
-            <div className="absolute inset-0 bg-gradient-to-b from-primary via-primary-container to-primary pointer-events-none opacity-95"></div>
-            <div className="absolute -top-24 -right-24 w-80 h-80 rounded-full bg-secondary-fixed/10 blur-3xl pointer-events-none"></div>
-            <div className="absolute -bottom-24 -left-24 w-80 h-80 rounded-full bg-tertiary-fixed/10 blur-3xl pointer-events-none"></div>
+            <div className="absolute -top-24 -right-24 w-80 h-80 rounded-full bg-secondary-fixed/10 blur-3xl pointer-events-none z-1"></div>
+            <div className="absolute -bottom-24 -left-24 w-80 h-80 rounded-full bg-tertiary-fixed/10 blur-3xl pointer-events-none z-1"></div>
 
             {/* Inner Content Stack */}
             <div className="relative z-10 space-y-space-lg">

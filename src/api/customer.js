@@ -1,6 +1,11 @@
 import apiClient from './client';
 
 export const customerApi = {
+  // Dashboard Summary
+  getDashboardSummary() {
+    return apiClient.get('/customer/dashboard/summary');
+  },
+
   // 1. Orders Management
   getOrders(params = {}) {
     return apiClient.get('/customer/orders', params);

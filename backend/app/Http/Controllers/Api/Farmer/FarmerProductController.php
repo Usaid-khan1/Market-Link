@@ -8,6 +8,7 @@ use App\Http\Resources\ProductResource;
 use App\Models\Product;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class FarmerProductController extends Controller
@@ -53,10 +54,46 @@ class FarmerProductController extends Controller
         $validated = $request->validated();
         $validated['farmer_id'] = $request->user()->id;
 
+        if ($request->hasFile('image')) {
+            $file = $request->file('image');
+            $filename = 'prod_' . time() . '_' . Str::random(8) . '.' . $file->getClientOriginalExtension();
+            $destinationPath = public_path('uploads/products');
+            if (!file_exists($destinationPath)) {
+                mkdir($destinationPath, 0755, true);
+            }
+            $file->move($destinationPath, $filename);
+            $validated['image'] = asset('uploads/products/' . $filename);
+        }
+
         $product = Product::create($validated);
         $product->load(['category', 'market']);
 
         return $this->success(new ProductResource($product), 'Product created successfully', 201);
+    }
+
+    /**
+     * Upload standalone product image.
+     */
+    public function uploadImage(Request $request): JsonResponse
+    {
+        $request->validate([
+            'image' => ['required', 'file', 'image', 'mimes:jpeg,png,jpg,webp,gif', 'max:5120'],
+        ]);
+
+        $file = $request->file('image');
+        $filename = 'prod_' . time() . '_' . Str::random(8) . '.' . $file->getClientOriginalExtension();
+        $destinationPath = public_path('uploads/products');
+        if (!file_exists($destinationPath)) {
+            mkdir($destinationPath, 0755, true);
+        }
+        $file->move($destinationPath, $filename);
+
+        $url = asset('uploads/products/' . $filename);
+
+        return $this->success([
+            'url' => $url,
+            'filename' => $filename,
+        ], 'Image uploaded successfully');
     }
 
     /**
@@ -79,8 +116,20 @@ class FarmerProductController extends Controller
     public function update(FarmerProductRequest $request, int $id): JsonResponse
     {
         $product = Product::where('farmer_id', $request->user()->id)->findOrFail($id);
+        $validated = $request->validated();
 
-        $product->update($request->validated());
+        if ($request->hasFile('image')) {
+            $file = $request->file('image');
+            $filename = 'prod_' . time() . '_' . Str::random(8) . '.' . $file->getClientOriginalExtension();
+            $destinationPath = public_path('uploads/products');
+            if (!file_exists($destinationPath)) {
+                mkdir($destinationPath, 0755, true);
+            }
+            $file->move($destinationPath, $filename);
+            $validated['image'] = asset('uploads/products/' . $filename);
+        }
+
+        $product->update($validated);
         $product->load(['category', 'market']);
 
         return $this->success(new ProductResource($product), 'Product updated successfully');

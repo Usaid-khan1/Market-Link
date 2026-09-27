@@ -6,63 +6,8 @@ export default function FarmerReviews({ showToast }) {
   const [replyingToId, setReplyingToId] = useState(null);
   const [replyText, setReplyText] = useState('');
 
-  // Reviews Dataset for Green Pastures Organic
-  const [reviews, setReviews] = useState([
-    {
-      id: 1,
-      customer: 'Elena Rostova',
-      avatar: 'ER',
-      avatarBg: 'bg-primary-fixed text-on-primary-fixed',
-      rating: 5,
-      product: 'Heirloom Brandywine Tomatoes',
-      date: 'Oct 16, 2025',
-      comment:
-        'The absolute best tomatoes in Portland! Thin skin, incredible depth of sweetness, and picked at peak ripeness. Our Caprese salad was sublime.',
-      farmerReply:
-        'Thank you so much Elena! We pick them just hours before the Saturday market to ensure maximum sugars and acid balance. See you next weekend! — Marcus & Sarah',
-      replyDate: 'Oct 16, 2025'
-    },
-    {
-      id: 2,
-      customer: 'Marcus Brody',
-      avatar: 'MB',
-      avatarBg: 'bg-tertiary-fixed text-on-tertiary-fixed',
-      rating: 5,
-      product: 'Organic Romanesco Cauliflower',
-      date: 'Oct 14, 2025',
-      comment:
-        'A work of art! Both aesthetically stunning and delicious roasted with garlic butter. Can you keep more in stock for Pioneer Pavilion?',
-      farmerReply: null,
-      replyDate: null
-    },
-    {
-      id: 3,
-      customer: 'Sarah Jenkins',
-      avatar: 'SJ',
-      avatarBg: 'bg-secondary-fixed text-on-secondary-fixed',
-      rating: 4,
-      product: 'Rainbow Swiss Chard & Lacinato Kale',
-      date: 'Oct 11, 2025',
-      comment:
-        'Super fresh and crunchy greens. One leaf had a tiny caterpillar on it, which confirms it is genuinely 100% organic and spray-free! Just rinse thoroughly.',
-      farmerReply:
-        'Haha thanks for understanding Sarah! Zero synthetic sprays means native fauna occasionally says hello. We inspect every bundle carefully and appreciate your support for true biodynamic farming! — Marcus',
-      replyDate: 'Oct 12, 2025'
-    },
-    {
-      id: 4,
-      customer: 'David Reynolds',
-      avatar: 'DR',
-      avatarBg: 'bg-surface-container text-on-surface',
-      rating: 5,
-      product: 'Sweet Italian Genovese Basil',
-      date: 'Oct 08, 2025',
-      comment:
-        'Fragrance filled our entire kitchen. Stems stayed firm in a glass of water for nearly a week.',
-      farmerReply: null,
-      replyDate: null
-    }
-  ]);
+  // Reviews Dataset
+  const [reviews, setReviews] = useState([]);
 
   // Counts
   const counts = useMemo(() => {
@@ -70,6 +15,13 @@ export default function FarmerReviews({ showToast }) {
     const replied = reviews.filter((r) => Boolean(r.farmerReply)).length;
     const unreplied = total - replied;
     return { total, replied, unreplied };
+  }, [reviews]);
+
+  // Average Rating
+  const avgRating = useMemo(() => {
+    return reviews.length > 0
+      ? (reviews.reduce((sum, r) => sum + (Number(r.rating) || 5), 0) / reviews.length).toFixed(1)
+      : '0.0';
   }, [reviews]);
 
   // Filtered
@@ -85,23 +37,28 @@ export default function FarmerReviews({ showToast }) {
   useEffect(() => {
     farmerApi.getReviews()
       .then((res) => {
-        if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
+        if (res?.data && Array.isArray(res.data)) {
           const mapped = res.data.map((r) => ({
             id: r.id,
-            customer: r.customer_name || 'Verified Customer',
-            avatar: (r.customer_name || 'VC').split(' ').map((n) => n[0]).join('').substring(0, 2).toUpperCase(),
+            customer: r.customer_name || (r.customer?.name ?? 'Verified Customer'),
+            avatar: (r.customer_name || (r.customer?.name ?? 'VC')).split(' ').map((n) => n[0]).join('').substring(0, 2).toUpperCase(),
             avatarBg: 'bg-primary-fixed text-on-primary-fixed',
-            rating: r.rating || 5,
-            product: r.product_name || 'Market Produce',
+            rating: Number(r.rating) || 5,
+            product: r.product_name || (r.product?.name ?? 'Market Produce'),
             date: r.created_at ? new Date(r.created_at).toLocaleDateString() : 'Recent',
             comment: r.comment || '',
             farmerReply: r.reply || null,
             replyDate: r.replied_at ? new Date(r.replied_at).toLocaleDateString() : null
           }));
           setReviews(mapped);
+        } else {
+          setReviews([]);
         }
       })
-      .catch((err) => console.warn('Could not load farmer reviews:', err));
+      .catch((err) => {
+        console.warn('Could not load farmer reviews:', err);
+        setReviews([]);
+      });
   }, []);
 
   // Open Reply
@@ -168,17 +125,24 @@ export default function FarmerReviews({ showToast }) {
             </span>
             <div className="flex items-baseline gap-2">
               <span className="font-headline-md text-3xl sm:text-4xl font-bold text-on-surface">
-                4.95
+                {avgRating}
               </span>
-              <div className="flex items-center gap-0.5 text-[#F28C28]">
+              <div className="flex items-center gap-0.5">
                 {[1, 2, 3, 4, 5].map((s) => (
-                  <span key={s} className="material-symbols-outlined text-[20px]">star</span>
+                  <span
+                    key={s}
+                    className={`material-symbols-outlined text-[20px] ${
+                      s <= Math.round(Number(avgRating)) ? 'text-[#F28C28]' : 'text-outline-variant'
+                    }`}
+                  >
+                    star
+                  </span>
                 ))}
               </div>
             </div>
             <span className="text-xs text-secondary font-bold flex items-center gap-1">
               <span className="material-symbols-outlined text-[16px]">verified</span>
-              Top 5% Highest Rated Grower
+              {Number(avgRating) > 0 ? (Number(avgRating) >= 4.5 ? 'Top Rated Grower Stand' : 'Verified Community Rating') : 'Awaiting feedback'}
             </span>
           </div>
 
@@ -194,10 +158,10 @@ export default function FarmerReviews({ showToast }) {
               Total Reviews
             </span>
             <span className="font-headline-md text-3xl sm:text-4xl font-bold text-on-surface">
-              142
+              {reviews.length}
             </span>
             <span className="text-xs text-on-surface-variant">
-              Across Downtown Sat &amp; Pioneer Pavilion
+              {reviews.length > 0 ? 'Verified farm stall reviews' : 'No reviews recorded yet'}
             </span>
           </div>
 

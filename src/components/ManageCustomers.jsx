@@ -22,127 +22,8 @@ export default function ManageCustomers({ onNavigate, showToast }) {
     tier: 'Regular Shopper'
   });
 
-  // Sample Customers Dataset
-  const [customers, setCustomers] = useState([
-    {
-      id: 1,
-      name: 'Elena Rostova',
-      initials: 'ER',
-      email: 'elena.rostova@gmail.com',
-      phone: '(503) 555-0144',
-      neighborhood: 'South Park Blocks',
-      preferredMarket: 'Downtown Saturday Market',
-      joinedDate: 'Mar 14, 2024',
-      totalOrders: 28,
-      totalSpent: '$940.50',
-      status: 'active',
-      tier: 'VIP Harvest Club',
-      tierBadge: 'bg-tertiary-fixed text-on-tertiary-fixed',
-      avatarColor: 'bg-primary-fixed text-on-primary-fixed',
-      recentOrders: [
-        { id: '#ML-8920', date: 'Oct 18, 2025', farm: 'Green Pastures Organic', amount: '$34.00', status: 'Ready for Pickup' },
-        { id: '#ML-8841', date: 'Oct 11, 2025', farm: 'Miller & Stone Hearth', amount: '$22.50', status: 'Collected' },
-        { id: '#ML-8712', date: 'Oct 04, 2025', farm: 'Sunrise Orchard', amount: '$41.20', status: 'Collected' }
-      ]
-    },
-    {
-      id: 2,
-      name: 'Samuel Chen',
-      initials: 'SC',
-      email: 'samuel.chen@techpdx.io',
-      phone: '(503) 555-0812',
-      neighborhood: 'East River District',
-      preferredMarket: 'Riverside Twilight Market',
-      joinedDate: 'Jun 22, 2024',
-      totalOrders: 19,
-      totalSpent: '$615.00',
-      status: 'active',
-      tier: 'Regular Shopper',
-      tierBadge: 'bg-surface-container text-on-surface',
-      avatarColor: 'bg-secondary-fixed text-on-secondary-fixed',
-      recentOrders: [
-        { id: '#ML-8918', date: 'Oct 18, 2025', farm: 'Mountain View Orchard', amount: '$45.50', status: 'Collected' },
-        { id: '#ML-8805', date: 'Sep 28, 2025', farm: 'Pine Ridge Apiary', amount: '$24.00', status: 'Collected' }
-      ]
-    },
-    {
-      id: 3,
-      name: 'Maya Lin',
-      initials: 'ML',
-      email: 'maya.lin@westportland.org',
-      phone: '(503) 555-0377',
-      neighborhood: 'West Hills',
-      preferredMarket: 'Pioneer Pavilion',
-      joinedDate: 'Jan 08, 2025',
-      totalOrders: 14,
-      totalSpent: '$420.00',
-      status: 'active',
-      tier: 'SNAP / EBT Participant',
-      tierBadge: 'bg-primary-fixed text-on-primary-fixed',
-      avatarColor: 'bg-primary text-on-primary',
-      recentOrders: [
-        { id: '#ML-8917', date: 'Oct 18, 2025', farm: 'Old Mill Hearth Bakery', amount: '$27.00', status: 'Pending Pack' },
-        { id: '#ML-8819', date: 'Oct 11, 2025', farm: 'Whispering Pines Herbs', amount: '$18.50', status: 'Collected' }
-      ]
-    },
-    {
-      id: 4,
-      name: 'Marcus Brody',
-      initials: 'MB',
-      email: 'm_brody@northpdx.net',
-      phone: '(503) 555-0929',
-      neighborhood: 'Oak Valley Ridge',
-      preferredMarket: 'Oak Valley Sunday',
-      joinedDate: 'Aug 19, 2024',
-      totalOrders: 22,
-      totalSpent: '$780.00',
-      status: 'active',
-      tier: 'VIP Harvest Club',
-      tierBadge: 'bg-tertiary-fixed text-on-tertiary-fixed',
-      avatarColor: 'bg-tertiary-fixed text-on-tertiary-fixed',
-      recentOrders: [
-        { id: '#ML-8899', date: 'Oct 12, 2025', farm: 'Highland Berry Co.', amount: '$38.00', status: 'Collected' }
-      ]
-    },
-    {
-      id: 5,
-      name: 'Danielle Cooper',
-      initials: 'DC',
-      email: 'dani.cooper@alumni.uoregon.edu',
-      phone: '(503) 555-0655',
-      neighborhood: 'Central Plaza',
-      preferredMarket: 'Pioneer Pavilion',
-      joinedDate: 'Apr 02, 2024',
-      totalOrders: 31,
-      totalSpent: '$1,120.00',
-      status: 'active',
-      tier: 'VIP Harvest Club',
-      tierBadge: 'bg-tertiary-fixed text-on-tertiary-fixed',
-      avatarColor: 'bg-secondary-fixed text-on-secondary-fixed',
-      recentOrders: [
-        { id: '#ML-8910', date: 'Oct 18, 2025', farm: 'Riverbend Goat Dairy', amount: '$52.00', status: 'Ready for Pickup' }
-      ]
-    },
-    {
-      id: 6,
-      name: 'Brett "AngryShopper" K.',
-      initials: 'BK',
-      email: 'brett_k_pdx@outlook.com',
-      phone: '(503) 555-0188',
-      neighborhood: 'North Waterfront',
-      preferredMarket: 'Downtown Saturday Market',
-      joinedDate: 'Oct 05, 2025',
-      totalOrders: 1,
-      totalSpent: '$12.00',
-      status: 'suspended',
-      tier: 'Regular Shopper',
-      tierBadge: 'bg-surface-container text-on-surface',
-      avatarColor: 'bg-error-container text-on-error-container',
-      recentOrders: [
-        { id: '#ML-8801', date: 'Oct 05, 2025', farm: 'Green Pastures Organic', amount: '$12.00', status: 'Disputed' }
-      ]
-    }
-  ]);
+  // Customers Dataset
+  const [customers, setCustomers] = useState([]);
 
   // Metrics
   const metrics = useMemo(() => {
@@ -186,25 +67,34 @@ export default function ManageCustomers({ onNavigate, showToast }) {
   useEffect(() => {
     adminApi.getCustomers()
       .then((res) => {
-        if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
-          const mapped = res.data.map((c) => ({
-            id: c.id,
-            name: c.name,
-            initials: c.name.split(' ').map((n) => n[0]).join('').substring(0, 2).toUpperCase(),
-            email: c.email,
-            phone: c.phone || '(503) 555-0199',
-            neighborhood: c.address || 'Portland Metro',
-            preferredMarket: 'Downtown Saturday Market',
-            joinedDate: c.created_at ? new Date(c.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Mar 14, 2024',
-            totalOrders: 14,
-            totalSpent: '$420.00',
-            status: c.status || 'active',
-            tier: 'Regular Shopper',
-            tierBadge: 'bg-surface-container text-on-surface',
-            avatarColor: 'bg-primary-fixed text-on-primary-fixed',
-            recentOrders: []
-          }));
+        if (res?.data && Array.isArray(res.data)) {
+          const mapped = res.data.map((c) => {
+            const tierStr = c.tier || 'Regular Shopper';
+            let tBadge = 'bg-surface-container text-on-surface';
+            if (tierStr.includes('VIP')) tBadge = 'bg-tertiary-fixed text-on-tertiary-fixed';
+            else if (tierStr.includes('SNAP') || tierStr.includes('EBT')) tBadge = 'bg-primary-fixed text-on-primary-fixed';
+
+            return {
+              id: c.id,
+              name: c.name,
+              initials: c.name.split(' ').map((n) => n[0]).join('').substring(0, 2).toUpperCase(),
+              email: c.email,
+              phone: c.phone || '(503) 555-0199',
+              neighborhood: c.address || 'Portland Metro',
+              preferredMarket: c.preferred_market || 'Downtown Saturday Market',
+              joinedDate: c.created_at ? new Date(c.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Recent',
+              totalOrders: c.orders_count ?? 0,
+              totalSpent: `$${Number(c.total_spent ?? 0).toFixed(2)}`,
+              status: c.status || 'active',
+              tier: tierStr,
+              tierBadge: tBadge,
+              avatarColor: 'bg-primary-fixed text-on-primary-fixed',
+              recentOrders: c.recent_orders || []
+            };
+          });
           setCustomers(mapped);
+        } else {
+          setCustomers([]);
         }
       })
       .catch((err) => console.warn('Could not load live customers:', err));

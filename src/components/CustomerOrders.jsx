@@ -11,126 +11,8 @@ export default function CustomerOrders({ onNavigate, showToast, onAddToCart }) {
   const [reviewModalOrder, setReviewModalOrder] = useState(null);
   const [reviewForm, setReviewForm] = useState({ rating: 5, comment: '' });
 
-  // Customer Orders Dataset (Elena Rostova)
-  const [orders, setOrders] = useState([
-    {
-      id: '#ML-8920',
-      farmer: 'Green Pastures Organic',
-      stallLocation: 'Pioneer Pavilion • Stall #08',
-      farmerPhone: '(503) 555-0471',
-      farmerEmail: 'marcus@greenpastures.bio',
-      itemsSummary: '4 lbs Brandywine Tomatoes, 2 bunches Chard, 2 basil',
-      itemsList: [
-        { name: 'Heirloom Brandywine Tomatoes', qty: '4 lbs', unitPrice: '$4.50', total: '$18.00' },
-        { name: 'Rainbow Swiss Chard & Lacinato Kale', qty: '2 bunches', unitPrice: '$3.75', total: '$7.50' },
-        { name: 'Sweet Italian Genovese Basil', qty: '2 bunches', unitPrice: '$2.50', total: '$5.00' },
-        { name: 'Stall Packing & Crate Deposit', qty: '1 unit', unitPrice: '$3.50', total: '$3.50' }
-      ],
-      pickupDate: 'Saturday, Oct 18, 2025',
-      pickupSlot: '9:30 AM – 11:00 AM',
-      market: 'Pioneer Pavilion Heritage Market',
-      totalAmount: '$34.00',
-      status: 'Placed',
-      cutoffPassed: false,
-      cutoffText: 'Cutoff: Friday 8:00 PM (12 hrs remaining)',
-      timeline: [
-        { time: 'Friday 6:15 PM', title: 'Reservation Placed', desc: 'Pre-order voucher submitted online.' },
-        { time: 'Awaiting', title: 'Farmer Acceptance', desc: 'Marcus & Sarah Thorne will pack fresh at harvest.' }
-      ]
-    },
-    {
-      id: '#ML-8918',
-      farmer: 'Mountain View Orchard & Cider',
-      stallLocation: 'Riverside Waterfront • Pier 4',
-      farmerPhone: '(503) 555-0612',
-      farmerEmail: 'cider@mountainview.farms',
-      itemsSummary: '1 gal Fresh Apple Cider, 4 lbs Honeycrisp',
-      itemsList: [
-        { name: 'Cold-Pressed Sweet Apple Cider (1 Gal)', qty: '1 jug', unitPrice: '$11.00', total: '$11.00' },
-        { name: 'Honeycrisp Orchard Apples', qty: '4 lbs', unitPrice: '$3.20', total: '$12.80' }
-      ],
-      pickupDate: 'Saturday, Oct 18, 2025',
-      pickupSlot: '10:00 AM – 11:30 AM',
-      market: 'Riverside Twilight Market',
-      totalAmount: '$23.80',
-      status: 'Ready for Pickup',
-      cutoffPassed: true,
-      cutoffText: 'Cutoff passed (Crate packed)',
-      timeline: [
-        { time: 'Thursday 2:30 PM', title: 'Reservation Placed', desc: 'Submitted by Elena' },
-        { time: 'Friday 4:00 PM', title: 'Accepted by Farmer', desc: 'Cider bottled fresh from press' },
-        { time: 'Saturday 7:45 AM', title: 'Ready for Pickup', desc: 'Crate staged at Pier 4 table #2' }
-      ]
-    },
-    {
-      id: '#ML-8841',
-      farmer: 'Miller & Stone Hearth Bakery',
-      stallLocation: 'Downtown Saturday Market • Space 19',
-      farmerPhone: '(503) 555-0211',
-      farmerEmail: 'david@stonehearthbreads.com',
-      itemsSummary: '2 Country Sourdough Boules, 1 Brioche Bun 4-pack',
-      itemsList: [
-        { name: 'Artisan Sourdough Country Loaf', qty: '2 loaves', unitPrice: '$7.50', total: '$15.00' },
-        { name: 'Golden Brioche Buns (4-pack)', qty: '1 pack', unitPrice: '$6.50', total: '$6.50' }
-      ],
-      pickupDate: 'Saturday, Oct 11, 2025',
-      pickupSlot: '8:30 AM – 10:00 AM',
-      market: 'Downtown Saturday Market',
-      totalAmount: '$21.50',
-      status: 'Completed',
-      cutoffPassed: true,
-      hasReviewed: true,
-      timeline: [
-        { time: 'Oct 10, 5:00 PM', title: 'Order Placed', desc: 'Reserved prior to Friday bake' },
-        { time: 'Oct 11, 8:45 AM', title: 'Collected & Paid', desc: 'Paid $21.50 in cash at table 19' }
-      ]
-    },
-    {
-      id: '#ML-8712',
-      farmer: 'Riverbend Goat Dairy',
-      stallLocation: 'River District • Lot 14-B',
-      farmerPhone: '(503) 555-0192',
-      farmerEmail: 'dale@riverbenddairy.local',
-      itemsSummary: '2 tubs Herbed Chèvre Curd, 1 pt Raw Goat Milk',
-      itemsList: [
-        { name: 'Artisan Herbed Goat Chèvre (8oz)', qty: '2 tubs', unitPrice: '$9.00', total: '$18.00' },
-        { name: 'Fresh Jersey Goat Milk (1 Pint)', qty: '1 bottle', unitPrice: '$5.50', total: '$5.50' }
-      ],
-      pickupDate: 'Saturday, Oct 04, 2025',
-      pickupSlot: '9:00 AM – 10:30 AM',
-      market: 'River District Sat',
-      totalAmount: '$23.50',
-      status: 'Completed',
-      cutoffPassed: true,
-      hasReviewed: false,
-      timeline: [
-        { time: 'Oct 03, 1:15 PM', title: 'Order Placed', desc: 'Submitted online' },
-        { time: 'Oct 04, 9:20 AM', title: 'Collected & Paid', desc: 'Voucher verified, card charged at stall' }
-      ]
-    },
-    {
-      id: '#ML-8650',
-      farmer: 'Whispering Pines Organic Herbs',
-      stallLocation: 'Oak Valley • Space 3',
-      farmerPhone: '(503) 555-0912',
-      farmerEmail: 'eleanor@whisperingpines.farms',
-      itemsSummary: '3 bundles French Tarragon & Rosemary',
-      itemsList: [
-        { name: 'Fresh French Culinary Tarragon', qty: '2 bundles', unitPrice: '$3.50', total: '$7.00' },
-        { name: 'Organic Tuscan Rosemary', qty: '1 bundle', unitPrice: '$3.00', total: '$3.00' }
-      ],
-      pickupDate: 'Sunday, Sep 28, 2025',
-      pickupSlot: '10:00 AM – 11:30 AM',
-      market: 'Oak Valley Sunday Bazaar',
-      totalAmount: '$10.00',
-      status: 'Cancelled',
-      cutoffPassed: true,
-      timeline: [
-        { time: 'Sep 27, 4:00 PM', title: 'Order Placed', desc: 'Customer reservation' },
-        { time: 'Sep 27, 7:10 PM', title: 'Cancelled by Customer', desc: 'Before harvest cutoff' }
-      ]
-    }
-  ]);
+  // Customer Orders Dataset
+  const [orders, setOrders] = useState([]);
 
   const tabs = ['All', 'Placed', 'Accepted', 'Ready for Pickup', 'Completed', 'Cancelled'];
 
@@ -204,7 +86,7 @@ export default function CustomerOrders({ onNavigate, showToast, onAddToCart }) {
   useEffect(() => {
     customerApi.getOrders()
       .then((res) => {
-        if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
+        if (res?.data && Array.isArray(res.data)) {
           const mapped = res.data.map((o) => {
             let uiStatus = 'Placed';
             if (o.order_status === 'accepted') uiStatus = 'Accepted';
@@ -215,8 +97,8 @@ export default function CustomerOrders({ onNavigate, showToast, onAddToCart }) {
             const itemsList = (o.items || []).map((it) => ({
               name: it.product_name || it.product?.name || 'Produce Item',
               qty: `${it.quantity} ${it.unit || ''}`,
-              unitPrice: `$${Number(it.unit_price).toFixed(2)}`,
-              total: `$${Number(it.subtotal).toFixed(2)}`
+              unitPrice: `$${Number(it.unit_price || 0).toFixed(2)}`,
+              total: `$${Number(it.subtotal || 0).toFixed(2)}`
             }));
 
             const itemsSummary = itemsList.map((it) => `${it.qty} ${it.name}`).join(', ') || 'Market Pre-Order';
@@ -234,7 +116,7 @@ export default function CustomerOrders({ onNavigate, showToast, onAddToCart }) {
               pickupDate: o.pickup_date || 'Saturday',
               pickupSlot: o.pickup_time || '9:30 AM – 11:00 AM',
               market: o.market?.market_name || 'Downtown Saturday Market',
-              totalAmount: `$${Number(o.total_amount).toFixed(2)}`,
+              totalAmount: `$${Number(o.total_amount || 0).toFixed(2)}`,
               status: uiStatus,
               cutoffPassed: false,
               cutoffText: 'Cutoff: Friday 8:00 PM',
@@ -245,9 +127,14 @@ export default function CustomerOrders({ onNavigate, showToast, onAddToCart }) {
             };
           });
           setOrders(mapped);
+        } else {
+          setOrders([]);
         }
       })
-      .catch((err) => console.warn('Could not load customer orders:', err));
+      .catch((err) => {
+        console.warn('Could not load customer orders:', err);
+        setOrders([]);
+      });
   }, []);
 
   // Cancel Order Handler

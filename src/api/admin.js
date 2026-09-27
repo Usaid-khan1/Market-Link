@@ -8,6 +8,12 @@ export const adminApi = {
   getReports(params = {}) {
     return apiClient.get('/admin/reports', params);
   },
+  getOrders(params = {}) {
+    return apiClient.get('/admin/orders', params);
+  },
+  getOrder(id) {
+    return apiClient.get(`/admin/orders/${id}`);
+  },
 
   // 2. Manage Farmers
   getFarmers(params = {}) {

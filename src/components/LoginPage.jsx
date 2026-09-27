@@ -226,26 +226,34 @@ export default function LoginPage({ onNavigate, onLoginSuccess, onOpenRegister }
               background: 'linear-gradient(160deg, #0a3d1a 0%, #125224 50%, #2e6b3a 100%)',
             }}
           >
+            {/* Background Video */}
+            <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+              <video
+                autoPlay
+                loop
+                muted
+                playsInline
+                className="w-full h-full object-cover opacity-50 scale-105"
+              >
+                <source
+                  src="https://res.cloudinary.com/dkscvg8pg/video/upload/v1790504468/Untitled_design_fvyhvl.mp4"
+                  type="video/mp4"
+                />
+              </video>
+              <div className="absolute inset-0 bg-gradient-to-t from-[#092813]/90 via-[#125224]/60 to-[#092813]/50" />
+            </div>
+
             {/* Pattern overlay */}
             <div
-              className="absolute inset-0 pointer-events-none"
+              className="absolute inset-0 pointer-events-none z-1"
               style={{
                 backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 20px, rgba(255,255,255,0.02) 20px, rgba(255,255,255,0.02) 40px)',
               }}
             />
-            {/* Background Image */}
-            <div className="absolute inset-0 z-0">
-              <img
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuCQx4zeFxfkQfCV8xOtyyZoij6plMebMpWiMQvY0Kg3T8vHuk09xwO7vo_22BQvNoYeq_YRvdi7utwl8vHxbtP412xVeQFK3umSuyotszCOHOP0AN2kvx2l-YufXoO2OWcyysGeFWzc6XRg1nmgBCBeFyggVSTynzQpMyZBAtUvx4kUlKB78hSg3ohvSkC3Xbshswlg5jyW1758RMwFdsUB5EzRMDm6XQOKW_gN_FxCBqR8VHtEeUsk"
-                alt="Warm morning sunlight streaming across fresh organic farm harvest"
-                className="w-full h-full object-cover mix-blend-multiply opacity-30 scale-105"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-primary/90 via-primary/50 to-primary/20" />
-            </div>
 
             {/* Ambient glow */}
             <div
-              className="absolute -right-20 -top-20 w-64 h-64 rounded-full pointer-events-none"
+              className="absolute -right-20 -top-20 w-64 h-64 rounded-full pointer-events-none z-1"
               style={{ background: 'radial-gradient(circle, rgba(185,244,116,0.15) 0%, transparent 70%)' }}
             />
 

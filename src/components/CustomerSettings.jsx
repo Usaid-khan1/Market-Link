@@ -6,14 +6,14 @@ export default function CustomerSettings({ onNavigate, showToast }) {
 
   // Basic Info Form State
   const [basicInfo, setBasicInfo] = useState({
-    fullName: user?.name || 'Elena Rostova',
-    email: user?.email || 'elena.rostova@gmail.com',
-    phone: user?.phone || '(503) 555-0144',
-    address: user?.address || '1420 SW Park Ave, Apt 4B',
-    city: 'Portland',
-    state: 'OR',
-    zip: '97201',
-    preferredMarket: 'Pioneer Pavilion Heritage Market'
+    fullName: user?.name || '',
+    email: user?.email || '',
+    phone: user?.phone || '',
+    address: user?.address || '',
+    city: '',
+    state: '',
+    zip: '',
+    preferredMarket: ''
   });
 
   useEffect(() => {
@@ -46,22 +46,7 @@ export default function CustomerSettings({ onNavigate, showToast }) {
   });
 
   // Shared Family Members State
-  const [familyMembers, setFamilyMembers] = useState([
-    {
-      id: 1,
-      name: 'Alexander Rostova',
-      email: 'alex.rostova@gmail.com',
-      relation: 'Spouse',
-      role: 'Authorized for Stall Pickup'
-    },
-    {
-      id: 2,
-      name: 'Mila Rostova',
-      email: 'mila.r@reed.edu',
-      relation: 'Daughter',
-      role: 'Authorized for Stall Pickup'
-    }
-  ]);
+  const [familyMembers, setFamilyMembers] = useState([]);
 
   // Invite Family Member Modal State
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
@@ -352,14 +337,19 @@ export default function CustomerSettings({ onNavigate, showToast }) {
           </div>
 
           <div className="space-y-3">
-            {familyMembers.map((member) => (
+            {familyMembers.length === 0 ? (
+              <div className="py-8 text-center text-on-surface-variant text-xs italic">
+                No authorized family members added yet. Click "+ Invite Family Member" to allow someone else to collect your pre-orders.
+              </div>
+            ) : (
+              familyMembers.map((member) => (
               <div
                 key={member.id}
                 className="flex items-center justify-between p-3.5 rounded-xl bg-surface-container-low/60 border border-outline-variant/30 hover:border-outline-variant transition-all"
               >
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="w-9 h-9 rounded-full bg-primary/10 text-primary font-bold text-xs flex items-center justify-center shrink-0">
-                    {member.name.split(' ').map(n => n[0]).join('')}
+                    {(member.name || 'U').split(' ').map(n => n[0]).join('')}
                   </div>
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
@@ -385,7 +375,8 @@ export default function CustomerSettings({ onNavigate, showToast }) {
                   <span className="material-symbols-outlined text-[18px]">delete</span>
                 </button>
               </div>
-            ))}
+            ))
+            )}
           </div>
         </div>
 

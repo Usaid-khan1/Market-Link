@@ -162,8 +162,12 @@ export default function ReservationModal({ product, onClose, onConfirmReservatio
               {/* Product Snippet */}
               <div className="flex gap-space-sm items-center bg-surface-container-low p-space-sm rounded-xl">
                 <img
-                  src={product.image}
+                  src={product.image || 'https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=400&q=80'}
                   alt={product.name}
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = 'https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=400&q=80';
+                  }}
                   className="w-16 h-16 rounded-lg object-cover shadow-sm"
                 />
                 <div className="flex-1 min-w-0">

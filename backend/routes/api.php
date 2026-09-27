@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\Admin\AdminDashboardController;
 use App\Http\Controllers\Api\Admin\AdminModerationController;
+use App\Http\Controllers\Api\Admin\AdminOrderController;
 use App\Http\Controllers\Api\Admin\AdminUserController;
 use App\Http\Controllers\Api\Admin\AnnouncementController;
 use App\Http\Controllers\Api\Admin\CategoryController;
@@ -13,6 +14,7 @@ use App\Http\Controllers\Api\Farmer\FarmerProductController;
 use App\Http\Controllers\Api\Farmer\FarmerProfileController;
 use App\Http\Controllers\Api\Farmer\FarmerReviewController;
 use App\Http\Controllers\Api\Customer\CustomerBrowseController;
+use App\Http\Controllers\Api\Customer\CustomerDashboardController;
 use App\Http\Controllers\Api\Customer\CustomerFavoriteController;
 use App\Http\Controllers\Api\Customer\CustomerNotificationController;
 use App\Http\Controllers\Api\Customer\CustomerOrderController;
@@ -71,6 +73,8 @@ Route::middleware('auth:sanctum')->group(function () {
         // 1. Dashboard summary & Reports
         Route::get('/dashboard/summary', [AdminDashboardController::class, 'summary']);
         Route::get('/reports', [AdminDashboardController::class, 'reports']);
+        Route::get('/orders', [AdminOrderController::class, 'index']);
+        Route::get('/orders/{id}', [AdminOrderController::class, 'show']);
 
         // 2. Manage Farmers
         Route::get('/farmers', [AdminUserController::class, 'farmers']);
@@ -122,6 +126,7 @@ Route::middleware('auth:sanctum')->group(function () {
         // 3. Product Catalog Management (CRUD + status toggle)
         Route::get('/products', [FarmerProductController::class, 'index']);
         Route::post('/products', [FarmerProductController::class, 'store']);
+        Route::post('/products/upload-image', [FarmerProductController::class, 'uploadImage']);
         Route::get('/products/{id}', [FarmerProductController::class, 'show']);
         Route::match(['put', 'patch'], '/products/{id}', [FarmerProductController::class, 'update']);
         Route::delete('/products/{id}', [FarmerProductController::class, 'destroy']);
@@ -155,6 +160,9 @@ Route::middleware('auth:sanctum')->group(function () {
                 'data' => ['role' => 'customer'],
             ]);
         });
+
+        // Dashboard Summary
+        Route::get('/dashboard/summary', [CustomerDashboardController::class, 'summary']);
 
         // 1. Pre-Orders Management
         Route::get('/orders', [CustomerOrderController::class, 'index']);

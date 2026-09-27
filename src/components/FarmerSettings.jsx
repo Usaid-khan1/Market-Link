@@ -4,12 +4,12 @@ import farmerApi from '../api/farmer';
 export default function FarmerSettings({ showToast }) {
   // Basic Info Form State
   const [basicInfo, setBasicInfo] = useState({
-    stallName: 'Green Pastures Organic Farm',
-    contactPerson: 'Marcus & Sarah Thorne',
-    phone: '(503) 555-0471',
-    email: 'marcus@greenpastures.bio',
-    farmAddress: '7422 Ridgeview Orchard Lane, Oak Valley, OR 97034',
-    bio: 'Family-operated 12-acre biodynamic farm committed to zero synthetic inputs, heritage seed preservation, and high-sugar heirloom produce.'
+    stallName: '',
+    contactPerson: '',
+    phone: '',
+    email: '',
+    farmAddress: '',
+    bio: ''
   });
 
   // Markets & Schedule State
@@ -22,8 +22,7 @@ export default function FarmerSettings({ showToast }) {
   ];
 
   const [selectedMarkets, setSelectedMarkets] = useState([
-    'Downtown Saturday Market',
-    'Pioneer Pavilion Heritage Market'
+    'Downtown Saturday Market'
   ]);
 
   const [operatingDays, setOperatingDays] = useState(['Wednesday', 'Saturday', 'Sunday']);
@@ -36,10 +35,10 @@ export default function FarmerSettings({ showToast }) {
 
   // Stall Location State
   const [stallLocation, setStallLocation] = useState({
-    stallNumber: 'Pioneer Pavilion • Stall #08',
-    address: 'SW Park Ave & Montgomery St, Portland, OR 97201',
-    lat: '45.5152',
-    lng: '-122.6784'
+    stallNumber: '',
+    address: '',
+    lat: '',
+    lng: ''
   });
 
   // Change Password State
@@ -55,24 +54,28 @@ export default function FarmerSettings({ showToast }) {
       .then((res) => {
         if (res?.data) {
           const p = res.data;
-          setBasicInfo((prev) => ({
-            ...prev,
-            stallName: p.stall_name || prev.stallName,
-            contactPerson: p.contact_person || prev.contactPerson,
-            phone: p.phone || prev.phone,
-            email: p.email || prev.email,
-            farmAddress: p.address || prev.farmAddress,
-            bio: p.bio || prev.bio
-          }));
+          setBasicInfo({
+            stallName: p.stall_name || p.user?.name || '',
+            contactPerson: p.contact_person || p.user?.name || '',
+            phone: p.phone || p.user?.phone || '',
+            email: p.email || p.user?.email || '',
+            farmAddress: p.address || '',
+            bio: p.bio || ''
+          });
           if (p.operating_days && Array.isArray(p.operating_days)) {
             setOperatingDays(p.operating_days);
           }
-          if (p.latitude && p.longitude) {
-            setStallLocation((prev) => ({
-              ...prev,
-              lat: String(p.latitude),
-              lng: String(p.longitude)
-            }));
+          setStallLocation({
+            stallNumber: p.stall_number || (p.stall_name ? `${p.stall_name} Pavilion Stall` : ''),
+            address: p.address || '',
+            lat: p.latitude ? String(p.latitude) : '45.5152',
+            lng: p.longitude ? String(p.longitude) : '-122.6784'
+          });
+          if (p.pickup_time_start || p.pickup_time_end) {
+            setPickupWindow({
+              start: p.pickup_time_start || '08:00 AM',
+              end: p.pickup_time_end || '01:30 PM'
+            });
           }
         }
       })
