@@ -101,7 +101,7 @@ export default function CustomerSettings({ onNavigate, showToast }) {
   }
 
   return (
-    <div className="w-full space-y-6 animate-fade-in pb-24">
+    <div className="px-3 sm:px-6 lg:px-gutter py-4 sm:py-space-lg max-w-7xl mx-auto w-full space-y-6 animate-fade-in pb-24">
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-outline-variant/40 pb-5">
         <div>

@@ -937,6 +937,8 @@ export default function CustomerDashboard({ onNavigate, initialTab = 'dashboard'
             setBookingTargetStall(null);
           }}
           onConfirmReservation={(slip) => handleConfirmStallReservation(slip, bookingTargetStall)}
+          onOpenLogin={() => onNavigate && onNavigate('login')}
+          onOpenRegister={() => onNavigate && onNavigate('register')}
         />
       )}
     </div>

@@ -159,33 +159,30 @@ function DashboardAccessGateway({
               <button
                 type="button"
                 onClick={() => onDemoLogin && onDemoLogin('admin')}
-                className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
-                  targetRole === 'admin'
+                className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${targetRole === 'admin'
                     ? 'bg-primary text-white shadow-xs'
                     : 'bg-surface-container-high text-on-surface hover:bg-primary/10'
-                }`}
+                  }`}
               >
                 Admin
               </button>
               <button
                 type="button"
                 onClick={() => onDemoLogin && onDemoLogin('farmer')}
-                className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
-                  targetRole === 'farmer'
+                className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${targetRole === 'farmer'
                     ? 'bg-secondary text-white shadow-xs'
                     : 'bg-surface-container-high text-on-surface hover:bg-secondary/10'
-                }`}
+                  }`}
               >
                 Farmer
               </button>
               <button
                 type="button"
                 onClick={() => onDemoLogin && onDemoLogin('customer')}
-                className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
-                  targetRole === 'customer'
+                className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${targetRole === 'customer'
                     ? 'bg-primary text-white shadow-xs'
                     : 'bg-surface-container-high text-on-surface hover:bg-primary/10'
-                }`}
+                  }`}
               >
                 Shopper
               </button>
@@ -246,8 +243,8 @@ function AppContent() {
         targetRole === 'admin'
           ? 'admin@marketlink.test'
           : targetRole === 'farmer'
-          ? 'farmer1@marketlink.test'
-          : 'customer1@marketlink.test';
+            ? 'farmer1@marketlink.test'
+            : 'customer1@marketlink.test';
       await login({ email, password: 'password' });
       showToast(`⚡ Authenticated as Demo ${targetRole.toUpperCase()}! Welcome.`);
     } catch (err) {
@@ -333,7 +330,7 @@ function AppContent() {
         if (res?.data && isMounted) {
           setLiveProducts(res.data);
         }
-      }).catch(() => {});
+      }).catch(() => { });
     };
 
     window.addEventListener('marketlink:product-added', handleProductAdded);
@@ -586,7 +583,7 @@ function AppContent() {
       return (
         <div className="min-h-screen flex flex-col bg-surface">
           {renderAppToast()}
-          <Navbar currentView={currentView} onNavigate={handleNavigate} onOpenAuth={() => setAuthMode('login')} onFocusSearch={() => {}} />
+          <Navbar currentView={currentView} onNavigate={handleNavigate} onOpenAuth={() => setAuthMode('login')} onFocusSearch={() => { }} />
           <DashboardAccessGateway
             targetRole="admin"
             onDemoLogin={handleQuickDemoLogin}
@@ -604,7 +601,7 @@ function AppContent() {
       return (
         <div className="min-h-screen flex flex-col bg-surface">
           {renderAppToast()}
-          <Navbar currentView={currentView} onNavigate={handleNavigate} onOpenAuth={() => setAuthMode('login')} onFocusSearch={() => {}} />
+          <Navbar currentView={currentView} onNavigate={handleNavigate} onOpenAuth={() => setAuthMode('login')} onFocusSearch={() => { }} />
           <DashboardAccessGateway
             targetRole="admin"
             isDenied={true}
@@ -625,16 +622,16 @@ function AppContent() {
       currentView === 'admin-markets'
         ? 'markets'
         : currentView === 'admin-customers'
-        ? 'customers'
-        : currentView === 'admin-moderation'
-        ? 'moderation'
-        : currentView === 'admin-reports'
-        ? 'reports'
-        : currentView === 'admin-settings'
-        ? 'settings'
-        : currentView === 'admin-farmers'
-        ? 'farmers'
-        : 'dashboard';
+          ? 'customers'
+          : currentView === 'admin-moderation'
+            ? 'moderation'
+            : currentView === 'admin-reports'
+              ? 'reports'
+              : currentView === 'admin-settings'
+                ? 'settings'
+                : currentView === 'admin-farmers'
+                  ? 'farmers'
+                  : 'dashboard';
 
     return <AdminDashboard onNavigate={handleNavigate} initialTab={tab} />;
   }
@@ -659,7 +656,7 @@ function AppContent() {
       return (
         <div className="min-h-screen flex flex-col bg-surface">
           {renderAppToast()}
-          <Navbar currentView={currentView} onNavigate={handleNavigate} onOpenAuth={() => setAuthMode('farmer')} onFocusSearch={() => {}} />
+          <Navbar currentView={currentView} onNavigate={handleNavigate} onOpenAuth={() => setAuthMode('farmer')} onFocusSearch={() => { }} />
           <DashboardAccessGateway
             targetRole="farmer"
             onDemoLogin={handleQuickDemoLogin}
@@ -677,7 +674,7 @@ function AppContent() {
       return (
         <div className="min-h-screen flex flex-col bg-surface">
           {renderAppToast()}
-          <Navbar currentView={currentView} onNavigate={handleNavigate} onOpenAuth={() => setAuthMode('farmer')} onFocusSearch={() => {}} />
+          <Navbar currentView={currentView} onNavigate={handleNavigate} onOpenAuth={() => setAuthMode('farmer')} onFocusSearch={() => { }} />
           <DashboardAccessGateway
             targetRole="farmer"
             isDenied={true}
@@ -698,16 +695,16 @@ function AppContent() {
       currentView === 'farmer-products'
         ? 'products'
         : currentView === 'farmer-stock'
-        ? 'stock-template'
-        : currentView === 'farmer-pre-orders'
-        ? 'pre-orders'
-        : currentView === 'farmer-reviews'
-        ? 'reviews'
-        : currentView === 'farmer-stall' || currentView === 'stall'
-        ? 'stall'
-        : currentView === 'farmer-settings' || currentView === 'settings'
-        ? 'settings'
-        : 'dashboard';
+          ? 'stock-template'
+          : currentView === 'farmer-pre-orders'
+            ? 'pre-orders'
+            : currentView === 'farmer-reviews'
+              ? 'reviews'
+              : currentView === 'farmer-stall' || currentView === 'stall'
+                ? 'stall'
+                : currentView === 'farmer-settings' || currentView === 'settings'
+                  ? 'settings'
+                  : 'dashboard';
 
     return <FarmerDashboard onNavigate={handleNavigate} initialTab={tab} />;
   }
@@ -734,7 +731,7 @@ function AppContent() {
       return (
         <div className="min-h-screen flex flex-col bg-surface">
           {renderAppToast()}
-          <Navbar currentView={currentView} onNavigate={handleNavigate} onOpenAuth={() => setAuthMode('login')} onFocusSearch={() => {}} />
+          <Navbar currentView={currentView} onNavigate={handleNavigate} onOpenAuth={() => setAuthMode('login')} onFocusSearch={() => { }} />
           <DashboardAccessGateway
             targetRole="customer"
             onDemoLogin={handleQuickDemoLogin}
@@ -752,14 +749,14 @@ function AppContent() {
       currentView === 'customer-orders' || currentView === 'my-orders'
         ? 'orders'
         : currentView === 'customer-cart' || currentView === 'cart'
-        ? 'cart'
-        : currentView === 'customer-favorites' || currentView === 'favorites'
-        ? 'favorites'
-        : currentView === 'customer-reviews' || currentView === 'my-reviews'
-        ? 'reviews'
-        : currentView === 'customer-settings' || currentView === 'profile-settings'
-        ? 'settings'
-        : 'dashboard';
+          ? 'cart'
+          : currentView === 'customer-favorites' || currentView === 'favorites'
+            ? 'favorites'
+            : currentView === 'customer-reviews' || currentView === 'my-reviews'
+              ? 'reviews'
+              : currentView === 'customer-settings' || currentView === 'profile-settings'
+                ? 'settings'
+                : 'dashboard';
 
     return <CustomerDashboard onNavigate={handleNavigate} initialTab={tab} />;
   }
@@ -972,6 +969,7 @@ function AppContent() {
           onClose={() => setReserveProduct(null)}
           onConfirmReservation={handleConfirmReservation}
           onOpenAuth={(role) => setAuthMode(role || 'customer')}
+          onOpenLogin={() => handleNavigate('login')}
           onOpenRegister={() => handleNavigate('register')}
         />
       )}

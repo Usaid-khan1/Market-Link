@@ -9,7 +9,8 @@ export default function ReservationModal({
   onClose,
   onConfirmReservation,
   onOpenAuth,
-  onOpenRegister
+  onOpenRegister,
+  onOpenLogin
 }) {
   const { user, isAuthenticated } = useAuth();
   const [quantity, setQuantity] = useState(product?.quantity || 1);
@@ -157,9 +158,9 @@ export default function ReservationModal({
               <h4 className="font-headline-sm text-base font-bold text-on-surface">
                 Customer Sign In Required
               </h4>
-              <p className="text-xs text-on-surface-variant max-w-sm leading-relaxed">
+              {/* <p className="text-xs text-on-surface-variant max-w-sm leading-relaxed">
                 Bina login ke produce hold ya stall reservation confirm nahi ki ja sakti. Please sign in as a Shopper or register to reserve produce.
-              </p>
+              </p> */}
 
               {/* Product preview snippet */}
               <div className="w-full max-w-sm p-3 bg-surface-container-low rounded-xl border border-outline-variant/30 flex items-center gap-3 my-2 text-left">
@@ -179,7 +180,11 @@ export default function ReservationModal({
                   type="button"
                   onClick={() => {
                     onClose();
-                    onOpenAuth && onOpenAuth('customer');
+                    if (onOpenLogin) {
+                      onOpenLogin();
+                    } else if (onOpenAuth) {
+                      onOpenAuth('customer');
+                    }
                   }}
                   className="flex-1 py-2.5 px-4 rounded-xl bg-primary hover:bg-primary/90 text-on-primary font-bold text-xs shadow-sm cursor-pointer transition-all flex items-center justify-center gap-1.5"
                 >
@@ -222,7 +227,11 @@ export default function ReservationModal({
                   type="button"
                   onClick={() => {
                     onClose();
-                    onOpenAuth && onOpenAuth('customer');
+                    if (onOpenLogin) {
+                      onOpenLogin();
+                    } else if (onOpenAuth) {
+                      onOpenAuth('customer');
+                    }
                   }}
                   className="py-2 px-5 rounded-xl bg-primary text-on-primary font-bold text-xs cursor-pointer"
                 >

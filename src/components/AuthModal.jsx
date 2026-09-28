@@ -117,8 +117,8 @@ export default function AuthModal({ initialMode = 'login', onClose, onLoginSucce
                 {mode === 'farmer'
                   ? 'List your weekly harvest and connect with local buyers'
                   : mode === 'register'
-                  ? 'Reserve fresh produce from local farms near you'
-                  : 'Sign in to your community account'}
+                    ? 'Reserve fresh produce from local farms near you'
+                    : 'Sign in to your community account'}
               </p>
             </div>
             <button
@@ -137,11 +137,10 @@ export default function AuthModal({ initialMode = 'login', onClose, onLoginSucce
             <button
               key={key}
               onClick={() => { setMode(key); setErrorMessage(null); }}
-              className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer border ${
-                mode === key
+              className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer border ${mode === key
                   ? `${data.bg} ${data.color} ${data.activeBorder}`
                   : 'text-on-surface-variant hover:bg-surface-container border-transparent'
-              }`}
+                }`}
             >
               <span className="material-symbols-outlined text-[14px]">{data.icon}</span>
               {data.label}
@@ -245,8 +244,8 @@ export default function AuthModal({ initialMode = 'login', onClose, onLoginSucce
                 background: mode === 'farmer'
                   ? 'linear-gradient(135deg, #914d00, #6e3900)'
                   : mode === 'register'
-                  ? 'linear-gradient(135deg, #3e6a00, #125224)'
-                  : 'linear-gradient(135deg, #125224, #2e6b3a)',
+                    ? 'linear-gradient(135deg, #3e6a00, #125224)'
+                    : 'linear-gradient(135deg, #125224, #2e6b3a)',
               }}
             >
               {isLoading ? (
